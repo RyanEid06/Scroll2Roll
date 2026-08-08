@@ -15,4 +15,14 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
 - [x] Build and relocation-test a portable Windows x64 package with notices, documentation, and checksums.
 - [x] Prepare and validate the static Cloudflare product/download website.
 - [x] Run the release acceptance matrix and document deliberate limitations honestly.
-- [ ] Add later games one at a time only under future owner direction.
+- [x] Record the owner-approved 0.2.0 expansion architecture, payout math,
+  deterministic strategy, UI contracts, migration policy, and acceptance gates.
+- [ ] Add save-v2 migration and the reusable multi-game session foundation.
+- [ ] Complete European Roulette and rerun the full Blackjack regression gate.
+- [ ] Complete Plinko with audited row/risk expected-return tables.
+- [ ] Complete the original Coop Climb step-and-cash-out game.
+- [ ] Complete the original real-time Midnight Crossing arcade game.
+- [ ] Complete single-player No-Limit Texas Hold'em against 1-5 bounded AI
+  opponents.
+- [ ] Revalidate all six games, Visual Studio, packaging, relocation, and the
+  static Cloudflare product/download site for 0.2.0.

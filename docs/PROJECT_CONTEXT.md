@@ -12,13 +12,21 @@ Read this file and `MASTER_PLAN.md` completely at the start of every Scroll2Roll
 - Graphics/input/audio: Rocket's reviewed raylib 6.0 integration
 - Target: Windows x64
 - IDE: Visual Studio Community 2026 with Rocket Language 2.0.3
-- Current version: 0.1.0
+- Current released baseline: 0.1.0
+- Expansion target: 0.2.0
 
 ## Product vision and completed scope
 
 Scroll2Roll is a polished, local, single-player, play-money casino shell that can add owner-approved games one at a time. Version 0.1.0 completes Blackjack first with a branded startup experience, reusable lobby and settings, deterministic headless engine tests, a native raylib table, versioned local persistence, portable Windows packaging, and a prepared Cloudflare product/download website.
 
 All 13 implementation and validation milestones in `MASTER_PLAN.md` are complete locally. No push, release publication, Cloudflare deployment, or signing was performed.
+
+The owner has now approved the 0.2.0 expansion defined in
+`EXPANSION_PLAN.md`: European Roulette, Plinko, Chicken (presented as the
+original Coop Climb), Cross the Road (presented as the original real-time
+Midnight Crossing), and single-player No-Limit Texas Hold'em, implemented in
+that order. The expansion plan is complete; game implementation has not yet
+started. All five games must be complete before 0.2.0 acceptance.
 
 ## Explicit non-goals
 
@@ -27,7 +35,7 @@ All 13 implementation and validation milestones in `MASTER_PLAN.md` are complete
 - No online multiplayer or gambling service.
 - No browser implementation of the Rocket casino.
 - No Rocket syntax, compiler, runtime ABI, LSP, diagnostic, package, CodeView/PDB, source-map, or Phase 19 changes.
-- No additional casino game implementation before future owner direction.
+- No additional games beyond the five explicitly approved for 0.2.0.
 - No push, publication, deployment, or unsupported signing claim without owner approval.
 
 ## Rocket and raylib constraints
@@ -71,6 +79,9 @@ Rendering never owns Blackjack rules. The C++ adapter never owns application or 
 - The final `Scroll2Roll-0.1.0-windows-x64.zip` is 1,507,358 bytes with SHA-256 `6408d68501e02005164ff2bb016026d71b90ae6e49dfe43e2f324c0dc96d4ac7`.
 - Source and staged website validation pass current Cloudflare Pages Free file-count and per-asset limits.
 - Detailed evidence and exact commands are in `docs/VALIDATION.md`.
+- The 0.2.0 expansion baseline was rerun on 2026-08-08: Debug and Release each
+  passed native build, `rocketc check`, all 10 existing tests, and both
+  formatting checks before new game implementation began.
 
 ## Deliberate limitations
 
@@ -102,8 +113,14 @@ Spacing, typography, component states, borders, timing, and responsive layout va
 - Completed: reviewed raylib integration, reusable shell, full visual Blackjack, settings, and local persistence.
 - Completed: Visual Studio Community 2026 repository acceptance.
 - Completed: Windows packaging, relocated smoke validation, static website, and Cloudflare Pages preparation.
-- Current: final local commits and owner review.
-- Next: only with explicit owner approval, push the local commits and publish/deploy the prepared release/site. Later games require separate owner direction.
+- Completed: owner-approved 0.2.0 architecture, rules, payout math,
+  deterministic strategy, UI contracts, migration design, milestone gates, and
+  acceptance criteria in `EXPANSION_PLAN.md`.
+- Current: expansion milestone E0, adding the 0.2.0/save-v2 foundation before
+  European Roulette.
+- Next: complete European Roulette engine, API, tests, full UI flow,
+  documentation, and Blackjack regression gate; then proceed in the mandated
+  game order.
 
 ## Major decisions
 
@@ -113,6 +130,11 @@ Spacing, typography, component states, borders, timing, and responsive layout va
 - Keep rendering dependent on the tested Blackjack API instead of duplicating game rules.
 - Keep the native adapter narrow and reusable; new UI operations were added only when demonstrated necessary.
 - Keep the Cloudflare site static and separate from native application behavior. The current archive fits Pages Free's verified 25 MiB per-asset limit.
+- Use version 0.2.0 and `scroll2roll-save-2` for the expansion, with explicit
+  migration of valid `scroll2roll-save-1` data and safe recovery for corrupt or
+  unsupported data.
+- Maintain one local play-credit balance across games, transferring it only at
+  engine-defined safe settlement/cash-out/hand boundaries.
 
 ## Files that must remain out of Git
 
@@ -120,4 +142,10 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 
 ## New-chat handoff
 
-Read `AGENTS.md`, `docs/MASTER_PLAN.md`, and this file completely. Inspect Git status and preserve user changes. The complete 0.1.0 implementation is locally validated; continue only from **Milestones**. Use frozen Rocket 2.0 and the pinned raylib integration, rerun proportionate validation for changes, update this handoff, make logical local commits, and do not push, publish, deploy, sign, or start another game without explicit owner approval.
+Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`, and this file
+completely. Inspect Git status and preserve user changes. The 0.1.0 Blackjack
+baseline and its 10 tests pass in Debug and Release. Continue from **Milestones**
+in the exact approved game order. Use frozen Rocket 2.0 and the pinned raylib
+integration, rerun all prior tests at every game gate, update this handoff, make
+logical local commits, and do not push, publish, deploy, sign, or add an
+unapproved game.

@@ -2,6 +2,14 @@
 
 This file records the complete local acceptance pass performed on Windows x64 on 2026-08-08. Generated artifacts remain ignored and are reproducible from the documented scripts.
 
+## 0.2.0 expansion baseline
+
+Before expansion implementation, both Debug and Release
+`scripts/validate.ps1` passes completed again on 2026-08-08. Each configuration
+passed the native CMake/raylib build, `rocketc check`, all 10 existing Rocket
+tests, and `rocketc fmt --check` for `src` and `tests`. This is the regression
+baseline for every game milestone in `EXPANSION_PLAN.md`.
+
 ## Rocket and native application
 
 - Debug `scripts/validate.ps1`: CMake/raylib build, Rocket check, 10/10 tests, and `src`/`tests` formatting checks passed.
