@@ -1,0 +1,95 @@
+import src.chicken.model
+import src.chicken.rules
+import std.collections
+import std.random
+
+pub fn phase_code(phase: model.Phase) -> Int:
+    match phase:
+        case model.Ready:
+            return 0
+        case model.Climbing:
+            return 1
+        case model.Settled:
+            return 2
+
+pub fn new_game(starting_balance: Int, seed: Int) -> Result[model.Game, String]:
+    if starting_balance < 5:
+        return Err("Starting balance is below the Coop Climb minimum")
+    let no_path: Array[Int] = []
+    let no_history: Array[model.RoundResult] = []
+    return Ok(model.Game(starting_balance, model.Medium(), 10, model.Ready(), no_path, 0, 0, 0, false, no_history, 1, seed, "Choose risk and secure a coop pass"))
+
+fn configured(game: model.Game, risk: model.Risk, bet: Int, message: String) -> Result[model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Coop Climb configuration is locked during a round")
+    if not rules.valid_bet(bet):
+        return Err("Coop Climb bet must be 5-1000 credits in units of 5")
+    return Ok(model.Game(game.balance, risk, bet, game.phase, game.path, game.survived_depth, game.wager, game.payout, game.failed, game.history, game.round_number, game.seed, message))
+
+pub fn with_risk(game: model.Game, risk: model.Risk) -> Result[model.Game, String]:
+    return configured(game, risk, game.bet, "Risk profile changed")
+
+pub fn with_bet(game: model.Game, bet: Int) -> Result[model.Game, String]:
+    return configured(game, game.risk, bet, "Wager changed")
+
+fn hidden_path(game: model.Game) -> Array[Int]:
+    random.seed(game.seed + game.round_number * 130363)
+    let numerator = rules.survival_numerator(game.risk)
+    let denominator = rules.survival_denominator(game.risk)
+    var path: Array[Int] = []
+    var depth = 0
+    while depth < rules.maximum_depth():
+        var safe = 0
+        if random.int(0, denominator) < numerator:
+            safe = 1
+        path = collections.append(path, safe)
+        depth = depth + 1
+    return path
+
+pub fn start(game: model.Game) -> Result[model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Coop Climb round is already active")
+    if game.bet > game.balance:
+        return Err("Not enough play credits for that Coop Climb wager")
+    return Ok(model.Game(game.balance - game.bet, game.risk, game.bet, model.Climbing(), hidden_path(game), 0, game.bet, 0, false, game.history, game.round_number, game.seed, "Pass secured; choose Advance"))
+
+fn bounded_history(history: Array[model.RoundResult], result: model.RoundResult) -> Array[model.RoundResult]:
+    let inserted = collections.insert(history, 0, result)
+    if collections.length(inserted) <= 20:
+        return inserted
+    var bounded: Array[model.RoundResult] = []
+    var index = 0
+    while index < 20:
+        bounded = collections.append(bounded, inserted[index])
+        index = index + 1
+    return bounded
+
+pub fn advance(game: model.Game) -> Result[model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("Advance requires an active Coop Climb round")
+    if game.survived_depth >= rules.maximum_depth():
+        return Err("The final observatory coop is reached; cash out")
+    if game.path[game.survived_depth] == 0:
+        let result = model.RoundResult(game.survived_depth, game.wager, 0, true)
+        return Ok(model.Game(game.balance, game.risk, game.bet, model.Settled(), game.path, game.survived_depth, game.wager, 0, true, bounded_history(game.history, result), game.round_number, game.seed, "The next rung failed; wager lost"))
+    let depth = game.survived_depth + 1
+    var message = "Rung secured; advance again or cash out"
+    if depth == rules.maximum_depth():
+        message = "Final observatory coop secured; cash out"
+    return Ok(model.Game(game.balance, game.risk, game.bet, game.phase, game.path, depth, game.wager, game.payout, false, game.history, game.round_number, game.seed, message))
+
+pub fn cash_out(game: model.Game) -> Result[model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("Cash Out requires an active Coop Climb round")
+    if game.survived_depth < 1:
+        return Err("Secure at least one rung before cashing out")
+    let multiplier = rules.multiplier_at(game.risk, game.survived_depth)?
+    let payout = rules.payout(game.wager, multiplier)
+    let result = model.RoundResult(game.survived_depth, game.wager, payout, false)
+    return Ok(model.Game(game.balance + payout, game.risk, game.bet, model.Settled(), game.path, game.survived_depth, game.wager, payout, false, bounded_history(game.history, result), game.round_number, game.seed, "Coop Climb cash out settled"))
+
+pub fn next_round(game: model.Game) -> Result[model.Game, String]:
+    if phase_code(game.phase) != 2:
+        return Err("The Coop Climb round has not settled")
+    let no_path: Array[Int] = []
+    return Ok(model.Game(game.balance, game.risk, game.bet, model.Ready(), no_path, 0, 0, 0, false, game.history, game.round_number + 1, game.seed, "Ready for another Coop Climb"))

@@ -1,0 +1,73 @@
+import src.chicken.model
+
+pub fn risk_code(risk: model.Risk) -> Int:
+    match risk:
+        case model.Low:
+            return 0
+        case model.Medium:
+            return 1
+        case model.High:
+            return 2
+
+pub fn risk_name(risk: model.Risk) -> String:
+    match risk:
+        case model.Low:
+            return "Low"
+        case model.Medium:
+            return "Medium"
+        case model.High:
+            return "High"
+
+pub fn maximum_depth() -> Int:
+    return 10
+
+pub fn target_return_basis_points() -> Int:
+    return 9600
+
+pub fn valid_bet(bet: Int) -> Bool:
+    return bet >= 5 and bet <= 1000 and bet / 5 * 5 == bet
+
+pub fn survival_numerator(risk: model.Risk) -> Int:
+    let code = risk_code(risk)
+    if code == 0:
+        return 4
+    if code == 1:
+        return 2
+    return 1
+
+pub fn survival_denominator(risk: model.Risk) -> Int:
+    let code = risk_code(risk)
+    if code == 0:
+        return 5
+    if code == 1:
+        return 3
+    return 2
+
+pub fn multipliers(risk: model.Risk) -> Array[Int]:
+    let code = risk_code(risk)
+    if code == 0:
+        return[12000, 15000, 18750, 23437, 29296, 36621, 45776, 57220, 71525, 89406]
+    if code == 1:
+        return[14400, 21600, 32400, 48600, 72900, 109350, 164025, 246037, 369056, 553584]
+    return[19200, 38400, 76800, 153600, 307200, 614400, 1228800, 2457600, 4915200, 9830400]
+
+pub fn multiplier_at(risk: model.Risk, depth: Int) -> Result[Int, String]:
+    if depth < 1 or depth > maximum_depth():
+        return Err("Coop Climb depth must be between 1 and 10")
+    return Ok(multipliers(risk)[depth - 1])
+
+pub fn expected_return_basis_points(risk: model.Risk, depth: Int) -> Result[Int, String]:
+    let multiplier = multiplier_at(risk, depth)?
+    let numerator = survival_numerator(risk)
+    let denominator = survival_denominator(risk)
+    var survived_paths = 1
+    var all_paths = 1
+    var rung = 0
+    while rung < depth:
+        survived_paths = survived_paths * numerator
+        all_paths = all_paths * denominator
+        rung = rung + 1
+    return Ok(multiplier * survived_paths / all_paths)
+
+pub fn payout(stake: Int, multiplier_basis_points: Int) -> Int:
+    return stake * multiplier_basis_points / 10000

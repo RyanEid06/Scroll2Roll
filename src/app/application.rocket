@@ -1,4 +1,5 @@
 import src.app.blackjack_view
+import src.app.chicken_view
 import src.app.components
 import src.app.plinko_view
 import src.app.registry
@@ -6,6 +7,7 @@ import src.app.roulette_view
 import src.app.theme
 import src.blackjack.engine
 import src.blackjack.model
+import src.chicken.chicken_api
 import src.persistence
 import src.plinko.plinko_api
 import src.roulette.api
@@ -34,9 +36,11 @@ pub struct State:
     plinko_help: Bool
     plinko_stage: Int
     plinko_next_step: Float
+    chicken: chicken_api.Session
+    chicken_help: Bool
 
 fn rebuild(state: State, screen: Int, game: model.Game, selected_bet: Int, settings: persistence.Settings, notice: String, error: String, exit_prompt: Bool, running: Bool, next_step: Float, saved_round: Int) -> State:
-    return State(screen, game, state.roulette, selected_bet, settings, state.save_path, notice, error, exit_prompt, running, next_step, saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step)
+    return State(screen, game, state.roulette, selected_bet, settings, state.save_path, notice, error, exit_prompt, running, next_step, saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help)
 
 fn new_table(settings: persistence.Settings, seed: Int) -> Result[model.Game, String]:
     let game = engine.new_game("Player", settings.play_balance, settings.ai_count, seed)?
@@ -46,7 +50,8 @@ fn initial(settings: persistence.Settings, save_path: String, notice: String) ->
     let game = new_table(settings, 20260808)?
     let roulette = api.new_session(settings.play_balance, 20260809)?
     let plinko = plinko_api.new_session(settings.play_balance, 20260810)?
-    return Ok(State(0, game, roulette, game.rules.minimum_bet, settings, save_path, notice, "", false, true, 0.0, 0, 0, 0, false, 0.0, plinko, false, 0, 0.0))
+    let chicken = chicken_api.new_session(settings.play_balance, 20260811)?
+    return Ok(State(0, game, roulette, game.rules.minimum_bet, settings, save_path, notice, "", false, true, 0.0, 0, 0, 0, false, 0.0, plinko, false, 0, 0.0, chicken, false))
 
 fn save_settings(state: State, settings: persistence.Settings) -> State:
     match persistence.save(state.save_path, settings):
@@ -59,19 +64,25 @@ fn with_game(state: State, game: model.Game, next_step: Float) -> State:
     return rebuild(state, state.screen, game, state.selected_bet, state.settings, state.notice, "", state.exit_prompt, state.running, next_step, state.saved_round)
 
 fn with_roulette(state: State, session: api.Session, spin_end: Float) -> State:
-    return State(state.screen, state.game, session, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step)
+    return State(state.screen, state.game, session, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help)
 
 fn roulette_focus(state: State, kind: Int, target: Int) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, kind, target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, kind, target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help)
 
 fn roulette_help(state: State, visible: Bool) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, visible, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, visible, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help)
 
 fn with_plinko(state: State, session: plinko_api.Session, stage: Int, next_step: Float) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, session, state.plinko_help, stage, next_step)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, session, state.plinko_help, stage, next_step, state.chicken, state.chicken_help)
 
 fn plinko_help(state: State, visible: Bool) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, visible, state.plinko_stage, state.plinko_next_step)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, visible, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help)
+
+fn with_chicken(state: State, session: chicken_api.Session) -> State:
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, session, state.chicken_help)
+
+fn chicken_help(state: State, visible: Bool) -> State:
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, visible)
 
 fn with_error(state: State, error: String) -> State:
     return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, error, state.exit_prompt, state.running, state.next_step, state.saved_round)
@@ -99,6 +110,14 @@ fn enter_plinko(state: State, seed: Int) -> State:
         case Err(error):
             return with_error(state, error)
 
+fn enter_chicken(state: State, seed: Int) -> State:
+    match chicken_api.new_session(state.settings.play_balance, seed):
+        case Ok(session):
+            let entered = rebuild(state, 6, state.game, state.selected_bet, state.settings, "Coop Climb observatory ready", "", false, true, state.next_step, state.saved_round)
+            return with_chicken(entered, session)
+        case Err(error):
+            return with_error(state, error)
+
 fn route_game(state: State, index: Int) -> State:
     if index == 0 and registry.available(index):
         return enter_game(state, 20260808 + index)
@@ -106,6 +125,8 @@ fn route_game(state: State, index: Int) -> State:
         return enter_roulette(state, 20260808 + index)
     if index == 2 and registry.available(index):
         return enter_plinko(state, 20260808 + index)
+    if index == 3 and registry.available(index):
+        return enter_chicken(state, 20260808 + index)
     return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, "That game is a future placeholder", "", state.exit_prompt, state.running, state.next_step, state.saved_round)
 
 fn change_bet(state: State, delta: Int) -> State:
@@ -555,6 +576,96 @@ fn update_plinko(state: State, window: rocket_raylib.Window, clicked: Bool, mous
             return plinko_return_to_lobby(state)
     return state
 
+fn chicken_cycle_risk(state: State) -> State:
+    var code = chicken_api.risk_code(state.chicken) + 1
+    if code > 2:
+        code = 0
+    match chicken_api.with_risk_code(state.chicken, code):
+        case Ok(session):
+            return with_chicken(state, session)
+        case Err(error):
+            return with_error(state, error)
+
+fn chicken_configure_bet(state: State, delta: Int) -> State:
+    var bet = state.chicken.game.bet + delta
+    if bet < 5:
+        bet = 5
+    if bet > 1000:
+        bet = 1000
+    match chicken_api.with_bet(state.chicken, bet):
+        case Ok(session):
+            return with_chicken(state, session)
+        case Err(error):
+            return with_error(state, error)
+
+fn chicken_save_settlement(state: State, session: chicken_api.Session) -> State:
+    let settings = persistence.with_balance(state.settings, session.game.balance)
+    return save_settings(with_chicken(rebuild(state, state.screen, state.game, state.selected_bet, settings, "Coop Climb result saved", "", false, true, state.next_step, state.saved_round), session), settings)
+
+fn chicken_start(state: State) -> State:
+    match chicken_api.with_start(state.chicken):
+        case Ok(session):
+            return with_chicken(state, session)
+        case Err(error):
+            return with_error(state, error)
+
+fn chicken_advance(state: State) -> State:
+    match chicken_api.with_advance(state.chicken):
+        case Ok(session):
+            if chicken_api.phase_code(session) == 2:
+                return chicken_save_settlement(state, session)
+            return with_chicken(state, session)
+        case Err(error):
+            return with_error(state, error)
+
+fn chicken_cash_out(state: State) -> State:
+    match chicken_api.with_cash_out(state.chicken):
+        case Ok(session):
+            return chicken_save_settlement(state, session)
+        case Err(error):
+            return with_error(state, error)
+
+fn chicken_return_to_lobby(state: State) -> State:
+    if chicken_api.phase_code(state.chicken) == 1:
+        return with_error(state, "Cash out or finish the active Coop Climb round")
+    let settings = persistence.with_balance(state.settings, state.chicken.game.balance)
+    return save_settings(rebuild(state, 1, state.game, state.selected_bet, settings, "Coop Climb progress saved; welcome back", "", false, true, state.next_step, state.saved_round), settings)
+
+fn update_chicken(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int) -> State:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(chicken_view.help_rect(width), mouse_x, mouse_y):
+        return chicken_help(state, not state.chicken_help)
+    if state.chicken_help:
+        return state
+    let phase = chicken_api.phase_code(state.chicken)
+    if phase == 0:
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_tab()) or clicked and components.contains(chicken_view.risk_rect(width), mouse_x, mouse_y):
+            return chicken_cycle_risk(state)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(chicken_view.bet_minus_rect(width), mouse_x, mouse_y):
+            return chicken_configure_bet(state, -5)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(chicken_view.bet_plus_rect(width), mouse_x, mouse_y):
+            return chicken_configure_bet(state, 5)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(chicken_view.start_rect(width), mouse_x, mouse_y):
+            return chicken_start(state)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(chicken_view.lobby_rect(height), mouse_x, mouse_y):
+            return chicken_return_to_lobby(state)
+    if phase == 1:
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(chicken_view.advance_rect(width), mouse_x, mouse_y):
+            return chicken_advance(state)
+        if state.chicken.game.survived_depth > 0 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(chicken_view.cash_out_rect(width), mouse_x, mouse_y)):
+            return chicken_cash_out(state)
+    if phase == 2:
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(chicken_view.next_rect(height), mouse_x, mouse_y):
+            match chicken_api.with_next_round(state.chicken):
+                case Ok(session):
+                    return with_chicken(state, session)
+                case Err(error):
+                    return with_error(state, error)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(chicken_view.lobby_rect(height), mouse_x, mouse_y):
+            return chicken_return_to_lobby(state)
+    return state
+
 fn update(state: State, window: rocket_raylib.Window) -> State:
     let clicked = rocket_raylib.is_mouse_pressed(window, rocket_raylib.mouse_left())
     let mouse_x = rocket_raylib.mouse_x(window)
@@ -582,6 +693,8 @@ fn update(state: State, window: rocket_raylib.Window) -> State:
         return update_roulette(state, window, clicked, mouse_x, mouse_y, now)
     if state.screen == 5:
         return update_plinko(state, window, clicked, mouse_x, mouse_y, now)
+    if state.screen == 6:
+        return update_chicken(state, window, clicked, mouse_x, mouse_y)
     return update_settings(state, window, clicked, mouse_x, mouse_y)
 
 fn draw_startup(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
@@ -656,6 +769,8 @@ fn draw(window: rocket_raylib.Window, state: State) -> Result[Bool, String]:
         roulette_view.draw(window, frame, state.roulette.game, state.roulette_kind, state.roulette_target, state.roulette_help, mouse_x, mouse_y)?
     if state.screen == 5:
         plinko_view.draw(window, frame, state.plinko.game, state.plinko_stage, state.plinko_help, mouse_x, mouse_y)?
+    if state.screen == 6:
+        chicken_view.draw(window, frame, state.chicken.game, state.chicken_help, mouse_x, mouse_y)?
     if state.error != "":
         components.modal(window, frame, "Something needs attention", state.error)?
     if state.exit_prompt:
@@ -687,7 +802,8 @@ fn event_sound(previous: State, current: State, sound: rocket_raylib.Sound, audi
     let blackjack_changed = previous.game.message != current.game.message
     let roulette_changed = previous.roulette.game.message != current.roulette.game.message
     let plinko_changed = previous.plinko.game.message != current.plinko.game.message
-    if audio_ready and current.settings.audio_enabled and(blackjack_changed or roulette_changed or plinko_changed):
+    let chicken_changed = previous.chicken.game.message != current.chicken.game.message
+    if audio_ready and current.settings.audio_enabled and(blackjack_changed or roulette_changed or plinko_changed or chicken_changed):
         let volume = rocket_raylib.set_sound_volume(sound, volume_value(current.settings.volume_percent))
         let played = rocket_raylib.play_sound(sound)
     return true

@@ -58,6 +58,21 @@ Each animation follows a seeded path already fixed by the engine. Rows, risk,
 bet, and batch size are locked during a drop. Exact multiplier and expected-
 return tables are documented in `PLINKO_MATH.md`.
 
+## Chicken / Coop Climb
+
+- `Tab`: cycle Low, Medium, and High risk before a round.
+- `Down` / `Up`: reduce or increase the wager by 5 credits.
+- `Enter`: secure the pass, then advance onto the next hidden rung.
+- `S`: cash out after at least one safe rung.
+- `P`: open or close complete rules and probability help.
+- `N`: begin the next round after cash-out or failure.
+- `B` / `Escape`: return to the lobby only while ready or settled.
+- Mouse: use every risk, wager, start, advance, cash-out, help, next-round, and lobby control.
+
+The engine commits the finite 10-rung path when the wager is prepaid. Future
+safe/fail values remain hidden; the original observatory UI reveals only an
+attempted rung. Exact tables are documented in `COOP_CLIMB_MATH.md`.
+
 ## Settings
 
 - `M`: toggle audio.

@@ -27,6 +27,11 @@ complete prepaid batch exceeds the available balance. Wait for the bounded
 animation to settle, then choose Next or return to the lobby. A batch contains
 at most 10 balls and cannot run indefinitely.
 
+Coop Climb locks risk and wager after the pass is secured. Cash Out is disabled
+until one rung is safe, and lobby return is disabled while a round is active.
+Choose Advance to reveal the next hidden rung or Cash Out with `S`; after a
+failure or cash-out, choose Next or Lobby.
+
 ## Reporting a problem
 
 Record the version, the exact action sequence, and whether the problem occurs in the portable package or a development build. Never attach personal or sensitive data; Scroll2Roll does not need any.

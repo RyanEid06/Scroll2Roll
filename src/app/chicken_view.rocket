@@ -1,0 +1,132 @@
+import src.app.components
+import src.app.theme
+import src.chicken.engine
+import src.chicken.model
+import src.chicken.rules
+import src.rocket_raylib
+import std.collections
+import std.string
+
+pub fn risk_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 154, 232, 42)
+
+pub fn bet_minus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 216, 46, 40)
+
+pub fn bet_plus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 144, 216, 46, 40)
+
+pub fn start_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 282, 232, 48)
+
+pub fn advance_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 282, 232, 48)
+
+pub fn cash_out_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 344, 232, 48)
+
+pub fn help_rect(width: Int) -> components.Rect:
+    return components.rect(width - 118, 24, 86, 38)
+
+pub fn next_rect(height: Int) -> components.Rect:
+    return components.rect(32, height - 68, 150, 42)
+
+pub fn lobby_rect(height: Int) -> components.Rect:
+    return components.rect(192, height - 68, 120, 42)
+
+fn multiplier_label(basis_points: Int) -> String:
+    let whole = basis_points / 10000
+    let hundredths =(basis_points - whole * 10000) / 100
+    var fraction = string.from_int(hundredths)
+    if hundredths < 10:
+        fraction = string.concat("0", fraction)
+    return string.concat(string.from_int(whole), string.concat(".", string.concat(fraction, "x")))
+
+fn draw_coop(frame: rocket_raylib.Frame, x: Int, y: Int, width: Int, fill: rocket_raylib.Color, ink: rocket_raylib.Color, label: String) -> Result[Bool, String]:
+    rocket_raylib.draw_rectangle(frame, x, y + 8, width, 28, fill)?
+    rocket_raylib.draw_rectangle(frame, x + 10, y, width - 20, 10, theme.border())?
+    rocket_raylib.draw_circle(frame, x + 22, y + 22, 6.0, theme.gold())?
+    rocket_raylib.draw_text(frame, label, x + 42, y + 14, theme.small_size(), ink)?
+    return Ok(true)
+
+fn draw_ladder(frame: rocket_raylib.Frame, game: model.Game, height: Int) -> Result[Bool, String]:
+    let values = rules.multipliers(game.risk)
+    let start_y = height - 120
+    rocket_raylib.draw_rectangle(frame, 210, 80, 22, start_y - 52, theme.border())?
+    var depth = 0
+    while depth < rules.maximum_depth():
+        let y = start_y - depth * 39
+        var fill = theme.panel()
+        var ink = theme.text()
+        var status = "Future path hidden"
+        if depth < game.survived_depth:
+            fill = theme.emerald()
+            ink = theme.background()
+            status = "Secured"
+        if engine.phase_code(game.phase) == 1 and depth == game.survived_depth:
+            fill = theme.gold()
+            ink = theme.background()
+            status = "Next choice"
+        if engine.phase_code(game.phase) == 2 and game.failed and depth == game.survived_depth:
+            fill = theme.danger()
+            status = "Failed rung"
+        let label = string.concat(string.concat("Coop ", string.from_int(depth + 1)), string.concat("  ", string.concat(multiplier_label(values[depth]), string.concat("  ", status))))
+        draw_coop(frame, 46, y, 350, fill, ink, label)?
+        depth = depth + 1
+    rocket_raylib.draw_circle(frame, 221, 66, 18.0, theme.gold())?
+    rocket_raylib.draw_circle(frame, 221, 66, 9.0, theme.background())?
+    return Ok(true)
+
+fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.overlay())?
+    let box = components.rect(width / 2 - 350, 70, 700, 480)
+    components.panel(frame, box)?
+    rocket_raylib.draw_text(frame, "COOP CLIMB RULES AND RETURN", box.x + 26, box.y + 24, theme.heading_size(), theme.gold())?
+    let lines = ["Lock one wager, then reveal one hidden rung at a time.", "After every safe rung choose Advance or Cash Out.", "A failed advance loses the prepaid wager; future safety stays hidden.", "Low survives 4/5, Medium 2/3, and High 1/2 on each rung.", "Ten fixed multiplier tables target 96% return at every cash-out depth.", "Settlement floors stake x basis-point multiplier / 10000.", "Tab risk | Up/Down bet | Enter start/advance | S cash out.", "P closes help. Credits are local play money with no monetary value."]
+    var index = 0
+    while index < collections.length(lines):
+        rocket_raylib.draw_text(frame, lines[index], box.x + 26, box.y + 82 + index * 42, theme.body_size(), theme.text())?
+        index = index + 1
+    return Ok(true)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: model.Game, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_text(frame, "COOP CLIMB", 32, 26, theme.heading_size(), theme.gold())?
+    rocket_raylib.draw_text(frame, "Original observatory ladder", 32, 62, theme.small_size(), theme.muted())?
+    rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(game.balance)), width - 300, 36, theme.body_size(), theme.emerald())?
+    let help_button = help_rect(width)
+    components.button(window, frame, help_button, "Help [P]", true, components.contains(help_button, mouse_x, mouse_y), false)?
+    draw_ladder(frame, game, height)?
+    components.panel(frame, components.rect(width - 350, 110, 272, 330))?
+    rocket_raylib.draw_text(frame, game.message, width - 330, 120, theme.small_size(), theme.muted())?
+    components.button(window, frame, risk_rect(width), string.concat("Risk: ", rules.risk_name(game.risk)), engine.phase_code(game.phase) == 0, components.contains(risk_rect(width), mouse_x, mouse_y), false)?
+    rocket_raylib.draw_text(frame, string.concat("Wager: ", string.from_int(game.bet)), width - 270, 226, theme.body_size(), theme.text())?
+    components.button(window, frame, bet_minus_rect(width), "-", engine.phase_code(game.phase) == 0, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, bet_plus_rect(width), "+", engine.phase_code(game.phase) == 0, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
+    let phase = engine.phase_code(game.phase)
+    if phase == 0:
+        components.button(window, frame, start_rect(width), "Secure pass [Enter]", game.bet <= game.balance, components.contains(start_rect(width), mouse_x, mouse_y), true)?
+        rocket_raylib.draw_text(frame, "Tab risk | Up/Down wager", width - 330, 354, theme.small_size(), theme.muted())?
+    if phase == 1:
+        components.button(window, frame, advance_rect(width), "Advance [Enter]", game.survived_depth < rules.maximum_depth(), components.contains(advance_rect(width), mouse_x, mouse_y), true)?
+        var cash_label = "Cash Out [S]"
+        if game.survived_depth > 0:
+            cash_label = string.concat("Cash ", string.concat(multiplier_label(rules.multiplier_at(game.risk, game.survived_depth)?), " [S]"))
+        components.button(window, frame, cash_out_rect(width), cash_label, game.survived_depth > 0, components.contains(cash_out_rect(width), mouse_x, mouse_y), false)?
+    if phase == 2:
+        rocket_raylib.draw_text(frame, string.concat("Wager ", string.from_int(game.wager)), width - 330, 286, theme.body_size(), theme.text())?
+        rocket_raylib.draw_text(frame, string.concat("Return ", string.from_int(game.payout)), width - 330, 330, theme.body_size(), theme.emerald())?
+        let next = next_rect(height)
+        let lobby = lobby_rect(height)
+        components.button(window, frame, next, "Next [N]", true, components.contains(next, mouse_x, mouse_y), true)?
+        components.button(window, frame, lobby, "Lobby [B]", true, components.contains(lobby, mouse_x, mouse_y), false)?
+    if phase == 0:
+        let lobby = lobby_rect(height)
+        components.button(window, frame, lobby, "Lobby [B]", true, components.contains(lobby, mouse_x, mouse_y), false)?
+        rocket_raylib.draw_text(frame, "Ready: returning preserves settled credits", 420, height - 52, theme.small_size(), theme.muted())?
+    if help:
+        draw_help(window, frame)?
+    return Ok(true)

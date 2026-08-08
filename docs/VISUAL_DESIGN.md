@@ -31,3 +31,8 @@ symmetrical multiplier buckets, gold balls, a compact configuration rail, and
 a rules overlay. At the 800x600 minimum, the board contracts horizontally and
 vertically so it remains separate from controls and settlement actions. Motion
 is staged from tested engine paths and cannot alter a landing bucket.
+
+Coop Climb uses an original observatory ladder: procedural coops climb toward a
+gold telescope, with accessible completed, current, failed, and future states.
+The fixed multipliers remain visible while future safe/fail values remain
+hidden. At 800x600 all 10 rungs and the control rail fit without overlap.

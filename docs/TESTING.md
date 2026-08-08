@@ -2,7 +2,7 @@
 
 No feature claim is complete until its focused test passes.
 
-The implemented matrix covers Rocket check/build/test, Blackjack card/shoe/rule invariants, complete European Roulette bet geometry and payouts, exact Plinko probability/return tables, deterministic complete and consecutive sessions, nonnegative balances, safety limits, save-v1 migration/save-v2 recovery, scripted GUI input, native resource lifetimes, package contents, sanitized relocation, and static website checks.
+The implemented matrix covers Rocket check/build/test, Blackjack card/shoe/rule invariants, complete European Roulette bet geometry and payouts, exact Plinko and Coop Climb probability/return tables, deterministic complete and consecutive sessions, nonnegative balances, safety limits, save-v1 migration/save-v2 recovery, scripted GUI input, native resource lifetimes, package contents, sanitized relocation, and static website checks.
 
 Test setup helpers must return explicit failure or a nonzero test status when construction is invalid. They must never substitute a plausible fallback card, state, or resource.
 
@@ -20,6 +20,9 @@ Test setup helpers must return explicit failure or a nonzero test status when co
 - `plinko_math_test.rocket`: combinations, outcome counts, table symmetry, risk ordering, payout rounding, and exact 8-16-row expected returns documented in `PLINKO_MATH.md`.
 - `plinko_session_test.rocket`: deterministic paths, batch validation, prepaid wagers, locked configuration, settlement, history bounds, failure paths, and consecutive-round balances.
 - `plinko_gui_flow_test.rocket`: responsive lobby routing, keyboard/mouse configuration, help, bounded multi-ball animation, settlement, persistence, next round, and lobby return.
+- `chicken_rules_test.rocket`: all fixed survival/multiplier tables, every depth's 95.99%-96.00% expected return, risk ordering, wager validation, and floor settlement documented in `COOP_CLIMB_MATH.md`.
+- `chicken_session_test.rocket`: deterministic hidden paths, legal/illegal transitions, first/final-rung cash-out, failure, insufficient balance, 25-round balance bounds, and bounded history.
+- `chicken_gui_flow_test.rocket`: minimum-size lobby routing, help, keyboard/mouse risk and wager controls, advance, cash-out/failure, persistence, next round, lobby return, and resource cleanup.
 - Four reviewed raylib tests cover API behavior, audio stress, resource lifetime, and missing assets.
 
-The current suite passes 16/16 tests. Package relocation and source/staged website checks are separate scripts. Exact evidence is recorded in `VALIDATION.md`; generated evidence stays under ignored `out/`.
+The current suite passes 19/19 tests. Package relocation and source/staged website checks are separate scripts. Exact evidence is recorded in `VALIDATION.md`; generated evidence stays under ignored `out/`.

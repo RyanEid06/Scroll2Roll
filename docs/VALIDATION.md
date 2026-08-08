@@ -58,6 +58,29 @@ baseline for every game milestone in `EXPANSION_PLAN.md`.
   Roulette, and Plinko claims. No package publication or deployment was
   performed.
 
+## Expansion milestone E3 - Chicken / Coop Climb
+
+- `chicken_rules_test.rocket` verifies the fixed 10-rung tables for Low 4/5,
+  Medium 2/3, and High 1/2 per-step survival; every chosen cash-out depth has
+  an exact theoretical return of 95.99% or 96.00%. It also verifies risk
+  ordering, wager bounds, depth bounds, and floor settlement against
+  `COOP_CLIMB_MATH.md`.
+- `chicken_session_test.rocket` verifies deterministic hidden paths, all legal
+  and illegal transitions, configuration locking, first- and final-rung
+  cash-outs, first-rung failure, insufficient balance behavior, 25 consecutive
+  rounds, nonnegative balances, and 20-result history bounding.
+- `chicken_gui_flow_test.rocket` runs at the 800x600 minimum and verifies lobby
+  routing, help, keyboard and mouse risk/wager changes, start, advance,
+  cash-out/failure, save-v2 persistence, next round, lobby return, rendering,
+  and native resource cleanup.
+- The complete Rocket suite passes 19/19 with all 16 prior Blackjack,
+  infrastructure, Roulette, and Plinko regressions preserved.
+- Debug and Release `scripts/validate.ps1` each pass the native build,
+  `rocketc check`, all 19 tests, and both formatting checks after complete Coop
+  Climb integration.
+- Source website validation passes with Coop Climb added alongside the three
+  prior complete games. No package publication or deployment was performed.
+
 ## Visual Studio Community 2026
 
 The installed Rocket Language 2.0.3 extension was exercised from this repository with `src/main.rocket` active:

@@ -20,7 +20,7 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
 - [x] Add save-v2 migration and the reusable multi-game session foundation.
 - [x] Complete European Roulette and rerun the full Blackjack regression gate.
 - [x] Complete Plinko with audited row/risk expected-return tables.
-- [ ] Complete the original Coop Climb step-and-cash-out game.
+- [x] Complete the original Coop Climb step-and-cash-out game.
 - [ ] Complete the original real-time Midnight Crossing arcade game.
 - [ ] Complete single-player No-Limit Texas Hold'em against 1-5 bounded AI
   opponents.

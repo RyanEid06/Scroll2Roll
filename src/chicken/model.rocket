@@ -1,0 +1,30 @@
+pub enum Risk:
+    Low
+    Medium
+    High
+
+pub enum Phase:
+    Ready
+    Climbing
+    Settled
+
+pub struct RoundResult:
+    survived_depth: Int
+    wager: Int
+    payout: Int
+    failed: Bool
+
+pub struct Game:
+    balance: Int
+    risk: Risk
+    bet: Int
+    phase: Phase
+    path: Array[Int]
+    survived_depth: Int
+    wager: Int
+    payout: Int
+    failed: Bool
+    history: Array[RoundResult]
+    round_number: Int
+    seed: Int
+    message: String

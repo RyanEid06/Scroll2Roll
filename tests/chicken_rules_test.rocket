@@ -1,0 +1,63 @@
+import src.chicken.model
+import src.chicken.rules
+import std.collections
+
+fn run() -> Result[Int, String]:
+    if rules.maximum_depth() != 10 or rules.target_return_basis_points() != 9600:
+        return Ok(1)
+    if rules.survival_numerator(model.Low()) != 4 or rules.survival_denominator(model.Low()) != 5:
+        return Ok(2)
+    if rules.survival_numerator(model.Medium()) != 2 or rules.survival_denominator(model.Medium()) != 3:
+        return Ok(3)
+    if rules.survival_numerator(model.High()) != 1 or rules.survival_denominator(model.High()) != 2:
+        return Ok(4)
+    let low = rules.multipliers(model.Low())
+    let medium = rules.multipliers(model.Medium())
+    let high = rules.multipliers(model.High())
+    if collections.length(low) != 10 or collections.length(medium) != 10 or collections.length(high) != 10:
+        return Ok(5)
+    if low[0] != 12000 or low[9] != 89406:
+        return Ok(6)
+    if medium[0] != 14400 or medium[9] != 553584:
+        return Ok(7)
+    if high[0] != 19200 or high[9] != 9830400:
+        return Ok(8)
+    var depth = 1
+    while depth <= rules.maximum_depth():
+        let low_return = rules.expected_return_basis_points(model.Low(), depth)?
+        let medium_return = rules.expected_return_basis_points(model.Medium(), depth)?
+        let high_return = rules.expected_return_basis_points(model.High(), depth)?
+        if low_return < 9599 or low_return > 9600:
+            return Ok(9)
+        if medium_return < 9599 or medium_return > 9600:
+            return Ok(10)
+        if high_return != 9600:
+            return Ok(11)
+        if not(low[depth - 1] < medium[depth - 1] and medium[depth - 1] < high[depth - 1]):
+            return Ok(12)
+        depth = depth + 1
+    match rules.multiplier_at(model.Low(), 0):
+        case Ok(value):
+            return Ok(13)
+        case Err(error):
+            let expected = true
+    match rules.multiplier_at(model.High(), 11):
+        case Ok(value):
+            return Ok(14)
+        case Err(error):
+            let expected = true
+    if rules.valid_bet(4) or rules.valid_bet(11) or rules.valid_bet(1005):
+        return Ok(15)
+    if not rules.valid_bet(5) or not rules.valid_bet(1000):
+        return Ok(16)
+    if rules.payout(25, 23437) != 58 or rules.payout(5, 12000) != 6:
+        return Ok(17)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

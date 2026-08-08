@@ -21,7 +21,7 @@ Circular imports, duplicated visual rules, machine-specific paths, and C++ appli
 - `src/rocket_raylib.rocket`: safe Rocket graphics/input/audio boundary.
 - `native/rocket_raylib_adapter.*`: primitive ABI and resource-token policy only.
 
-`src/app/registry.rocket` is the shell's routing boundary. Blackjack, European Roulette, and Plinko are registered as available; Poker remains an honest future placeholder until its mandated milestone. Adding a game does not require rewriting startup, lobby, settings, persistence, or common controls.
+`src/app/registry.rocket` is the shell's routing boundary. Blackjack, European Roulette, Plinko, and Coop Climb are registered as available; Poker remains an honest future placeholder until its mandated milestone. Adding a game does not require rewriting startup, lobby, settings, persistence, or common controls.
 
 `src/app/blackjack_view.rocket` reads engine state and emits intents through `src/blackjack/api.rocket`. It does not calculate legal moves, hand values, payouts, or dealer behavior.
 
@@ -41,13 +41,20 @@ configuration, three audited risk tables, deterministic 50/50 paths, bounded
 only the paths already committed by the engine. Exact tables and binomial
 expected-return calculations are published in `PLINKO_MATH.md`.
 
+`src/chicken/model.rocket`, `rules.rocket`, and `engine.rocket` own the finite
+10-rung Coop Climb round, fixed survival/multiplier profiles, prepaid wager,
+hidden seeded path, legal advance/cash-out transitions, settlement, and bounded
+history. `src/chicken/chicken_api.rocket` exposes only presentation intents.
+`src/app/chicken_view.rocket` reads completed/current state but never inspects
+future path values. Exact tables are published in `COOP_CLIMB_MATH.md`.
+
 ## Money representation
 
 All play-money values are integer credits. Bets use a table unit compatible with exact 3:2 payouts. Balances must never become negative. Credits have no cash value and are not transferable.
 
 ## Determinism and testing
 
-Shoe, Roulette wheel, and Plinko path generation accept explicit seeds. Tests use deterministic state construction through checked helpers and scripted GUI input. Production rendering and audio are excluded from engine decisions. Every safety loop has a finite error-producing bound.
+Shoe, Roulette wheel, Plinko path, and Coop Climb ladder generation accept explicit seeds. Tests use deterministic state construction through checked helpers and scripted GUI input. Production rendering and audio are excluded from engine decisions. Every safety loop has a finite error-producing bound.
 
 ## Native boundary
 
