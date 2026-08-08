@@ -27,6 +27,21 @@ pub fn muted() -> rocket_raylib.Color:
 pub fn border() -> rocket_raylib.Color:
     return rocket_raylib.color(41, 50, 65, 255)
 
+pub fn road() -> rocket_raylib.Color:
+    return rocket_raylib.color(30, 41, 59, 255)
+
+pub fn rail() -> rocket_raylib.Color:
+    return rocket_raylib.color(55, 48, 63, 255)
+
+pub fn water() -> rocket_raylib.Color:
+    return rocket_raylib.color(15, 70, 110, 255)
+
+pub fn safe_lane() -> rocket_raylib.Color:
+    return rocket_raylib.color(17, 72, 58, 255)
+
+pub fn timber() -> rocket_raylib.Color:
+    return rocket_raylib.color(146, 94, 48, 255)
+
 pub fn card_light() -> rocket_raylib.Color:
     return rocket_raylib.color(248, 250, 252, 255)
 

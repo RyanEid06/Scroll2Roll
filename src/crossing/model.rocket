@@ -1,0 +1,36 @@
+pub enum HazardKind:
+    Car
+    Tram
+    Log
+
+pub enum Phase:
+    Ready
+    Running
+    Settled
+
+pub struct Hazard:
+    lane: Int
+    kind: HazardKind
+    position: Int
+    length: Int
+    speed: Int
+
+pub struct Game:
+    balance: Int
+    bet: Int
+    phase: Phase
+    paused: Bool
+    hazards: Array[Hazard]
+    player_x: Int
+    player_lane: Int
+    checkpoints: Int
+    multiplier_basis_points: Int
+    wager: Int
+    payout: Int
+    failed: Bool
+    completed: Bool
+    tick_count: Int
+    difficulty: Int
+    round_number: Int
+    seed: Int
+    message: String

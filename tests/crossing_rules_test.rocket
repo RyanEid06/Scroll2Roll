@@ -1,0 +1,41 @@
+import src.crossing.model
+import src.crossing.rules
+
+fn run() -> Result[Int, String]:
+    if rules.world_width() != 900 or rules.lane_count() != 8 or rules.fixed_ticks_per_second() != 20:
+        return Ok(1)
+    if rules.max_ticks_per_frame() != 8 or rules.max_checkpoints() != 5:
+        return Ok(2)
+    if rules.lane_kind(0) != 0 or rules.lane_kind(1) != 1 or rules.lane_kind(3) != 2:
+        return Ok(3)
+    if rules.lane_kind(4) != 0 or rules.lane_kind(5) != 3 or rules.lane_kind(7) != 4:
+        return Ok(4)
+    if rules.multiplier_for(0) != 10000 or rules.multiplier_for(1) != 12500 or rules.multiplier_for(5) != 22500:
+        return Ok(5)
+    if rules.multiplier_for(99) != 22500 or rules.payout(25, 12500) != 31:
+        return Ok(6)
+    if not rules.overlaps(450, 430, 70) or rules.overlaps(450, 471, 70):
+        return Ok(7)
+    if rules.valid_bet(4) or rules.valid_bet(11) or rules.valid_bet(1005):
+        return Ok(8)
+    if not rules.valid_bet(5) or not rules.valid_bet(1000):
+        return Ok(9)
+    if not rules.valid_hazard(model.Hazard(1, model.Car(), 100, 70, 6)):
+        return Ok(10)
+    if not rules.valid_hazard(model.Hazard(3, model.Tram(), 100, 280, -12)):
+        return Ok(11)
+    if not rules.valid_hazard(model.Hazard(5, model.Log(), 100, 180, 4)):
+        return Ok(12)
+    if rules.valid_hazard(model.Hazard(5, model.Car(), 100, 70, 6)):
+        return Ok(13)
+    if rules.valid_hazard(model.Hazard(1, model.Car(), 100, 20, 0)):
+        return Ok(14)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

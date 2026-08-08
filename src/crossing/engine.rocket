@@ -1,0 +1,182 @@
+import src.crossing.model
+import src.crossing.rules
+import std.collections
+import std.random
+
+pub fn phase_code(phase: model.Phase) -> Int:
+    match phase:
+        case model.Ready:
+            return 0
+        case model.Running:
+            return 1
+        case model.Settled:
+            return 2
+
+pub fn new_game(starting_balance: Int, seed: Int) -> Result[model.Game, String]:
+    if starting_balance < 5:
+        return Err("Starting balance is below the Midnight Crossing minimum")
+    let no_hazards: Array[model.Hazard] = []
+    return Ok(model.Game(starting_balance, 10, model.Ready(), false, no_hazards, 450, 0, 0, 10000, 0, 0, false, false, 0, 1, 1, seed, "Choose a pass and enter the crossing"))
+
+pub fn with_bet(game: model.Game, bet: Int) -> Result[model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Midnight Crossing wager is locked during a run")
+    if not rules.valid_bet(bet):
+        return Err("Midnight Crossing bet must be 5-1000 credits in units of 5")
+    return Ok(model.Game(game.balance, bet, game.phase, game.paused, game.hazards, game.player_x, game.player_lane, game.checkpoints, game.multiplier_basis_points, game.wager, game.payout, game.failed, game.completed, game.tick_count, game.difficulty, game.round_number, game.seed, "Wager changed"))
+
+fn append_lane(hazards: Array[model.Hazard], lane: Int, kind: model.HazardKind, count: Int, length: Int, speed: Int) -> Array[model.Hazard]:
+    var result = hazards
+    var index = 0
+    while index < count:
+        let jitter = random.int(0, rules.world_width())
+        let raw_position = jitter + index * rules.world_width() / count
+        let position =(raw_position - raw_position / rules.world_width() * rules.world_width()) / 10 * 10
+        var signed_speed = speed
+        if index / 2 * 2 == index:
+            signed_speed = 0 - speed
+        result = collections.append(result, model.Hazard(lane, kind, position, length, signed_speed))
+        index = index + 1
+    return result
+
+pub fn generated_hazards(seed: Int, round_number: Int) -> Array[model.Hazard]:
+    random.seed(seed + round_number * 15485863)
+    var hazards: Array[model.Hazard] = []
+    hazards = append_lane(hazards, 1, model.Car(), 3, 70, 6)
+    hazards = append_lane(hazards, 2, model.Car(), 2, 100, 8)
+    hazards = append_lane(hazards, 3, model.Tram(), 1, 280, 12)
+    hazards = append_lane(hazards, 5, model.Log(), 3, 180, 4)
+    hazards = append_lane(hazards, 6, model.Log(), 2, 240, 5)
+    return hazards
+
+pub fn start(game: model.Game) -> Result[model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Midnight Crossing run is already active")
+    if game.bet > game.balance:
+        return Err("Not enough play credits for that crossing pass")
+    return Ok(model.Game(game.balance - game.bet, game.bet, model.Running(), false, generated_hazards(game.seed, game.round_number), 450, 0, 0, 10000, game.bet, 0, false, false, 0, 1, game.round_number, game.seed, "Cross when the lane is clear"))
+
+fn hazard_at(hazards: Array[model.Hazard], player_x: Int, lane: Int, kind_code: Int) -> Int:
+    var index = 0
+    while index < collections.length(hazards):
+        let hazard = hazards[index]
+        if hazard.lane == lane and rules.hazard_code(hazard.kind) == kind_code and rules.overlaps(player_x, hazard.position, hazard.length):
+            return index
+        index = index + 1
+    return -1
+
+pub fn safe_at(game: model.Game, player_x: Int, lane: Int) -> Bool:
+    if player_x < rules.player_width() / 2 or player_x > rules.world_width() - rules.player_width() / 2:
+        return false
+    let kind = rules.lane_kind(lane)
+    if kind == 1:
+        return hazard_at(game.hazards, player_x, lane, 0) < 0
+    if kind == 2:
+        return hazard_at(game.hazards, player_x, lane, 1) < 0
+    if kind == 3:
+        return hazard_at(game.hazards, player_x, lane, 2) >= 0
+    return lane >= 0 and lane < rules.lane_count()
+
+fn failed(game: model.Game, message: String) -> model.Game:
+    return model.Game(game.balance, game.bet, model.Settled(), false, game.hazards, game.player_x, game.player_lane, game.checkpoints, game.multiplier_basis_points, game.wager, 0, true, false, game.tick_count, game.difficulty, game.round_number, game.seed, message)
+
+fn won(game: model.Game, completed: Bool, message: String) -> model.Game:
+    let payout = rules.payout(game.wager, game.multiplier_basis_points)
+    return model.Game(game.balance + payout, game.bet, model.Settled(), false, game.hazards, game.player_x, game.player_lane, game.checkpoints, game.multiplier_basis_points, game.wager, payout, false, completed, game.tick_count, game.difficulty, game.round_number, game.seed, message)
+
+fn moved_hazards(hazards: Array[model.Hazard], difficulty: Int) -> Array[model.Hazard]:
+    var result: Array[model.Hazard] = []
+    var index = 0
+    while index < collections.length(hazards):
+        let hazard = hazards[index]
+        var position = hazard.position + hazard.speed * difficulty
+        if position > rules.world_width():
+            position = position - rules.world_width() - hazard.length
+        if position + hazard.length < 0:
+            position = position + rules.world_width() + hazard.length
+        result = collections.append(result, model.Hazard(hazard.lane, hazard.kind, position, hazard.length, hazard.speed))
+        index = index + 1
+    return result
+
+fn one_tick(game: model.Game) -> model.Game:
+    if phase_code(game.phase) != 1 or game.paused:
+        return game
+    var support_speed = 0
+    if rules.lane_kind(game.player_lane) == 3:
+        let support = hazard_at(game.hazards, game.player_x, game.player_lane, 2)
+        if support >= 0:
+            support_speed = game.hazards[support].speed * game.difficulty
+    let hazards = moved_hazards(game.hazards, game.difficulty)
+    let player_x = game.player_x + support_speed
+    let moved = model.Game(game.balance, game.bet, game.phase, game.paused, hazards, player_x, game.player_lane, game.checkpoints, game.multiplier_basis_points, game.wager, game.payout, game.failed, game.completed, game.tick_count + 1, game.difficulty, game.round_number, game.seed, game.message)
+    if not safe_at(moved, player_x, game.player_lane):
+        if rules.lane_kind(game.player_lane) == 3:
+            return failed(moved, "The canal crossing lost safe support")
+        return failed(moved, "A moving hazard ended the crossing")
+    return moved
+
+pub fn tick_many(game: model.Game, requested: Int) -> Result[model.Game, String]:
+    if requested < 0:
+        return Err("Fixed tick request cannot be negative")
+    var count = requested
+    if count > rules.max_ticks_per_frame():
+        count = rules.max_ticks_per_frame()
+    var result = game
+    var tick = 0
+    while tick < count and phase_code(result.phase) == 1 and not result.paused:
+        result = one_tick(result)
+        tick = tick + 1
+    return Ok(result)
+
+pub fn move_player(game: model.Game, horizontal: Int, vertical: Int) -> Result[model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("Movement requires an active Midnight Crossing run")
+    if game.paused:
+        return Err("Resume Midnight Crossing before moving")
+    if horizontal < -1 or horizontal > 1 or vertical < -1 or vertical > 1:
+        return Err("Movement must be one grid step")
+    if horizontal != 0 and vertical != 0 or horizontal == 0 and vertical == 0:
+        return Err("Movement must use exactly one direction")
+    let player_x = game.player_x + horizontal * rules.movement_step()
+    let player_lane = game.player_lane + vertical
+    if player_x < rules.player_width() / 2 or player_x > rules.world_width() - rules.player_width() / 2:
+        return Err("Movement would leave the crossing bounds")
+    if player_lane < 0 or player_lane >= rules.lane_count():
+        return Err("Movement would leave the lane grid")
+    if player_lane == rules.lane_count() - 1:
+        let checkpoints = game.checkpoints + 1
+        let multiplier = rules.multiplier_for(checkpoints)
+        var difficulty = 1 + checkpoints
+        if difficulty > 4:
+            difficulty = 4
+        let checkpoint = model.Game(game.balance, game.bet, game.phase, game.paused, game.hazards, 450, 0, checkpoints, multiplier, game.wager, game.payout, game.failed, game.completed, game.tick_count, difficulty, game.round_number, game.seed, "Checkpoint secured; cash out or cross again")
+        if checkpoints >= rules.max_checkpoints():
+            return Ok(won(checkpoint, true, "All five Midnight Crossing checkpoints cleared"))
+        return Ok(checkpoint)
+    let moved = model.Game(game.balance, game.bet, game.phase, game.paused, game.hazards, player_x, player_lane, game.checkpoints, game.multiplier_basis_points, game.wager, game.payout, game.failed, game.completed, game.tick_count, game.difficulty, game.round_number, game.seed, "Movement committed")
+    if not safe_at(moved, player_x, player_lane):
+        if rules.lane_kind(player_lane) == 3:
+            return Ok(failed(moved, "The canal lane had no safe platform"))
+        return Ok(failed(moved, "The player collided with a moving hazard"))
+    return Ok(moved)
+
+pub fn toggle_pause(game: model.Game) -> Result[model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("Pause requires an active Midnight Crossing run")
+    var message = "Midnight Crossing paused"
+    if game.paused:
+        message = "Midnight Crossing resumed"
+    return Ok(model.Game(game.balance, game.bet, game.phase, not game.paused, game.hazards, game.player_x, game.player_lane, game.checkpoints, game.multiplier_basis_points, game.wager, game.payout, game.failed, game.completed, game.tick_count, game.difficulty, game.round_number, game.seed, message))
+
+pub fn cash_out(game: model.Game) -> Result[model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("Cash Out requires an active Midnight Crossing run")
+    if game.checkpoints < 1:
+        return Err("Reach a checkpoint before cashing out")
+    return Ok(won(game, false, "Midnight Crossing cash out settled"))
+
+pub fn next_round(game: model.Game) -> Result[model.Game, String]:
+    if phase_code(game.phase) != 2:
+        return Err("The Midnight Crossing run has not settled")
+    let no_hazards: Array[model.Hazard] = []
+    return Ok(model.Game(game.balance, game.bet, model.Ready(), false, no_hazards, 450, 0, 0, 10000, 0, 0, false, false, 0, 1, game.round_number + 1, game.seed, "Ready for another Midnight Crossing"))

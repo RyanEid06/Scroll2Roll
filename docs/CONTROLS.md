@@ -73,6 +73,21 @@ The engine commits the finite 10-rung path when the wager is prepaid. Future
 safe/fail values remain hidden; the original observatory UI reveals only an
 attempted rung. Exact tables are documented in `COOP_CLIMB_MATH.md`.
 
+## Cross the Road / Midnight Crossing
+
+- Arrow keys: move one bounded grid step left, right, forward, or backward.
+- Mouse direction pad: equivalent four-direction movement.
+- `Down` / `Up` before a run: reduce or increase the pass by 5 credits.
+- `Enter`: prepay the configured pass and start the run.
+- `P`: pause the fixed-tick engine and open/close complete help.
+- `S`: cash out after at least one checkpoint.
+- `N`: begin the next run after failure, cash-out, or completion.
+- `B` / `Escape`: return to the lobby only while ready or settled.
+
+Forward movement reaches checkpoints; sideways/backward movement is defensive
+and does not farm score. Cars/trams collide, canal lanes require logs, and logs
+carry the player on engine ticks. See `MIDNIGHT_CROSSING_DESIGN.md`.
+
 ## Settings
 
 - `M`: toggle audio.

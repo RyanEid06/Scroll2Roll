@@ -1,0 +1,133 @@
+import src.app.application
+import src.crossing.engine
+import src.crossing.rules
+import src.rocket_raylib
+import src.rocket_raylib_testing
+import std.file
+import std.testing
+
+fn press(window: rocket_raylib.Window, key: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_key(key, true, false)
+    return application.step_for_test(state, window)
+
+fn click(window: rocket_raylib.Window, x: Int, y: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_mouse(x, y, true)
+    return application.step_for_test(state, window)
+
+fn frame(window: rocket_raylib.Window, state: application.State) -> Result[application.State, String]:
+    application.draw_for_test(window, state)?
+    return Ok(application.step_for_test(state, window))
+
+fn drive_checkpoint(window: rocket_raylib.Window, value: application.State, mouse: Bool) -> Result[application.State, String]:
+    var state = value
+    var guard = 0
+    while engine.phase_code(state.crossing.game.phase) == 1 and state.crossing.game.checkpoints == 0 and guard < 3000:
+        let next_lane = state.crossing.game.player_lane + 1
+        var corridor_clear = true
+        if state.crossing.game.player_lane == 0:
+            corridor_clear = engine.safe_at(state.crossing.game, state.crossing.game.player_x, 1) and engine.safe_at(state.crossing.game, state.crossing.game.player_x, 2) and engine.safe_at(state.crossing.game, state.crossing.game.player_x, 3)
+        if corridor_clear and engine.safe_at(state.crossing.game, state.crossing.game.player_x, next_lane):
+            if mouse:
+                state = click(window, 587, 305, state)
+            else:
+                state = press(window, rocket_raylib.key_up(), state)
+        else:
+            let left_x = state.crossing.game.player_x - rules.movement_step()
+            let right_x = state.crossing.game.player_x + rules.movement_step()
+            let current_lane = state.crossing.game.player_lane
+            if rules.lane_kind(current_lane) == 3 and engine.safe_at(state.crossing.game, left_x, current_lane) and engine.safe_at(state.crossing.game, left_x, next_lane):
+                if mouse:
+                    state = click(window, 525, 359, state)
+                else:
+                    state = press(window, rocket_raylib.key_left(), state)
+            else:
+                if rules.lane_kind(current_lane) == 3 and engine.safe_at(state.crossing.game, right_x, current_lane) and engine.safe_at(state.crossing.game, right_x, next_lane):
+                    if mouse:
+                        state = click(window, 649, 359, state)
+                    else:
+                        state = press(window, rocket_raylib.key_right(), state)
+                else:
+                    state = frame(window, state)?
+        guard = guard + 1
+    if guard >= 3000:
+        return Err("Midnight Crossing GUI checkpoint guard exceeded")
+    return Ok(state)
+
+fn run() -> Result[Int, String]:
+    if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
+        return Ok(1)
+    let temporary = testing.temp_directory("scroll2roll-crossing-gui")?
+    let save_path = testing.fixture_path(temporary, "settings.s2r")?
+    match rocket_raylib.open_window(800, 600, "Midnight Crossing scripted GUI"):
+        case Ok(window):
+            var state = application.initial_for_test(save_path)?
+            state = press(window, rocket_raylib.key_enter(), state)
+            state = click(window, 400, 420, state)
+            if state.screen != 7 or engine.phase_code(state.crossing.game.phase) != 0:
+                return Ok(2)
+            state = press(window, rocket_raylib.key_p(), state)
+            if not state.crossing_help:
+                return Ok(3)
+            application.draw_for_test(window, state)?
+            state = press(window, rocket_raylib.key_p(), state)
+            state = press(window, rocket_raylib.key_up(), state)
+            if state.crossing.game.bet != 15:
+                return Ok(4)
+            state = press(window, rocket_raylib.key_enter(), state)
+            if engine.phase_code(state.crossing.game.phase) != 1 or state.crossing.game.balance != 985:
+                return Ok(5)
+            state = press(window, rocket_raylib.key_p(), state)
+            let paused_tick = state.crossing.game.tick_count
+            state = frame(window, state)?
+            if not state.crossing_help or not state.crossing.game.paused or state.crossing.game.tick_count != paused_tick:
+                return Ok(6)
+            state = press(window, rocket_raylib.key_p(), state)
+            state = drive_checkpoint(window, state, false)?
+            if engine.phase_code(state.crossing.game.phase) != 1 or state.crossing.game.checkpoints != 1:
+                return Ok(7)
+            state = press(window, rocket_raylib.key_s(), state)
+            if engine.phase_code(state.crossing.game.phase) != 2 or state.crossing.game.payout != 18 or not file.exists(save_path):
+                return Ok(8)
+            let first_balance = state.crossing.game.balance
+            state = click(window, 100, 550, state)
+            if engine.phase_code(state.crossing.game.phase) != 0:
+                return Ok(9)
+            state = click(window, 679, 210, state)
+            state = click(window, 586, 274, state)
+            if engine.phase_code(state.crossing.game.phase) != 1 or state.crossing.game.bet != 20:
+                return Ok(10)
+            state = click(window, 649, 359, state)
+            state = click(window, 525, 359, state)
+            if state.crossing.game.player_x != 450 or state.crossing.game.checkpoints != 0:
+                return Ok(11)
+            state = click(window, 524, 419, state)
+            if not state.crossing_help or not state.crossing.game.paused:
+                return Ok(12)
+            state = click(window, 524, 419, state)
+            state = drive_checkpoint(window, state, true)?
+            if engine.phase_code(state.crossing.game.phase) != 1 or state.crossing.game.checkpoints != 1:
+                return Ok(13)
+            state = click(window, 645, 419, state)
+            if engine.phase_code(state.crossing.game.phase) != 2:
+                return Ok(14)
+            application.draw_for_test(window, state)?
+            state = click(window, 230, 550, state)
+            if state.screen != 1 or state.settings.play_balance != state.crossing.game.balance:
+                return Ok(15)
+            if first_balance < 0 or state.crossing.game.balance < 0:
+                return Ok(16)
+            let closed = rocket_raylib.close_window(window)
+            testing.cleanup_temp(temporary)?
+            if rocket_raylib_testing.buffer_live_count() != 0:
+                return Ok(17)
+            return Ok(0)
+        case Err(error):
+            return Err(error)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

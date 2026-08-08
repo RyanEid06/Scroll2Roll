@@ -1,0 +1,32 @@
+import src.crossing.engine
+import src.crossing.model
+
+pub struct Session:
+    game: model.Game
+
+pub fn new_session(starting_balance: Int, seed: Int) -> Result[Session, String]:
+    return Ok(Session(engine.new_game(starting_balance, seed)?))
+
+pub fn with_bet(session: Session, bet: Int) -> Result[Session, String]:
+    return Ok(Session(engine.with_bet(session.game, bet)?))
+
+pub fn with_start(session: Session) -> Result[Session, String]:
+    return Ok(Session(engine.start(session.game)?))
+
+pub fn with_move(session: Session, horizontal: Int, vertical: Int) -> Result[Session, String]:
+    return Ok(Session(engine.move_player(session.game, horizontal, vertical)?))
+
+pub fn with_ticks(session: Session, count: Int) -> Result[Session, String]:
+    return Ok(Session(engine.tick_many(session.game, count)?))
+
+pub fn with_pause(session: Session) -> Result[Session, String]:
+    return Ok(Session(engine.toggle_pause(session.game)?))
+
+pub fn with_cash_out(session: Session) -> Result[Session, String]:
+    return Ok(Session(engine.cash_out(session.game)?))
+
+pub fn with_next_round(session: Session) -> Result[Session, String]:
+    return Ok(Session(engine.next_round(session.game)?))
+
+pub fn phase_code(session: Session) -> Int:
+    return engine.phase_code(session.game.phase)

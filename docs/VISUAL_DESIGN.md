@@ -36,3 +36,8 @@ Coop Climb uses an original observatory ladder: procedural coops climb toward a
 gold telescope, with accessible completed, current, failed, and future states.
 The fixed multipliers remain visible while future safe/fail values remain
 hidden. At 800x600 all 10 rungs and the control rail fit without overlap.
+
+Midnight Crossing uses an original top-down night-city board with safe medians,
+charcoal roads, a rail lane, blue canals, procedural vehicles/logs, and a
+checkpoint band. Integer engine positions scale into the available board area;
+the minimum-size control rail remains separate. Rendering never moves hazards.

@@ -32,6 +32,12 @@ until one rung is safe, and lobby return is disabled while a round is active.
 Choose Advance to reveal the next hidden rung or Cash Out with `S`; after a
 failure or cash-out, choose Next or Lobby.
 
+Midnight Crossing is real-time only while a run is active and unpaused. Use `P`
+to pause safely. Cars and the tram fail on contact; blue canal lanes require a
+timber log beneath the player, and moving logs carry the player. Cash Out stays
+disabled until the first checkpoint. The fixed-tick guard caps long frames at
+eight simulation steps instead of allowing an unbounded catch-up loop.
+
 ## Reporting a problem
 
 Record the version, the exact action sequence, and whether the problem occurs in the portable package or a development build. Never attach personal or sensitive data; Scroll2Roll does not need any.

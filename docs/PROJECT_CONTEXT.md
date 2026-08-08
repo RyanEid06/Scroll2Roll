@@ -25,8 +25,8 @@ The owner has approved the 0.2.0 expansion defined in
 `EXPANSION_PLAN.md`: European Roulette, Plinko, Chicken (presented as the
 original Coop Climb), Cross the Road (presented as the original real-time
 Midnight Crossing), and single-player No-Limit Texas Hold'em, implemented in
-that order. European Roulette, Plinko, Chicken, and the save-v2 foundation are
-complete. Cross the Road and Hold'em remain. All five games must be complete
+that order. European Roulette, Plinko, Chicken, Cross the Road, and the save-v2
+foundation are complete. Hold'em remains. All five games must be complete
 before final 0.2.0 acceptance.
 
 ## Explicit non-goals
@@ -50,7 +50,7 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
 - A modular rendering-independent Blackjack engine implements checked cards, exact hand values, a deterministic six-deck shoe, cut-card reshuffling, table limits, player/AI betting, legal actions, Hit, Stand, Double Down, Split, Double After Split, a four-hand maximum, split-Ace one-card behavior, no standard resplit, Late Surrender, dealer stand on soft 17, naturals, exact 3:2 settlement, and deterministic AI/basic-strategy progression.
 - Complete and consecutive rounds have bounded transitions and nonnegative play-money balances.
 - A small `src/blackjack/api.rocket` facade is the only rules boundary used by the visual table.
-- The raylib application implements startup, reusable lobby routing, settings, exit confirmation, keyboard/mouse controls, playable Blackjack, Roulette, Plinko, and Coop Climb tables, an honest Poker future placeholder, zero-to-five AI players, disabled illegal actions, outcomes, next round, restart, and lobby return.
+- The raylib application implements startup, reusable lobby routing, settings, exit confirmation, keyboard/mouse controls, playable Blackjack, Roulette, Plinko, Coop Climb, and Midnight Crossing tables, an honest Poker future placeholder, zero-to-five AI players, disabled illegal actions, outcomes, next round, restart, and lobby return.
 - Versioned local persistence stores display/audio preferences, AI count, first-run state, and approved play-money progress at `%LOCALAPPDATA%\Scroll2Roll\settings.s2r`, with safe missing/invalid/older-data recovery.
 - The static website and Cloudflare Pages staging flow are implemented without claiming browser play.
 - Release packaging includes the native executable, version, notices, controls, troubleshooting, and checksums, and passes relocated headless smoke validation.
@@ -77,13 +77,19 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
   the view, and settles failure or first-through-final-rung cash-outs. Low,
   Medium, and High use fixed 4/5, 2/3, and 1/2 per-step survival with audited
   95.99%-96.00% tables published in `COOP_CLIMB_MATH.md`.
+- Cross the Road is presented as the original Midnight Crossing real-time city
+  board. Its rendering-independent engine owns a seeded 900-unit, eight-lane
+  integer world; cars, tram, and moving-log hazards; 20 Hz fixed ticks; bounded
+  movement; collision/support; pause; checkpoints; difficulty; cash-out; and
+  five-checkpoint completion. Keyboard and mouse timing determine the result.
+  `MIDNIGHT_CROSSING_DESIGN.md` publishes the simulation and payout contract.
 
 ## Architecture
 
 Dependency direction is one way:
 
 1. Per-game model values and validated rule constructors.
-2. Rendering-independent Blackjack, Roulette, Plinko, and Coop Climb engines and settlement.
+2. Rendering-independent Blackjack, Roulette, Plinko, Coop Climb, and Midnight Crossing engines and settlement.
 3. Small presentation-facing APIs and sessions.
 4. Versioned local persistence isolated from rules.
 5. Reusable router, design tokens, components, lobby, settings, and per-game views.
@@ -118,14 +124,19 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
 - Debug and Release milestone-E3 validation each pass the native build,
   `rocketc check`, all 19 tests, and both formatting checks. Source website
   validation also passes with only implemented games claimed.
+- The complete post-Midnight-Crossing Rocket suite passes 22/22, preserving all
+  19 prior regressions and adding rule/geometry, deterministic fixed-tick
+  simulation/replay, and minimum-size keyboard/mouse GUI coverage.
+- Debug and Release milestone-E4 validation each pass the native build,
+  `rocketc check`, all 22 tests, and both formatting checks. Source website
+  validation also passes with only implemented games claimed.
 
 ## Deliberate limitations
 
 - Version 0.1.0 is unsigned. Windows may show an unknown-publisher warning; trusted code signing is not claimed.
 - The game is local-only and play-money-only. Credits are not transferable and have no cash value.
 - Poker remains a noninteractive future placeholder until its mandated final
-  game milestone. Cross the Road is added only when its implementation is
-  complete.
+  game milestone.
 - The packaged application uses procedural UI art and a short generated tone; it does not ship a screenshot-baseline suite or external art/audio catalog.
 - The frozen Rocket debugger represented the scalar `status` local during acceptance; managed locals such as the argument array may display as unavailable in the native debugger.
 - The frozen LSP's formatter is exposed through its `source.format.rocket` code-action contract and the reproducible `rocketc fmt` workflow; Visual Studio's generic `Edit.FormatDocument` command is not advertised for Rocket documents.
@@ -163,10 +174,15 @@ Spacing, typography, component states, borders, timing, and responsive layout va
 - Completed: expansion milestone E3, Chicken presented as the original Coop
   Climb, including fixed probability/payout tables, hidden deterministic paths,
   complete UI, focused tests, and regression gates.
-- Current: expansion milestone E4, Cross the Road presented as Midnight
-  Crossing.
-- Next: implement the fixed-tick deterministic hazard simulation, complete
-  real-time UI/controls, focused tests, and the full regression gate.
+- Completed: expansion milestone E4, Cross the Road presented as the original
+  Midnight Crossing, including deterministic fixed-tick simulation, real-time
+  hazards and log support, checkpoints, complete UI, focused tests, and Debug
+  and Release regression gates.
+- Current: expansion milestone E5, single-player No-Limit Texas Hold'em.
+- Next: implement cards and deterministic shuffling, the best-five-of-seven
+  evaluator, betting/action-order rules, contribution-tier side pots,
+  deterministic legal AI, private-card presentation, complete UI and focused
+  tests, then run the full Debug/Release regression gate.
 
 ## Major decisions
 
@@ -190,7 +206,7 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 
 Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`, and this file
 completely. Inspect Git status and preserve user changes. The 0.1.0 Blackjack
-baseline remains preserved and the post-Coop-Climb suite passes 19/19. Continue from **Milestones**
+baseline remains preserved and the post-Midnight-Crossing suite passes 22/22. Continue from **Milestones**
 in the exact approved game order. Use frozen Rocket 2.0 and the pinned raylib
 integration, rerun all prior tests at every game gate, update this handoff, make
 logical local commits, and do not push, publish, deploy, sign, or add an

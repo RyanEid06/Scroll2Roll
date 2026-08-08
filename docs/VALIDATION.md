@@ -81,6 +81,30 @@ baseline for every game milestone in `EXPANSION_PLAN.md`.
 - Source website validation passes with Coop Climb added alongside the three
   prior complete games. No package publication or deployment was performed.
 
+## Expansion milestone E4 - Cross the Road / Midnight Crossing
+
+- `crossing_rules_test.rocket` verifies the 900-unit, eight-lane world; every
+  required hazard kind and lane; fixed-tick bounds; checkpoint and difficulty
+  limits; collision/support geometry; exact checkpoint multipliers; and floor
+  settlement.
+- `crossing_simulation_test.rocket` verifies deterministic seeded world
+  generation and replay; wrapped car, tram, and log movement; traffic and tram
+  collisions; water failure and moving-log support; checkpoint resets and
+  difficulty progression; pause behavior; the eight-tick frame cap; cash-out;
+  automatic five-checkpoint completion; and 15 consecutive rounds with a
+  nonnegative balance.
+- `crossing_gui_flow_test.rocket` runs at the 800x600 minimum and verifies safe
+  keyboard- and mouse-timed crossings, pause/help, two checkpoint cash-outs,
+  save-v2 persistence, rendering, lobby return, and native resource cleanup.
+- The complete Rocket suite passes 22/22 with all 19 prior Blackjack,
+  infrastructure, Roulette, Plinko, and Coop Climb regressions preserved.
+- Debug and Release `scripts/validate.ps1` each pass the native build,
+  `rocketc check`, all 22 tests, and both formatting checks after complete
+  Midnight Crossing integration.
+- Source website validation passes with Midnight Crossing added alongside the
+  four prior complete games. No package publication or deployment was
+  performed.
+
 ## Visual Studio Community 2026
 
 The installed Rocket Language 2.0.3 extension was exercised from this repository with `src/main.rocket` active:

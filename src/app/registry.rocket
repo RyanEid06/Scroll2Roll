@@ -1,5 +1,5 @@
 pub fn game_count() -> Int:
-    return 5
+    return 6
 
 pub fn name(index: Int) -> String:
     if index == 0:
@@ -10,18 +10,22 @@ pub fn name(index: Int) -> String:
         return "Plinko"
     if index == 3:
         return "Coop Climb"
+    if index == 4:
+        return "Midnight Crossing"
     return "Poker"
 
 pub fn description(index: Int) -> String:
     if index == 0:
-        return "Complete table rules, AI players, and split hands"
+        return "Full rules and AI rivals"
     if index == 1:
-        return "Single-zero wheel, complete inside/outside betting"
+        return "Single-zero complete table"
     if index == 2:
-        return "8-16 rows with audited low, medium, and high risk"
+        return "Audited 8-16-row boards"
     if index == 3:
-        return "Original hidden-rung step-and-cash-out observatory"
+        return "Hidden-rung cash-out climb"
+    if index == 4:
+        return "Real-time traffic and canals"
     return "Future game - not installed"
 
 pub fn available(index: Int) -> Bool:
-    return index >= 0 and index <= 3
+    return index >= 0 and index <= 4

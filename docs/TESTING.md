@@ -2,7 +2,7 @@
 
 No feature claim is complete until its focused test passes.
 
-The implemented matrix covers Rocket check/build/test, Blackjack card/shoe/rule invariants, complete European Roulette bet geometry and payouts, exact Plinko and Coop Climb probability/return tables, deterministic complete and consecutive sessions, nonnegative balances, safety limits, save-v1 migration/save-v2 recovery, scripted GUI input, native resource lifetimes, package contents, sanitized relocation, and static website checks.
+The implemented matrix covers Rocket check/build/test, Blackjack card/shoe/rule invariants, complete European Roulette bet geometry and payouts, exact Plinko and Coop Climb probability/return tables, fixed-tick Midnight Crossing replays and hazards, deterministic complete and consecutive sessions, nonnegative balances, safety limits, save-v1 migration/save-v2 recovery, scripted GUI input, native resource lifetimes, package contents, sanitized relocation, and static website checks.
 
 Test setup helpers must return explicit failure or a nonzero test status when construction is invalid. They must never substitute a plausible fallback card, state, or resource.
 
@@ -23,6 +23,9 @@ Test setup helpers must return explicit failure or a nonzero test status when co
 - `chicken_rules_test.rocket`: all fixed survival/multiplier tables, every depth's 95.99%-96.00% expected return, risk ordering, wager validation, and floor settlement documented in `COOP_CLIMB_MATH.md`.
 - `chicken_session_test.rocket`: deterministic hidden paths, legal/illegal transitions, first/final-rung cash-out, failure, insufficient balance, 25-round balance bounds, and bounded history.
 - `chicken_gui_flow_test.rocket`: minimum-size lobby routing, help, keyboard/mouse risk and wager controls, advance, cash-out/failure, persistence, next round, lobby return, and resource cleanup.
+- `crossing_rules_test.rocket`: lane/hazard classification, world/tick/checkpoint bounds, collision overlap, pass validation, and exact cash-out payouts documented in `MIDNIGHT_CROSSING_DESIGN.md`.
+- `crossing_simulation_test.rocket`: deterministic world generation and replays, traffic/tram/canal failure, log drift, checkpoints, difficulty, movement legality, pause, tick cap, cash-out, five-checkpoint completion, and 15-round balances.
+- `crossing_gui_flow_test.rocket`: minimum-size keyboard/mouse direction flows, real-time safe timing, pause/help, two complete checkpoint cash-outs, persistence, next run, lobby return, rendering, and cleanup.
 - Four reviewed raylib tests cover API behavior, audio stress, resource lifetime, and missing assets.
 
-The current suite passes 19/19 tests. Package relocation and source/staged website checks are separate scripts. Exact evidence is recorded in `VALIDATION.md`; generated evidence stays under ignored `out/`.
+The current suite passes 22/22 tests. Package relocation and source/staged website checks are separate scripts. Exact evidence is recorded in `VALIDATION.md`; generated evidence stays under ignored `out/`.

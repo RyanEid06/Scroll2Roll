@@ -1,0 +1,76 @@
+import src.crossing.model
+
+pub fn world_width() -> Int:
+    return 900
+
+pub fn lane_count() -> Int:
+    return 8
+
+pub fn player_width() -> Int:
+    return 40
+
+pub fn movement_step() -> Int:
+    return 100
+
+pub fn fixed_ticks_per_second() -> Int:
+    return 20
+
+pub fn max_ticks_per_frame() -> Int:
+    return 8
+
+pub fn max_checkpoints() -> Int:
+    return 5
+
+pub fn valid_bet(bet: Int) -> Bool:
+    return bet >= 5 and bet <= 1000 and bet / 5 * 5 == bet
+
+pub fn lane_kind(lane: Int) -> Int:
+    if lane == 1 or lane == 2:
+        return 1
+    if lane == 3:
+        return 2
+    if lane == 5 or lane == 6:
+        return 3
+    if lane == 7:
+        return 4
+    return 0
+
+pub fn hazard_code(kind: model.HazardKind) -> Int:
+    match kind:
+        case model.Car:
+            return 0
+        case model.Tram:
+            return 1
+        case model.Log:
+            return 2
+
+pub fn multiplier_for(checkpoints: Int) -> Int:
+    if checkpoints <= 0:
+        return 10000
+    var bounded = checkpoints
+    if bounded > max_checkpoints():
+        bounded = max_checkpoints()
+    return 10000 + bounded * 2500
+
+pub fn payout(stake: Int, multiplier_basis_points: Int) -> Int:
+    return stake * multiplier_basis_points / 10000
+
+pub fn overlaps(player_x: Int, hazard_position: Int, hazard_length: Int) -> Bool:
+    let player_left = player_x - player_width() / 2
+    let player_right = player_x + player_width() / 2
+    return player_right > hazard_position and player_left < hazard_position + hazard_length
+
+pub fn valid_hazard(hazard: model.Hazard) -> Bool:
+    if hazard.lane < 1 or hazard.lane >= lane_count() - 1:
+        return false
+    if hazard.length < 40 or hazard.length > world_width():
+        return false
+    if hazard.speed == 0 or hazard.speed < -20 or hazard.speed > 20:
+        return false
+    let lane = lane_kind(hazard.lane)
+    let code = hazard_code(hazard.kind)
+    if code == 0:
+        return lane == 1
+    if code == 1:
+        return lane == 2
+    return lane == 3
