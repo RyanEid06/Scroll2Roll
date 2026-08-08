@@ -48,3 +48,16 @@ community positions, pot/split labels, recent actions, and a dedicated action
 rail. At 800x600 up to five opponents, sizing, legal action buttons, help,
 settlement, reset, and lobby controls remain distinct. The view receives only
 the privacy-safe public table and never the shuffled deck.
+
+The static website now applies the same tokens in a three-page experience. The
+profile page pairs an editorial welcome panel with a raised local-profile card.
+The Play page follows a dense premium dashboard direction with a compact sticky
+header, a high-contrast catalog hero, and six wide rectangular game cards. Each
+card contains an original inline SVG illustration assembled from simple shapes;
+no casino-provider artwork, layout, or external asset is copied. The Download
+page gives the verified package its own gold-accented panel and separates
+integrity, installation, requirements, unsigned-build, troubleshooting, and
+privacy content into readable sections. Desktop cards use a two-column grid;
+phone layouts collapse to one column without horizontal overflow. Visible
+focus, skip links, semantic landmarks, sufficient contrast, and reduced-motion
+rules apply across all three pages.

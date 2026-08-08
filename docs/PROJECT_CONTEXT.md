@@ -58,6 +58,13 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
 - The raylib application implements startup, reusable lobby routing, settings, exit confirmation, keyboard/mouse controls, playable Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, and No-Limit Hold'em tables, zero-to-five AI settings, disabled illegal actions, outcomes, next round/hand, restart/reset, and lobby return.
 - Versioned local persistence stores display/audio preferences, AI count, first-run state, and approved play-money progress at `%LOCALAPPDATA%\Scroll2Roll\settings.s2r`, with safe missing/invalid/older-data recovery.
 - The static website and Cloudflare Pages staging flow are implemented without claiming browser play.
+- The static website is a responsive three-page experience: new visitors create
+  a non-authenticated local browser profile with a validated nickname and
+  optional PNG/JPEG/WebP avatar; the Play page presents all six complete native
+  games in original illustrated cards; and the Download page presents the exact
+  verified 0.2.0 package, integrity data, installation, requirements,
+  unsigned-build disclosure, and troubleshooting. Profile data stays in
+  `localStorage`, is never transmitted, and can be edited or reset.
 - Release packaging includes the native executable, version, notices, controls, troubleshooting, and checksums, and passes relocated headless smoke validation.
 - Version 2 persistence writes `scroll2roll-save-2`, migrates valid
   `scroll2roll-save-1` settings and credits, and safely recovers from missing,
@@ -168,8 +175,11 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
   `901AD7600017EB227A7DDB755B56D65490CB978797228A6C3EBA60E2089CDA4B`.
   Its internal checksums, forbidden-content scan, and relocated headless smoke
   all pass.
-- The three-file source site and four-file staged site pass validation with the
-  release archive. The staged tree remains below Cloudflare Pages Free's
+- The six-file source site and seven-file staged site pass the expanded website
+  validator with the exact release archive. Focused browser checks pass local
+  profile validation/navigation, invalid and corrupt avatar handling, six
+  rectangular desktop cards, Download metadata, zero console errors, and 390px
+  responsive layouts without horizontal overflow. The staged tree remains below Cloudflare Pages Free's
   officially rechecked 20,000-file and 25-MiB-per-asset limits. Nothing was
   pushed, published, deployed, released, or signed.
 - Visual Studio tool discovery is repaired persistently through the Windows user
@@ -193,6 +203,9 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
 - The frozen Rocket debugger represented the scalar `status` local during acceptance; managed locals such as the argument array may display as unavailable in the native debugger.
 - The frozen LSP's formatter is exposed through its `source.format.rocket` code-action contract and the reproducible `rocketc fmt` workflow; Visual Studio's generic `Edit.FormatDocument` command is not advertised for Rocket documents.
 - No public release, Cloudflare site, remote download, external production user, or certificate signature is claimed.
+- The website profile exists only in the current browser's storage. Clearing
+  site data or choosing Reset removes it; it is not an authenticated or portable
+  account and does not affect the native application's separate local settings.
 
 ## Visual design tokens
 
@@ -243,6 +256,11 @@ Spacing, typography, component states, borders, timing, and responsive layout va
   swaps buffers, limits FPS, and pumps Windows events. The previously white,
   nonresponsive window now renders responsively with stable memory, and both
   Debug and Release gates pass 26/26.
+- Completed: static website profile/catalog redesign with three accessible
+  destinations, original six-game card art, exact verified package evidence,
+  local-only nickname/avatar persistence, expanded source/staged validation,
+  and focused desktop/phone browser checks. Native application files were not
+  changed.
 - Next: owner review of the local 0.2.0 handoff. Do not push, publish, deploy,
   create a release, or claim trusted signing without explicit approval.
 
@@ -264,6 +282,9 @@ Spacing, typography, component states, borders, timing, and responsive layout va
 - Force raylib `SUPPORT_CUSTOM_FRAME_CONTROL` off because the safe Rocket adapter
   intentionally delegates buffer swapping, frame pacing, and event polling to
   raylib's standard `EndDrawing()` behavior.
+- Keep the website profile deliberately non-authenticated and browser-local.
+  Accept only decoded PNG/JPEG/WebP avatars up to 1.5 MiB, store them as data
+  URLs, and block network connections through both implementation and CSP.
 
 ## Files that must remain out of Git
 

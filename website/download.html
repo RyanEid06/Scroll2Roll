@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en" data-page="download">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Download the verified local unsigned Scroll2Roll 0.2.0 Windows x64 archive and review its SHA-256, requirements, and installation steps.">
+  <meta name="color-scheme" content="dark">
+  <title>Download 0.2.0 for Windows | Scroll2Roll</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to download</a>
+  <header class="app-header">
+    <div class="app-header-inner shell">
+      <a class="brand" href="play.html" aria-label="Scroll2Roll Play"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span><span>SCROLL<span>2</span>ROLL</span></a>
+      <nav class="primary-nav" aria-label="Primary navigation"><a href="play.html">Play</a><a href="download.html" aria-current="page">Download</a></nav>
+      <div class="header-profile">
+        <div class="avatar-preview header-avatar" data-profile-avatar><img alt="Your profile picture" hidden><span aria-hidden="true">S2</span></div>
+        <div><div class="profile-name" data-profile-name>Player</div><a class="profile-link" href="index.html?edit=1">Edit profile</a></div>
+        <button class="reset-header" type="button" data-reset-profile aria-label="Reset local profile">Reset</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content" class="download-main shell">
+    <section class="download-hero" aria-labelledby="download-title">
+      <div>
+        <p class="eyebrow">Verified local acceptance package</p>
+        <h1 id="download-title">Scroll2Roll for Windows x64.</h1>
+        <p class="download-summary">Download the complete native six-game casino. It runs locally, uses play credits with no monetary value, and requires no account or internet connection after download.</p>
+        <div class="hero-actions"><span class="platform-badge">Windows x64</span><span class="platform-badge">Version 0.2.0</span><span class="platform-badge">Unsigned build</span></div>
+      </div>
+
+      <aside class="package-card" aria-labelledby="package-title">
+        <div class="package-icon" aria-hidden="true">↓</div>
+        <p class="eyebrow">Portable archive</p>
+        <h2 id="package-title">Scroll2Roll 0.2.0</h2>
+        <dl>
+          <dt>Archive</dt><dd>Scroll2Roll-0.2.0-windows-x64.zip</dd>
+          <dt>Size</dt><dd>1,733,465 bytes (1.65 MiB)</dd>
+          <dt>Platform</dt><dd>Windows x64</dd>
+          <dt>Signing</dt><dd>Local unsigned build</dd>
+        </dl>
+        <a class="button button-primary button-full" href="downloads/Scroll2Roll-0.2.0-windows-x64.zip" download>Download verified ZIP</a>
+        <small>The archive is staged from the existing verified package. No public release or trusted signature is claimed.</small>
+      </aside>
+    </section>
+
+    <div class="download-sections">
+      <section class="info-section" aria-labelledby="verify-title">
+        <p class="eyebrow">Integrity</p><h2 id="verify-title">Verify before you run it.</h2>
+        <p>Compare the downloaded archive with this SHA-256 value:</p>
+        <div class="hash-box"><code>901ad7600017eb227a7ddb755b56d65490cb978797228a6c3eba60e2089cda4b</code></div>
+        <p>PowerShell: <code>Get-FileHash .\Scroll2Roll-0.2.0-windows-x64.zip -Algorithm SHA256</code></p>
+      </section>
+
+      <section id="installation" class="info-section" aria-labelledby="install-title">
+        <p class="eyebrow">Installation</p><h2 id="install-title">From ZIP to lobby in four steps.</h2>
+        <ol class="steps">
+          <li>Download <strong>Scroll2Roll-0.2.0-windows-x64.zip</strong>.</li>
+          <li>Verify the archive SHA-256 against the value above.</li>
+          <li>Extract the complete ZIP to a writable local folder. Do not run the executable from inside the archive.</li>
+          <li>Open the extracted folder and run <strong>Scroll2Roll.exe</strong>.</li>
+        </ol>
+      </section>
+
+      <section class="info-section" aria-labelledby="requirements-title">
+        <p class="eyebrow">System requirements</p><h2 id="requirements-title">Built for a modern Windows PC.</h2>
+        <div class="requirements-grid">
+          <div class="requirement"><strong>Operating system</strong><span>Windows 10 or newer, 64-bit</span></div>
+          <div class="requirement"><strong>Graphics</strong><span>Driver with OpenGL 3.3 support</span></div>
+          <div class="requirement"><strong>Controls</strong><span>Keyboard or mouse</span></div>
+          <div class="requirement"><strong>Connection</strong><span>No internet required after download</span></div>
+        </div>
+      </section>
+
+      <section class="info-section" aria-labelledby="unsigned-title">
+        <p class="eyebrow">Unsigned-build disclosure</p><h2 id="unsigned-title">An unknown-publisher warning is expected.</h2>
+        <div class="warning-box"><strong>Scroll2Roll 0.2.0 is not code signed.</strong><p>Windows may show an unknown-publisher or SmartScreen warning. This site does not claim a trusted certificate. Verify the SHA-256 and the included <code>SHA256SUMS.txt</code> before running the application.</p></div>
+      </section>
+
+      <section id="troubleshooting" class="info-section" aria-labelledby="troubleshooting-title">
+        <p class="eyebrow">Troubleshooting</p><h2 id="troubleshooting-title">Quick fixes for common setup issues.</h2>
+        <div class="troubleshooting-list">
+          <details><summary>The application does not start</summary><p>Extract the complete ZIP to a writable local folder and run <code>Scroll2Roll.exe</code> from that folder, not from inside the ZIP.</p></details>
+          <details><summary>Windows shows an unknown publisher</summary><p>This is expected for the unsigned 0.2.0 build. Verify the archive and included file hashes before choosing whether to run it.</p></details>
+          <details><summary>Audio is unavailable</summary><p>The game continues silently if Windows cannot open an audio device. Audio can be disabled or adjusted in the native Settings screen.</p></details>
+          <details><summary>I need to reset game settings</summary><p>Close Scroll2Roll, then remove <code>%LOCALAPPDATA%\Scroll2Roll\settings.s2r</code>. This resets only native local settings and play-credit progress.</p></details>
+        </div>
+      </section>
+
+      <section class="info-section" aria-labelledby="privacy-title">
+        <p class="eyebrow">Local by design</p><h2 id="privacy-title">No cloud account. No real-money services.</h2>
+        <p>Scroll2Roll has no deposits, withdrawals, purchases, cryptocurrency, payments, analytics, trackers, cloud saves, or multiplayer networking. Website profile data stays in this browser; native settings stay on the Windows device.</p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer shell"><span>Scroll2Roll 0.2.0 · Windows x64</span><span>Local-only · Account-free · Play-money-only</span></footer>
+</body>
+</html>

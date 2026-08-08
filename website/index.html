@@ -1,137 +1,90 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-page="profile">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Scroll2Roll is a local, account-free, play-money Blackjack, European Roulette, Plinko, Coop Climb, Midnight Crossing, and No-Limit Hold'em casino for Windows x64.">
-  <title>Scroll2Roll — Play-money casino for Windows</title>
+  <meta name="description" content="Create a private, local-only Scroll2Roll display profile before exploring the Windows game catalog.">
+  <meta name="color-scheme" content="dark">
+  <title>Create your local profile | Scroll2Roll</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
 </head>
-<body>
-  <header class="nav wrap">
-    <a class="brand" href="#top" aria-label="Scroll2Roll home">SCROLL<span>2</span>ROLL</a>
-    <nav aria-label="Primary navigation">
-      <a href="#blackjack">Blackjack</a>
-      <a href="#roulette">Roulette</a>
-      <a href="#plinko">Plinko</a>
-      <a href="#coop-climb">Coop Climb</a>
-      <a href="#midnight-crossing">Midnight Crossing</a>
-      <a href="#holdem">Hold'em</a>
-      <a href="#install">Installation</a>
-      <a href="#privacy">Privacy</a>
-    </nav>
+<body class="profile-page">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header shell" aria-label="Site header">
+    <a class="brand" href="index.html" aria-label="Scroll2Roll profile">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i></span>
+      <span>SCROLL<span>2</span>ROLL</span>
+    </a>
+    <div class="privacy-chip"><span aria-hidden="true">●</span> Stored on this device</div>
   </header>
 
-  <main id="top">
-    <section class="hero wrap">
-      <div>
-        <p class="eyebrow">Native Rocket 2.0 · Windows x64</p>
-        <h1>A polished casino table that stays on your PC.</h1>
-        <p class="lede">Scroll2Roll includes complete Blackjack, European Roulette, Plinko, Coop Climb, real-time Midnight Crossing, and No-Limit Hold'em with exact play-credit settlement and a reusable casino lobby. No account. No cloud save. No real-money wagering.</p>
-        <div class="actions">
-          <a class="button primary" href="downloads/Scroll2Roll-0.2.0-windows-x64.zip">Download 0.2.0 for Windows</a>
-          <a class="button secondary" href="#controls">View controls</a>
+  <main id="main-content" class="profile-shell shell">
+    <section class="profile-intro" aria-labelledby="profile-title">
+      <p class="eyebrow">Welcome to your local lobby</p>
+      <h1 id="profile-title">Make the tables feel like yours.</h1>
+      <p class="lede">Choose a display name and optional avatar for this browser. Scroll2Roll creates no online account, asks for no password, and sends no profile data anywhere.</p>
+      <ul class="trust-list" aria-label="Profile privacy summary">
+        <li><span aria-hidden="true">✓</span><strong>Local only</strong><small>Saved in this browser</small></li>
+        <li><span aria-hidden="true">✓</span><strong>Account free</strong><small>No email or password</small></li>
+        <li><span aria-hidden="true">✓</span><strong>Play money</strong><small>Credits have no cash value</small></li>
+      </ul>
+    </section>
+
+    <section class="profile-card" aria-labelledby="form-title">
+      <div class="profile-card-heading">
+        <div>
+          <p class="step-label">Step 01</p>
+          <h2 id="form-title">Create your profile</h2>
         </div>
-        <p class="fine">Local unsigned release candidate. Verify the included SHA-256 checksums. Credits have no monetary value.</p>
+        <span class="local-badge">Local profile</span>
       </div>
-      <div class="app-preview" role="img" aria-label="Stylized preview of the Scroll2Roll Blackjack table">
-        <div class="preview-bar"><span></span><strong>BLACKJACK</strong><em>Credits 1,000</em></div>
-        <div class="dealer"><small>DEALER</small><div class="cards"><b>A<br><i>H</i></b><b class="back">S2R</b></div></div>
-        <div class="table-copy">Dealer stands on soft 17</div>
-        <div class="player"><small>YOUR HAND</small><div class="cards"><b>10<br><i>S</i></b><b>8<br><i>D</i></b></div><strong>Total 18</strong></div>
-        <div class="preview-actions"><span>Hit</span><span>Stand</span><span>Double</span><span>Split</span></div>
-      </div>
-    </section>
 
-    <section id="roulette" class="section band">
-      <div class="wrap">
-        <p class="eyebrow">The complete European wheel</p>
-        <h2>Every table position, one deterministic result.</h2>
-        <div class="feature-grid">
-          <article><h3>Complete betting layout</h3><p>Place straight, split, street, corner, six-line, basket, dozen, column, red/black, odd/even, and low/high bets with chips, undo, clear, repeat, and rebet.</p></article>
-          <article><h3>Correct single-zero payouts</h3><p>The rendering-independent engine validates table geometry and settles every simultaneous wager with documented European Roulette odds.</p></article>
-          <article><h3>Auditable animation</h3><p>An explicit seeded engine result is locked before the procedural wheel moves. Animation follows that result and never rerolls it.</p></article>
-          <article><h3>Keyboard and mouse</h3><p>Use the complete clickable table or cycle every bet family and legal target from the keyboard, with visible help and disabled states.</p></article>
+      <form id="profile-form" novalidate>
+        <div class="avatar-editor">
+          <div class="avatar-preview avatar-preview-large" data-avatar-preview aria-label="Avatar preview">
+            <img data-avatar-image alt="Selected profile picture preview" hidden>
+            <span data-avatar-fallback aria-hidden="true">S2</span>
+          </div>
+          <div class="avatar-copy">
+            <label class="field-label" for="avatar-input">Profile picture <span>Optional</span></label>
+            <p>PNG, JPEG, or WebP. Maximum 1.5 MiB.</p>
+            <div class="avatar-actions">
+              <label class="button button-secondary file-button" for="avatar-input"><span data-avatar-action>Choose image</span></label>
+              <input id="avatar-input" name="avatar" type="file" accept="image/png,image/jpeg,image/webp">
+              <button class="text-button danger-text" id="remove-avatar" type="button" hidden>Remove</button>
+            </div>
+            <p class="field-message" id="avatar-error" role="alert"></p>
+          </div>
         </div>
-      </div>
-    </section>
 
-    <section id="plinko" class="section wrap">
-      <p class="eyebrow">Audited probability, visible paths</p>
-      <h2>Plinko with published return math.</h2>
-      <div class="feature-grid">
-        <article><h3>Choose the board</h3><p>Configure 8 through 16 rows, Low, Medium, or High risk, a per-ball stake, and a finite batch of as many as 10 balls.</p></article>
-        <article><h3>Exact expected return</h3><p>Every symmetric multiplier table is checked against exact binomial landing probabilities for a documented 95.99% to 96.00% theoretical return.</p></article>
-        <article><h3>Committed outcomes</h3><p>The engine prepays the batch and fixes every seeded left/right path before animation. Rendering follows each path and cannot change its bucket.</p></article>
-        <article><h3>Responsive play</h3><p>The peg field scales down to the supported 800x600 window while keyboard and mouse controls stay separate, readable, and bounded.</p></article>
-      </div>
-    </section>
-
-    <section id="blackjack" class="section wrap">
-      <p class="eyebrow">The first complete table</p>
-      <h2>Blackjack rules you can trust.</h2>
-      <div class="feature-grid">
-        <article><h3>Complete actions</h3><p>Hit, Stand, Double Down, Split, and Late Surrender are enabled only when the tested engine says they are legal.</p></article>
-        <article><h3>Table-correct payouts</h3><p>Integer play credits preserve exact 3:2 Blackjack payouts, pushes, surrender refunds, doubles, splits, wins, and losses.</p></article>
-        <article><h3>Real round flow</h3><p>Play alongside as many as five deterministic AI players, watch the dealer finish, review settlement, and continue across multiple rounds.</p></article>
-        <article><h3>Local by design</h3><p>Settings and approved play-credit progress stay in a versioned local file with safe recovery from missing or invalid data.</p></article>
-      </div>
-    </section>
-
-    <section id="coop-climb" class="section band">
-      <div class="wrap">
-        <p class="eyebrow">Chicken, reimagined as an observatory ladder</p>
-        <h2>Advance one hidden rung or secure the return.</h2>
-        <div class="feature-grid">
-          <article><h3>Original presentation</h3><p>Coop Climb uses procedural observatory coops and a finite 10-rung ladder, without copying another provider's road, character, artwork, or layout.</p></article>
-          <article><h3>Hidden deterministic path</h3><p>The engine commits the safe/fail path when the wager is prepaid. The view separates secured, current, failed, and future rungs without revealing future safety.</p></article>
-          <article><h3>Audited risk tables</h3><p>Low, Medium, and High use exact per-rung survival ratios and fixed cash-out multipliers targeting a documented 95.99% to 96.00% theoretical return.</p></article>
-          <article><h3>Complete choice flow</h3><p>Advance or cash out from keyboard or mouse, review settlement, continue across bounded rounds, and preserve settled credits locally.</p></article>
+        <div class="field-group">
+          <label class="field-label" for="nickname">Nickname / display name</label>
+          <div class="input-wrap">
+            <input id="nickname" name="nickname" type="text" minlength="2" maxlength="24" autocomplete="nickname" required aria-describedby="nickname-hint nickname-error" placeholder="How should we welcome you?">
+            <span id="name-count" aria-hidden="true">0 / 24</span>
+          </div>
+          <p id="nickname-hint" class="field-hint">2–24 characters. Letters, numbers, spaces, apostrophes, periods, underscores, and hyphens are welcome.</p>
+          <p class="field-message" id="nickname-error" role="alert"></p>
         </div>
-      </div>
-    </section>
 
-    <section id="midnight-crossing" class="section wrap">
-      <p class="eyebrow">Real-time Cross the Road, built as an original night city</p>
-      <h2>Your movement and timing decide the crossing.</h2>
-      <div class="feature-grid">
-        <article><h3>Deterministic fixed ticks</h3><p>A seeded integer engine moves cars, the tram, and canal logs at 20 fixed ticks per second with an eight-tick frame guard. Rendering never advances hazards.</p></article>
-        <article><h3>Player-controlled survival</h3><p>Arrow keys or the mouse pad move across roads, rail, and water. Cars and trams collide; canals require logs that carry the player.</p></article>
-        <article><h3>Skill-based checkpoints</h3><p>Forward progress reaches checkpoints and raises difficulty. Sideways and backward moves support avoidance without farming score.</p></article>
-        <article><h3>Bounded cash-out</h3><p>Cash out from 1.25x through 2.00x after checkpoints, or clear the fifth checkpoint for automatic 2.25x settlement.</p></article>
-      </div>
-    </section>
-
-    <section id="holdem" class="section band">
-      <div class="wrap">
-        <p class="eyebrow">A complete local No-Limit Hold'em table</p>
-        <h2>Private cards, legal action, contribution-tier pots.</h2>
-        <div class="feature-grid">
-          <article><h3>One to five rivals</h3><p>Play a local 5/10 cash table against bounded deterministic recreational AI with correct heads-up and multiway blinds, dealer movement, and street order.</p></article>
-          <article><h3>Complete no-limit rules</h3><p>Check, call, fold, bet, raise-to, and all-in actions validate stacks, minimum targets, full-raise reopening, and short all-ins that do not reopen completed action.</p></article>
-          <article><h3>Audited cards and pots</h3><p>The best-five-of-seven evaluator covers every category and wheel straights. Main, side, split, and odd-chip pots settle from contribution tiers without rake.</p></article>
-          <article><h3>Privacy by presentation</h3><p>Your cards stay visible while rival cards remain backed until a non-folded showdown. AI uses only its cards and public state; folded cards are never exposed.</p></article>
+        <div class="profile-note">
+          <span class="note-icon" aria-hidden="true">i</span>
+          <p><strong>This is not an online account.</strong> Your nickname and avatar stay in browser storage on this device and can be edited or reset at any time.</p>
         </div>
-      </div>
-    </section>
 
-    <section id="install" class="section band">
-      <div class="wrap split">
-        <div><p class="eyebrow">System requirements</p><h2>Built for Windows x64.</h2><ul><li>Windows 10 or newer, 64-bit</li><li>Graphics driver with OpenGL 3.3 support</li><li>Keyboard or mouse</li><li>No account or internet connection required after download</li></ul></div>
-        <div><p class="eyebrow">Installation</p><ol><li>Download the approved release ZIP.</li><li>Verify its SHA-256 checksum.</li><li>Extract the complete archive to a writable folder.</li><li>Run <code>Scroll2Roll.exe</code>.</li></ol><p>The first release is unsigned; no trusted code-signing claim is made.</p></div>
-      </div>
-    </section>
-
-    <section id="controls" class="section wrap">
-      <p class="eyebrow">Keyboard and mouse</p><h2>Clear controls, visible legality.</h2>
-      <div class="controls"><span><kbd>Arrows</kbd> Move / configure / size</span><span><kbd>Enter</kbd> Deal / place / drop / advance / check / call</span><span><kbd>Tab</kbd> Bet type / risk</span><span><kbd>H</kbd> Hit / undo / all-in</span><span><kbd>S</kbd> Stand / spin / cash out</span><span><kbd>D</kbd> Double / clear / fold</span><span><kbd>M</kbd> Plinko ball count</span><span><kbd>P</kbd> Split / pause / help</span><span><kbd>R</kbd> Surrender / rebet / raise</span><span><kbd>N</kbd> Next round / hand</span><span><kbd>B</kbd> Lobby</span></div>
-    </section>
-
-    <section id="privacy" class="section band">
-      <div class="wrap split"><div><p class="eyebrow">Privacy</p><h2>Account-free version 1.</h2><p>Scroll2Roll does not create an account, authenticate to a cloud, collect payment details, or transmit play history. Local settings and play-credit progress remain on your Windows device.</p></div><div><p class="eyebrow">Play-money only</p><h2>Entertainment, not gambling services.</h2><p>There are no deposits, withdrawals, purchases, cryptocurrency, cash prizes, or claims that virtual credits have monetary value.</p><a href="../docs/TROUBLESHOOTING.md">Troubleshooting</a></div></div>
+        <button class="button button-primary button-full" id="profile-submit" type="submit">Create Account <span aria-hidden="true">→</span></button>
+        <button class="button button-quiet button-full" id="continue-profile" type="button" hidden>Continue to Play</button>
+        <button class="text-button reset-profile" type="button" data-reset-profile hidden>Reset local profile</button>
+        <p id="profile-status" class="form-status" aria-live="polite"></p>
+      </form>
+      <noscript><p class="noscript">JavaScript is required only to save this local browser profile. The Windows application itself remains native and account-free.</p></noscript>
     </section>
   </main>
 
-  <footer class="wrap"><strong>Scroll2Roll 0.2.0</strong><span>Native Rocket application · Website prepared for Cloudflare Pages</span></footer>
+  <footer class="site-footer shell">
+    <span>Scroll2Roll 0.2.0</span>
+    <span>Local-only · Account-free · Play-money-only</span>
+  </footer>
 </body>
 </html>

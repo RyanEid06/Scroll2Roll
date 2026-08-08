@@ -246,14 +246,27 @@ No trusted code signature is claimed.
 
 ## Static website
 
-- `.\scripts\test-website.ps1` passes the three source `website/` files.
-- `.\scripts\prepare-cloudflare-site.ps1` and
-  `.\scripts\test-website.ps1 -Site .\out\cloudflare-site` pass the four staged
-  files with the 1,733,465-byte release archive included.
+- `.\scripts\test-website.ps1` passes the six source `website/` files.
+- `.\scripts\prepare-cloudflare-site.ps1 -Output
+  .\out\cloudflare-site-validation` and `.\scripts\test-website.ps1 -Site
+  .\out\cloudflare-site-validation` pass the seven staged files with the
+  1,733,465-byte release archive included. The alternate ignored output was
+  used because another local process held the prior default staged archive;
+  the workflow now supports this explicit safe override.
 - The validator enforces the current Cloudflare Pages Free ceilings of 20,000
   files and 25 MiB per asset, rechecked against official Cloudflare
   documentation on 2026-08-09, and rejects browser-playable or real-money
   wording.
+- The redesigned site has three destinations: local profile/onboarding, the
+  complete six-game native catalog, and verified Windows download. The source
+  validator additionally checks nickname/avatar safety controls, no password
+  field or network API, same-origin CSP, accessible focus/reduced-motion hooks,
+  exactly six original-art cards, and the archive's exact size and SHA-256.
+- In-app browser checks completed the empty-name flow, invalid MIME rejection,
+  corrupt PNG signature rejection, local profile creation and navigation,
+  desktop card geometry (six 581-by-280-pixel rectangular cards at the tested
+  viewport), Download navigation and metadata, zero console errors, and 390px
+  profile/Play/Download layouts without horizontal overflow.
 - No Cloudflare deployment, Git push, GitHub release, or other publication was performed.
 
 ## Expansion milestone E6 - final 0.2.0 acceptance

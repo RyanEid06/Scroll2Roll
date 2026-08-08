@@ -46,5 +46,13 @@ Test setup helpers must return explicit failure or a nonzero test status when co
 The current suite passes 26/26 tests. Before those gates run,
 `scripts/validate.ps1` also rejects duplicate `.rocket` basenames under `src` so
 the frozen CodeView debugger can map every source unambiguously. Package
-relocation and source/staged website checks are separate scripts. Exact evidence
-is recorded in `VALIDATION.md`; generated evidence stays under ignored `out/`.
+relocation and source/staged website checks are separate scripts. The website
+validator now checks all three pages, exactly six catalog cards, the complete
+verified package identity, local-only profile storage, nickname/avatar safety
+controls, the absence of password and network APIs, same-origin security policy,
+accessible focus/reduced-motion hooks, prohibited product claims, and Cloudflare
+file/asset ceilings. Browser interaction checks cover empty-name validation,
+invalid MIME and corrupt-image handling, profile persistence/navigation,
+desktop card geometry, package presentation, console errors, and 390px layouts.
+Exact evidence is recorded in `VALIDATION.md`; generated evidence stays under
+ignored `out/`.

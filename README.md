@@ -21,6 +21,10 @@ Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`, and `docs/PRO
 
 The scripts accept portable `-RocketRoot` and `-Rocketc` inputs; no machine-specific path is committed. See [building](docs/BUILDING.md), [testing](docs/TESTING.md), and [validation evidence](docs/VALIDATION.md).
 
-`website/` is the static product/download site. It is not a browser implementation of the Rocket casino.
+`website/` is the static three-page profile, native-game catalog, and verified
+download site. Its optional nickname/avatar profile is non-authenticated and
+stored only in browser `localStorage`; it does not create an online account or
+upload personal data. The site is not a browser implementation of the Rocket
+casino.
 
 No release has been pushed, published, deployed, or signed. Those actions require explicit owner approval.

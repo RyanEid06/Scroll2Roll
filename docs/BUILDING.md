@@ -77,4 +77,12 @@ building.
 .\scripts\test-website.ps1 -Site .\out\cloudflare-site
 ```
 
+If a local preview process has the default staged archive open, prepare and
+validate a fresh ignored sibling without interrupting that process:
+
+```powershell
+.\scripts\prepare-cloudflare-site.ps1 -Output .\out\cloudflare-site-validation
+.\scripts\test-website.ps1 -Site .\out\cloudflare-site-validation
+```
+
 Generated builds, packages, staged sites, dependencies, PDBs, maps, and user saves remain ignored.
