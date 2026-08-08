@@ -1,0 +1,97 @@
+pub enum Phase:
+    Ready
+    Betting
+    Settled
+
+pub enum Street:
+    Preflop
+    Flop
+    Turn
+    River
+    Showdown
+
+pub struct Card:
+    rank: Int
+    suit: Int
+
+pub struct HandRank:
+    category: Int
+    values: Array[Int]
+
+pub struct Player:
+    id: Int
+    name: String
+    is_human: Bool
+    stack: Int
+    hole: Array[Card]
+    folded: Bool
+    all_in: Bool
+    street_contribution: Int
+    total_contribution: Int
+    acted: Bool
+    can_raise: Bool
+    last_action: String
+
+pub struct Pot:
+    amount: Int
+    eligible: Array[Int]
+    winners: Array[Int]
+
+pub struct Settlement:
+    players: Array[Player]
+    pots: Array[Pot]
+
+pub struct Decision:
+    action: Int
+    target: Int
+
+pub struct Game:
+    players: Array[Player]
+    deck: Array[Card]
+    next_card: Int
+    community: Array[Card]
+    dealer: Int
+    small_blind_seat: Int
+    big_blind_seat: Int
+    active: Int
+    current_bet: Int
+    last_full_raise: Int
+    small_blind: Int
+    big_blind: Int
+    phase: Phase
+    street: Street
+    pots: Array[Pot]
+    action_history: Array[String]
+    hand_number: Int
+    seed: Int
+    message: String
+
+pub struct PublicPlayer:
+    id: Int
+    name: String
+    is_human: Bool
+    stack: Int
+    cards: Array[Card]
+    card_count: Int
+    folded: Bool
+    all_in: Bool
+    street_contribution: Int
+    total_contribution: Int
+    dealer: Bool
+    small_blind: Bool
+    big_blind: Bool
+    active: Bool
+    last_action: String
+
+pub struct PublicTable:
+    players: Array[PublicPlayer]
+    community: Array[Card]
+    phase_code: Int
+    street_code: Int
+    pot_total: Int
+    current_bet: Int
+    active: Int
+    message: String
+    action_history: Array[String]
+    pot_count: Int
+    split_pot: Bool

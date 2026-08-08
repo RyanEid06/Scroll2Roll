@@ -1,0 +1,85 @@
+import src.app.application
+import src.holdem.holdem_api
+import src.rocket_raylib
+import src.rocket_raylib_testing
+import std.collections
+import std.file
+import std.testing
+
+fn press(window: rocket_raylib.Window, key: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_key(key, true, false)
+    return application.step_for_test(state, window)
+
+fn click(window: rocket_raylib.Window, x: Int, y: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_mouse(x, y, true)
+    return application.step_for_test(state, window)
+
+fn finish_with_mouse(window: rocket_raylib.Window, source: application.State) -> application.State:
+    var state = source
+    var actions = 0
+    while holdem_api.phase_code(state.holdem) == 1 and actions < 20:
+        state = click(window, 725, 336, state)
+        actions = actions + 1
+    return state
+
+fn run() -> Result[Int, String]:
+    if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
+        return Ok(1)
+    let temporary = testing.temp_directory("scroll2roll-holdem-gui")?
+    let save_path = testing.fixture_path(temporary, "settings.s2r")?
+    match rocket_raylib.open_window(800, 600, "Hold'em scripted GUI"):
+        case Ok(window):
+            var state = application.initial_for_test(save_path)?
+            state = press(window, rocket_raylib.key_enter(), state)
+            state = click(window, 650, 420, state)
+            if state.screen != 8 or holdem_api.phase_code(state.holdem) != 0:
+                return Ok(2)
+            state = press(window, rocket_raylib.key_p(), state)
+            if not state.holdem_help:
+                return Ok(3)
+            application.draw_for_test(window, state)?
+            state = press(window, rocket_raylib.key_p(), state)
+            state = click(window, 680, 192, state)
+            if holdem_api.phase_code(state.holdem) != 1 or not holdem_api.human_turn(state.holdem):
+                return Ok(4)
+            let public = holdem_api.public_table(state.holdem)
+            if collections.length(public.players[0].cards) != 2 or collections.length(public.players[1].cards) != 0:
+                return Ok(5)
+            state = press(window, rocket_raylib.key_right(), state)
+            state = press(window, rocket_raylib.key_r(), state)
+            if state.error != "":
+                return Ok(6)
+            state = finish_with_mouse(window, state)
+            if holdem_api.phase_code(state.holdem) != 2 or not file.exists(save_path):
+                return Ok(7)
+            application.draw_for_test(window, state)?
+            state = click(window, 100, 558, state)
+            if state.holdem.game.hand_number != 2:
+                return Ok(8)
+            if holdem_api.phase_code(state.holdem) == 1:
+                state = press(window, rocket_raylib.key_h(), state)
+            if holdem_api.phase_code(state.holdem) == 1:
+                state = finish_with_mouse(window, state)
+            if holdem_api.phase_code(state.holdem) != 2:
+                return Ok(9)
+            state = click(window, 680, 500, state)
+            if holdem_api.phase_code(state.holdem) != 0 or state.holdem.game.players[0].stack != 1000:
+                return Ok(10)
+            state = click(window, 240, 558, state)
+            if state.screen != 1 or state.settings.play_balance != 1000:
+                return Ok(11)
+            let closed = rocket_raylib.close_window(window)
+            testing.cleanup_temp(temporary)?
+            if rocket_raylib_testing.buffer_live_count() != 0:
+                return Ok(12)
+            return Ok(0)
+        case Err(error):
+            return Err(error)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

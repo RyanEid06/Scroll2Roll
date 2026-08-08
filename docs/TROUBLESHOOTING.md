@@ -38,6 +38,14 @@ timber log beneath the player, and moving logs carry the player. Cash Out stays
 disabled until the first checkpoint. The fixed-tick guard caps long frames at
 eight simulation steps instead of allowing an unbounded catch-up loop.
 
+Hold'em enables actions only for the human turn. Check and Fold are mutually
+exclusive; a raise-to target must meet the displayed minimum unless it is the
+player's shorter all-in maximum. A short all-in can require another Call but
+does not reopen Raise for a player who already acted. Opponent cards remain
+hidden until a non-folded showdown, and folded cards are never exposed. If the
+human cannot cover the 10-credit big blind, choose New Table to explicitly
+restore every seat to the documented 1,000-credit play-money stack.
+
 ## Reporting a problem
 
 Record the version, the exact action sequence, and whether the problem occurs in the portable package or a development build. Never attach personal or sensitive data; Scroll2Roll does not need any.

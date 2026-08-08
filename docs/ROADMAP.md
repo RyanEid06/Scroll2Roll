@@ -22,7 +22,7 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
 - [x] Complete Plinko with audited row/risk expected-return tables.
 - [x] Complete the original Coop Climb step-and-cash-out game.
 - [x] Complete the original real-time Midnight Crossing arcade game.
-- [ ] Complete single-player No-Limit Texas Hold'em against 1-5 bounded AI
+- [x] Complete single-player No-Limit Texas Hold'em against 1-5 bounded AI
   opponents.
 - [ ] Revalidate all six games, Visual Studio, packaging, relocation, and the
   static Cloudflare product/download site for 0.2.0.

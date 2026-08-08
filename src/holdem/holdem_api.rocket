@@ -1,0 +1,117 @@
+import src.holdem.ai
+import src.holdem.engine
+import src.holdem.model
+import src.holdem.rules
+import std.collections
+
+pub struct Session:
+    game: model.Game
+
+pub fn new_session(starting_balance: Int, ai_count: Int, seed: Int) -> Result[Session, String]:
+    return Ok(Session(engine.new_game(starting_balance, ai_count, seed)?))
+
+pub fn phase_code(session: Session) -> Int:
+    return rules.phase_code(session.game.phase)
+
+pub fn street_code(session: Session) -> Int:
+    return rules.street_code(session.game.street)
+
+pub fn human_balance(session: Session) -> Int:
+    return session.game.players[0].stack
+
+pub fn human_turn(session: Session) -> Bool:
+    return phase_code(session) == 1 and session.game.active == 0
+
+pub fn call_amount(session: Session) -> Int:
+    if not human_turn(session):
+        return 0
+    return rules.call_amount(session.game, 0)
+
+pub fn minimum_target(session: Session) -> Int:
+    return rules.minimum_raise_target(session.game)
+
+pub fn maximum_target(session: Session) -> Int:
+    return rules.maximum_target(session.game, 0)
+
+pub fn can_action(session: Session, action: Int, target: Int) -> Bool:
+    if not human_turn(session):
+        return false
+    if action == 0:
+        return rules.can_fold(session.game, 0)
+    if action == 1:
+        return rules.can_check(session.game, 0)
+    if action == 2:
+        return rules.can_call(session.game, 0)
+    if action == 3:
+        return rules.can_raise_to(session.game, 0, target)
+    if action == 4:
+        return rules.can_all_in(session.game, 0)
+    return false
+
+pub fn with_ai_step(session: Session) -> Result[Session, String]:
+    if phase_code(session) != 1 or session.game.active < 0:
+        return Err("No Hold'em AI action is pending")
+    let decision = ai.decide(session.game, session.game.active)?
+    return Ok(Session(engine.act(session.game, decision.action, decision.target)?))
+
+pub fn with_run_until_human(session: Session) -> Result[Session, String]:
+    var result = session
+    var steps = 0
+    while phase_code(result) == 1 and not human_turn(result) and steps < 64:
+        result = with_ai_step(result)?
+        steps = steps + 1
+    if steps >= 64 and phase_code(result) == 1 and not human_turn(result):
+        return Err("Hold'em AI action guard reached its bound")
+    return Ok(result)
+
+pub fn with_deal(session: Session) -> Result[Session, String]:
+    return with_run_until_human(Session(engine.start_hand(session.game)?))
+
+pub fn with_human_action(session: Session, action: Int, target: Int) -> Result[Session, String]:
+    if not human_turn(session):
+        return Err("It is not the human Hold'em turn")
+    return with_run_until_human(Session(engine.act(session.game, action, target)?))
+
+pub fn with_next_hand(session: Session) -> Result[Session, String]:
+    return with_run_until_human(Session(engine.next_hand(session.game)?))
+
+pub fn with_reset_table(session: Session) -> Result[Session, String]:
+    return Ok(Session(engine.reset_table(session.game)?))
+
+fn visible_cards(game: model.Game, player: model.Player) -> Array[model.Card]:
+    if player.is_human:
+        return player.hole
+    if rules.phase_code(game.phase) == 2 and not player.folded:
+        return player.hole
+    let hidden: Array[model.Card] = []
+    return hidden
+
+fn settled_pot_total(game: model.Game) -> Int:
+    var total = 0
+    var index = 0
+    while index < collections.length(game.pots):
+        total = total + game.pots[index].amount
+        index = index + 1
+    return total
+
+fn has_split_pot(game: model.Game) -> Bool:
+    var index = 0
+    while index < collections.length(game.pots):
+        if collections.length(game.pots[index].winners) > 1:
+            return true
+        index = index + 1
+    return false
+
+pub fn public_table(session: Session) -> model.PublicTable:
+    let game = session.game
+    var players: Array[model.PublicPlayer] = []
+    var index = 0
+    while index < collections.length(game.players):
+        let source = game.players[index]
+        let cards_value = visible_cards(game, source)
+        players = collections.append(players, model.PublicPlayer(source.id, source.name, source.is_human, source.stack, cards_value, collections.length(source.hole), source.folded, source.all_in, source.street_contribution, source.total_contribution, index == game.dealer, index == game.small_blind_seat, index == game.big_blind_seat, index == game.active, source.last_action))
+        index = index + 1
+    var pot_total = rules.pot_total(game)
+    if rules.phase_code(game.phase) == 2:
+        pot_total = settled_pot_total(game)
+    return model.PublicTable(players, game.community, rules.phase_code(game.phase), rules.street_code(game.street), pot_total, game.current_bet, game.active, game.message, game.action_history, collections.length(game.pots), has_split_pot(game))

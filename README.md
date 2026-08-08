@@ -1,12 +1,12 @@
 # Scroll2Roll
 
-Scroll2Roll is a local, single-player, play-money Windows casino application written in Rocket 2.0. Blackjack, European Roulette, Plinko, Chicken presented as Coop Climb, and Cross the Road presented as Midnight Crossing are complete behind a reusable raylib-powered casino shell; the owner-approved 0.2.0 expansion continues with No-Limit Texas Hold'em.
+Scroll2Roll is a local, single-player, play-money Windows casino application written in Rocket 2.0. Blackjack, European Roulette, Plinko, Chicken presented as Coop Climb, Cross the Road presented as Midnight Crossing, and No-Limit Texas Hold'em are complete behind a reusable raylib-powered casino shell.
 
 The native application targets Windows x64. It has no accounts, deposits, withdrawals, purchases, cryptocurrency, online multiplayer, real-money wagering, or browser-playable claim. Virtual credits have no monetary value.
 
 ## Project status
 
-The version-0.1.0 master-plan baseline remains preserved. Version 0.2.0 is in active local development: European Roulette, audited 8-16-row Plinko, hidden-rung Coop Climb, and fixed-tick Midnight Crossing are fully playable with deterministic settlement, keyboard/mouse flows, and save-v1 migration to save-v2. The current 22-test suite passes, including every original Blackjack regression. The untouched original Blackjack draft remains under `legacy/Blackjack-v1`.
+The version-0.1.0 master-plan baseline remains preserved. Version 0.2.0 is in local acceptance: all six games are fully playable with deterministic settlement, keyboard/mouse flows, privacy-safe Hold'em opponents, and save-v1 migration to save-v2. The current 26-test suite passes, including every original Blackjack regression. The untouched original Blackjack draft remains under `legacy/Blackjack-v1`.
 
 Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`, and `docs/PROJECT_CONTEXT.md` before changing the project.
 

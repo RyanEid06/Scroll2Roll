@@ -1,0 +1,179 @@
+import src.holdem.cards
+import src.holdem.model
+import std.collections
+
+fn empty_counts() -> Array[Int]:
+    var result: Array[Int] = []
+    var index = 0
+    while index < 15:
+        result = collections.append(result, 0)
+        index = index + 1
+    return result
+
+fn descending_values(counts: Array[Int]) -> Array[Int]:
+    var result: Array[Int] = []
+    var rank = 14
+    while rank >= 2:
+        var copies = counts[rank]
+        while copies > 0:
+            result = collections.append(result, rank)
+            copies = copies - 1
+        rank = rank - 1
+    return result
+
+fn straight_high(counts: Array[Int]) -> Int:
+    var high = 14
+    while high >= 6:
+        if counts[high] > 0 and counts[high - 1] > 0 and counts[high - 2] > 0 and counts[high - 3] > 0 and counts[high - 4] > 0:
+            return high
+        high = high - 1
+    if counts[14] > 0 and counts[5] > 0 and counts[4] > 0 and counts[3] > 0 and counts[2] > 0:
+        return 5
+    return 0
+
+fn one(value: Int) -> Array[Int]:
+    let result: Array[Int] = [value]
+    return result
+
+pub fn evaluate_five(values: Array[model.Card]) -> Result[model.HandRank, String]:
+    if collections.length(values) != 5:
+        return Err("Five-card evaluation requires exactly five cards")
+    var counts = empty_counts()
+    var flush = true
+    let suit = values[0].suit
+    var index = 0
+    while index < 5:
+        let rank = cards.rank_value(values[index])
+        counts[rank] = counts[rank] + 1
+        if values[index].suit != suit:
+            flush = false
+        index = index + 1
+    let straight = straight_high(counts)
+    if flush and straight > 0:
+        return Ok(model.HandRank(8, one(straight)))
+    var four = 0
+    var first_three = 0
+    var second_three = 0
+    var first_pair = 0
+    var second_pair = 0
+    var rank = 14
+    while rank >= 2:
+        if counts[rank] == 4:
+            four = rank
+        if counts[rank] == 3:
+            if first_three == 0:
+                first_three = rank
+            else:
+                second_three = rank
+        if counts[rank] == 2:
+            if first_pair == 0:
+                first_pair = rank
+            else:
+                if second_pair == 0:
+                    second_pair = rank
+        rank = rank - 1
+    if four > 0:
+        var result: Array[Int] = [four]
+        rank = 14
+        while rank >= 2:
+            if counts[rank] == 1:
+                result = collections.append(result, rank)
+            rank = rank - 1
+        return Ok(model.HandRank(7, result))
+    var house_pair = first_pair
+    if second_three > 0:
+        house_pair = second_three
+    if first_three > 0 and house_pair > 0:
+        let result: Array[Int] = [first_three, house_pair]
+        return Ok(model.HandRank(6, result))
+    if flush:
+        return Ok(model.HandRank(5, descending_values(counts)))
+    if straight > 0:
+        return Ok(model.HandRank(4, one(straight)))
+    if first_three > 0:
+        var result: Array[Int] = [first_three]
+        rank = 14
+        while rank >= 2:
+            if counts[rank] == 1:
+                result = collections.append(result, rank)
+            rank = rank - 1
+        return Ok(model.HandRank(3, result))
+    if first_pair > 0 and second_pair > 0:
+        var result: Array[Int] = [first_pair, second_pair]
+        rank = 14
+        while rank >= 2:
+            if counts[rank] == 1:
+                result = collections.append(result, rank)
+            rank = rank - 1
+        return Ok(model.HandRank(2, result))
+    if first_pair > 0:
+        var result: Array[Int] = [first_pair]
+        rank = 14
+        while rank >= 2:
+            if counts[rank] == 1:
+                result = collections.append(result, rank)
+            rank = rank - 1
+        return Ok(model.HandRank(1, result))
+    return Ok(model.HandRank(0, descending_values(counts)))
+
+pub fn compare(left: model.HandRank, right: model.HandRank) -> Int:
+    if left.category > right.category:
+        return 1
+    if left.category < right.category:
+        return -1
+    var index = 0
+    let left_length = collections.length(left.values)
+    let right_length = collections.length(right.values)
+    while index < left_length and index < right_length:
+        if left.values[index] > right.values[index]:
+            return 1
+        if left.values[index] < right.values[index]:
+            return -1
+        index = index + 1
+    return 0
+
+pub fn evaluate(values: Array[model.Card]) -> Result[model.HandRank, String]:
+    let length = collections.length(values)
+    if length < 5 or length > 7:
+        return Err("Hold'em evaluation requires five to seven cards")
+    let initial: Array[model.Card] = [values[0], values[1], values[2], values[3], values[4]]
+    var best = evaluate_five(initial)?
+    var a = 0
+    while a < length - 4:
+        var b = a + 1
+        while b < length - 3:
+            var c = b + 1
+            while c < length - 2:
+                var d = c + 1
+                while d < length - 1:
+                    var e = d + 1
+                    while e < length:
+                        let five: Array[model.Card] = [values[a], values[b], values[c], values[d], values[e]]
+                        let candidate = evaluate_five(five)?
+                        if compare(candidate, best) > 0:
+                            best = candidate
+                        e = e + 1
+                    d = d + 1
+                c = c + 1
+            b = b + 1
+        a = a + 1
+    return Ok(best)
+
+pub fn category_name(category: Int) -> String:
+    if category == 8:
+        return "Straight Flush"
+    if category == 7:
+        return "Four of a Kind"
+    if category == 6:
+        return "Full House"
+    if category == 5:
+        return "Flush"
+    if category == 4:
+        return "Straight"
+    if category == 3:
+        return "Three of a Kind"
+    if category == 2:
+        return "Two Pair"
+    if category == 1:
+        return "One Pair"
+    return "High Card"

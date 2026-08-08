@@ -105,6 +105,35 @@ baseline for every game milestone in `EXPANSION_PLAN.md`.
   four prior complete games. No package publication or deployment was
   performed.
 
+## Expansion milestone E5 - No-Limit Texas Hold'em
+
+- `holdem_cards_evaluator_test.rocket` verifies a unique standard 52-card deck,
+  deterministic Fisher-Yates shuffling, all nine categories, category-specific
+  tiebreaks, wheel straights, seven-card best-hand selection, ties, and the
+  canonical category counts across all 2,598,960 five-card combinations.
+- `holdem_betting_test.rocket` verifies the 1-5-AI table bounds, heads-up and
+  multiway blind/action order, checks, calls, folds, opening bets, full raises,
+  minimum targets, short all-ins, non-reopening and later full reopening,
+  street advancement, uncontested settlement, and chip conservation.
+- `holdem_pots_ai_privacy_test.rocket` verifies contribution-tier main and side
+  pots, folded contributions, split ties, clockwise odd chips, an explicit
+  reset/rebuy, deterministic complete one- and five-rival hands, opponent-card
+  privacy, folded-card privacy, consecutive hands, bounded AI, and table chip
+  conservation.
+- `holdem_gui_flow_test.rocket` runs at the 800x600 minimum and verifies sixth-
+  tile routing, complete help, private/public card rendering, keyboard sizing,
+  raise and all-in, mouse Deal and Check/Call, two complete hands, disabled
+  actions, settlement persistence, explicit new table, lobby return, and native
+  resource cleanup.
+- The complete Rocket suite passes 26/26 with all 22 prior Blackjack,
+  infrastructure, Roulette, Plinko, Coop Climb, and Midnight Crossing
+  regressions preserved.
+- Debug and Release `scripts/validate.ps1` each pass the native build,
+  `rocketc check`, all 26 tests, and both formatting checks after complete
+  Hold'em integration.
+- Source website validation passes with all six implemented games claimed. No
+  package publication or deployment was performed.
+
 ## Visual Studio Community 2026
 
 The installed Rocket Language 2.0.3 extension was exercised from this repository with `src/main.rocket` active:

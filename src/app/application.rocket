@@ -2,6 +2,7 @@ import src.app.blackjack_view
 import src.app.chicken_view
 import src.app.components
 import src.app.crossing_view
+import src.app.holdem_view
 import src.app.plinko_view
 import src.app.registry
 import src.app.roulette_view
@@ -10,6 +11,7 @@ import src.blackjack.engine
 import src.blackjack.model
 import src.chicken.chicken_api
 import src.crossing.crossing_api
+import src.holdem.holdem_api
 import src.persistence
 import src.plinko.plinko_api
 import src.roulette.api
@@ -43,13 +45,21 @@ pub struct State:
     crossing: crossing_api.Session
     crossing_help: Bool
     crossing_accumulator: Float
+    holdem: holdem_api.Session
+    holdem_help: Bool
+    holdem_target: Int
 
 fn rebuild(state: State, screen: Int, game: model.Game, selected_bet: Int, settings: persistence.Settings, notice: String, error: String, exit_prompt: Bool, running: Bool, next_step: Float, saved_round: Int) -> State:
-    return State(screen, game, state.roulette, selected_bet, settings, state.save_path, notice, error, exit_prompt, running, next_step, saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator)
+    return State(screen, game, state.roulette, selected_bet, settings, state.save_path, notice, error, exit_prompt, running, next_step, saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target)
 
 fn new_table(settings: persistence.Settings, seed: Int) -> Result[model.Game, String]:
     let game = engine.new_game("Player", settings.play_balance, settings.ai_count, seed)?
     return engine.set_bet(game, 0, game.rules.minimum_bet)
+
+fn holdem_ai_count(settings: persistence.Settings) -> Int:
+    if settings.ai_count < 1:
+        return 1
+    return settings.ai_count
 
 fn initial(settings: persistence.Settings, save_path: String, notice: String) -> Result[State, String]:
     let game = new_table(settings, 20260808)?
@@ -57,7 +67,8 @@ fn initial(settings: persistence.Settings, save_path: String, notice: String) ->
     let plinko = plinko_api.new_session(settings.play_balance, 20260810)?
     let chicken = chicken_api.new_session(settings.play_balance, 20260811)?
     let crossing = crossing_api.new_session(settings.play_balance, 20260812)?
-    return Ok(State(0, game, roulette, game.rules.minimum_bet, settings, save_path, notice, "", false, true, 0.0, 0, 0, 0, false, 0.0, plinko, false, 0, 0.0, chicken, false, crossing, false, 0.0))
+    let holdem = holdem_api.new_session(settings.play_balance, holdem_ai_count(settings), 20260813)?
+    return Ok(State(0, game, roulette, game.rules.minimum_bet, settings, save_path, notice, "", false, true, 0.0, 0, 0, 0, false, 0.0, plinko, false, 0, 0.0, chicken, false, crossing, false, 0.0, holdem, false, 10))
 
 fn save_settings(state: State, settings: persistence.Settings) -> State:
     match persistence.save(state.save_path, settings):
@@ -70,31 +81,37 @@ fn with_game(state: State, game: model.Game, next_step: Float) -> State:
     return rebuild(state, state.screen, game, state.selected_bet, state.settings, state.notice, "", state.exit_prompt, state.running, next_step, state.saved_round)
 
 fn with_roulette(state: State, session: api.Session, spin_end: Float) -> State:
-    return State(state.screen, state.game, session, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator)
+    return State(state.screen, state.game, session, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target)
 
 fn roulette_focus(state: State, kind: Int, target: Int) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, kind, target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, kind, target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target)
 
 fn roulette_help(state: State, visible: Bool) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, visible, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, visible, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target)
 
 fn with_plinko(state: State, session: plinko_api.Session, stage: Int, next_step: Float) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, session, state.plinko_help, stage, next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, session, state.plinko_help, stage, next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target)
 
 fn plinko_help(state: State, visible: Bool) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, visible, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, visible, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target)
 
 fn with_chicken(state: State, session: chicken_api.Session) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, session, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, session, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target)
 
 fn chicken_help(state: State, visible: Bool) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, visible, state.crossing, state.crossing_help, state.crossing_accumulator)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, visible, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target)
 
 fn with_crossing(state: State, session: crossing_api.Session, accumulator: Float) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, session, state.crossing_help, accumulator)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, session, state.crossing_help, accumulator, state.holdem, state.holdem_help, state.holdem_target)
 
 fn crossing_help(state: State, visible: Bool) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, visible, state.crossing_accumulator)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, visible, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target)
+
+fn with_holdem(state: State, session: holdem_api.Session, target: Int) -> State:
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, session, state.holdem_help, target)
+
+fn holdem_help(state: State, visible: Bool) -> State:
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, visible, state.holdem_target)
 
 fn with_error(state: State, error: String) -> State:
     return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, error, state.exit_prompt, state.running, state.next_step, state.saved_round)
@@ -138,6 +155,14 @@ fn enter_crossing(state: State, seed: Int) -> State:
         case Err(error):
             return with_error(state, error)
 
+fn enter_holdem(state: State, seed: Int) -> State:
+    match holdem_api.new_session(state.settings.play_balance, holdem_ai_count(state.settings), seed):
+        case Ok(session):
+            let entered = rebuild(state, 8, state.game, state.selected_bet, state.settings, "No-Limit Hold'em table ready", "", false, true, state.next_step, state.saved_round)
+            return with_holdem(entered, session, 10)
+        case Err(error):
+            return with_error(state, error)
+
 fn route_game(state: State, index: Int) -> State:
     if index == 0 and registry.available(index):
         return enter_game(state, 20260808 + index)
@@ -149,6 +174,8 @@ fn route_game(state: State, index: Int) -> State:
         return enter_chicken(state, 20260808 + index)
     if index == 4 and registry.available(index):
         return enter_crossing(state, 20260808 + index)
+    if index == 5 and registry.available(index):
+        return enter_holdem(state, 20260808 + index)
     return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, "That game is a future placeholder", "", state.exit_prompt, state.running, state.next_step, state.saved_round)
 
 fn change_bet(state: State, delta: Int) -> State:
@@ -801,6 +828,106 @@ fn update_crossing(state: State, window: rocket_raylib.Window, clicked: Bool, mo
             return crossing_return_to_lobby(state)
     return state
 
+fn holdem_target_for(session: holdem_api.Session, requested: Int) -> Int:
+    if not holdem_api.human_turn(session):
+        return 10
+    let minimum = holdem_api.minimum_target(session)
+    let maximum = holdem_api.maximum_target(session)
+    var target = requested
+    if target < minimum:
+        target = minimum
+    if target > maximum:
+        target = maximum
+    return target
+
+fn holdem_save_settlement(state: State, session: holdem_api.Session) -> State:
+    let settings = persistence.with_balance(state.settings, holdem_api.human_balance(session))
+    return save_settings(with_holdem(state, session, holdem_target_for(session, state.holdem_target)), settings)
+
+fn holdem_deal(state: State) -> State:
+    match holdem_api.with_deal(state.holdem):
+        case Ok(session):
+            return with_holdem(state, session, holdem_target_for(session, 20))
+        case Err(error):
+            return with_error(state, error)
+
+fn holdem_action(state: State, action: Int) -> State:
+    var target = 0
+    if action == 3:
+        target = state.holdem_target
+    match holdem_api.with_human_action(state.holdem, action, target):
+        case Ok(session):
+            if holdem_api.phase_code(session) == 2:
+                return holdem_save_settlement(state, session)
+            return with_holdem(state, session, holdem_target_for(session, state.holdem_target))
+        case Err(error):
+            return with_error(state, error)
+
+fn holdem_change_target(state: State, delta: Int) -> State:
+    return with_holdem(state, state.holdem, holdem_target_for(state.holdem, state.holdem_target + delta))
+
+fn holdem_reset(state: State) -> State:
+    match holdem_api.with_reset_table(state.holdem):
+        case Ok(session):
+            let settings = persistence.with_balance(state.settings, holdem_api.human_balance(session))
+            return save_settings(with_holdem(state, session, 10), settings)
+        case Err(error):
+            return with_error(state, error)
+
+fn holdem_next(state: State) -> State:
+    match holdem_api.with_next_hand(state.holdem):
+        case Ok(session):
+            if holdem_api.phase_code(session) == 2:
+                return holdem_save_settlement(state, session)
+            return with_holdem(state, session, holdem_target_for(session, 20))
+        case Err(error):
+            return with_error(state, error)
+
+fn holdem_return_to_lobby(state: State) -> State:
+    if holdem_api.phase_code(state.holdem) == 1:
+        return with_error(state, "Finish the active Hold'em hand before returning")
+    let settings = persistence.with_balance(state.settings, holdem_api.human_balance(state.holdem))
+    return save_settings(rebuild(state, 1, state.game, state.selected_bet, settings, "Hold'em progress saved; welcome back", "", false, true, state.next_step, state.saved_round), settings)
+
+fn update_holdem(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int) -> State:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(holdem_view.help_rect(width), mouse_x, mouse_y):
+        return holdem_help(state, not state.holdem_help)
+    if state.holdem_help:
+        return state
+    let phase = holdem_api.phase_code(state.holdem)
+    if phase == 0:
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(holdem_view.deal_rect(width), mouse_x, mouse_y):
+            return holdem_deal(state)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(holdem_view.reset_rect(width), mouse_x, mouse_y):
+            return holdem_reset(state)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(holdem_view.lobby_rect(height), mouse_x, mouse_y):
+            return holdem_return_to_lobby(state)
+    if phase == 1 and holdem_api.human_turn(state.holdem):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(holdem_view.target_minus_rect(width), mouse_x, mouse_y):
+            return holdem_change_target(state, -10)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(holdem_view.target_plus_rect(width), mouse_x, mouse_y):
+            return holdem_change_target(state, 10)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_d()) or clicked and components.contains(holdem_view.fold_rect(width), mouse_x, mouse_y):
+            return holdem_action(state, 0)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(holdem_view.call_rect(width), mouse_x, mouse_y):
+            if holdem_api.call_amount(state.holdem) > 0:
+                return holdem_action(state, 2)
+            return holdem_action(state, 1)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(holdem_view.raise_rect(width), mouse_x, mouse_y):
+            return holdem_action(state, 3)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()) or clicked and components.contains(holdem_view.all_in_rect(width), mouse_x, mouse_y):
+            return holdem_action(state, 4)
+    if phase == 2:
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(holdem_view.next_rect(height), mouse_x, mouse_y):
+            return holdem_next(state)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(holdem_view.reset_rect(width), mouse_x, mouse_y):
+            return holdem_reset(state)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(holdem_view.lobby_rect(height), mouse_x, mouse_y):
+            return holdem_return_to_lobby(state)
+    return state
+
 fn update(state: State, window: rocket_raylib.Window) -> State:
     let clicked = rocket_raylib.is_mouse_pressed(window, rocket_raylib.mouse_left())
     let mouse_x = rocket_raylib.mouse_x(window)
@@ -832,6 +959,8 @@ fn update(state: State, window: rocket_raylib.Window) -> State:
         return update_chicken(state, window, clicked, mouse_x, mouse_y)
     if state.screen == 7:
         return update_crossing(state, window, clicked, mouse_x, mouse_y)
+    if state.screen == 8:
+        return update_holdem(state, window, clicked, mouse_x, mouse_y)
     return update_settings(state, window, clicked, mouse_x, mouse_y)
 
 fn draw_startup(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
@@ -910,6 +1039,13 @@ fn draw(window: rocket_raylib.Window, state: State) -> Result[Bool, String]:
         chicken_view.draw(window, frame, state.chicken.game, state.chicken_help, mouse_x, mouse_y)?
     if state.screen == 7:
         crossing_view.draw(window, frame, state.crossing.game, state.crossing_help, mouse_x, mouse_y)?
+    if state.screen == 8:
+        let table = holdem_api.public_table(state.holdem)
+        let can_fold = holdem_api.can_action(state.holdem, 0, 0)
+        let can_call_check = holdem_api.can_action(state.holdem, 1, 0) or holdem_api.can_action(state.holdem, 2, 0)
+        let can_raise = holdem_api.can_action(state.holdem, 3, state.holdem_target)
+        let can_all_in = holdem_api.can_action(state.holdem, 4, 0)
+        holdem_view.draw(window, frame, table, state.holdem_target, can_fold, can_call_check, can_raise, can_all_in, state.holdem_help, mouse_x, mouse_y)?
     if state.error != "":
         components.modal(window, frame, "Something needs attention", state.error)?
     if state.exit_prompt:
@@ -943,7 +1079,8 @@ fn event_sound(previous: State, current: State, sound: rocket_raylib.Sound, audi
     let plinko_changed = previous.plinko.game.message != current.plinko.game.message
     let chicken_changed = previous.chicken.game.message != current.chicken.game.message
     let crossing_changed = previous.crossing.game.message != current.crossing.game.message
-    if audio_ready and current.settings.audio_enabled and(blackjack_changed or roulette_changed or plinko_changed or chicken_changed or crossing_changed):
+    let holdem_changed = previous.holdem.game.message != current.holdem.game.message
+    if audio_ready and current.settings.audio_enabled and(blackjack_changed or roulette_changed or plinko_changed or chicken_changed or crossing_changed or holdem_changed):
         let volume = rocket_raylib.set_sound_volume(sound, volume_value(current.settings.volume_percent))
         let played = rocket_raylib.play_sound(sound)
     return true

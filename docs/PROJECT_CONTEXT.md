@@ -25,9 +25,9 @@ The owner has approved the 0.2.0 expansion defined in
 `EXPANSION_PLAN.md`: European Roulette, Plinko, Chicken (presented as the
 original Coop Climb), Cross the Road (presented as the original real-time
 Midnight Crossing), and single-player No-Limit Texas Hold'em, implemented in
-that order. European Roulette, Plinko, Chicken, Cross the Road, and the save-v2
-foundation are complete. Hold'em remains. All five games must be complete
-before final 0.2.0 acceptance.
+that order. European Roulette, Plinko, Chicken, Cross the Road, Hold'em, and the
+save-v2 foundation are complete. All five expansion games must pass their final
+milestone and release-acceptance gates before 0.2.0 is accepted.
 
 ## Explicit non-goals
 
@@ -50,7 +50,7 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
 - A modular rendering-independent Blackjack engine implements checked cards, exact hand values, a deterministic six-deck shoe, cut-card reshuffling, table limits, player/AI betting, legal actions, Hit, Stand, Double Down, Split, Double After Split, a four-hand maximum, split-Ace one-card behavior, no standard resplit, Late Surrender, dealer stand on soft 17, naturals, exact 3:2 settlement, and deterministic AI/basic-strategy progression.
 - Complete and consecutive rounds have bounded transitions and nonnegative play-money balances.
 - A small `src/blackjack/api.rocket` facade is the only rules boundary used by the visual table.
-- The raylib application implements startup, reusable lobby routing, settings, exit confirmation, keyboard/mouse controls, playable Blackjack, Roulette, Plinko, Coop Climb, and Midnight Crossing tables, an honest Poker future placeholder, zero-to-five AI players, disabled illegal actions, outcomes, next round, restart, and lobby return.
+- The raylib application implements startup, reusable lobby routing, settings, exit confirmation, keyboard/mouse controls, playable Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, and No-Limit Hold'em tables, zero-to-five AI settings, disabled illegal actions, outcomes, next round/hand, restart/reset, and lobby return.
 - Versioned local persistence stores display/audio preferences, AI count, first-run state, and approved play-money progress at `%LOCALAPPDATA%\Scroll2Roll\settings.s2r`, with safe missing/invalid/older-data recovery.
 - The static website and Cloudflare Pages staging flow are implemented without claiming browser play.
 - Release packaging includes the native executable, version, notices, controls, troubleshooting, and checksums, and passes relocated headless smoke validation.
@@ -83,13 +83,22 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
   movement; collision/support; pause; checkpoints; difficulty; cash-out; and
   five-checkpoint completion. Keyboard and mouse timing determine the result.
   `MIDNIGHT_CROSSING_DESIGN.md` publishes the simulation and payout contract.
+- Single-player No-Limit Texas Hold'em is fully playable with one human and
+  1-5 deterministic recreational AI rivals. Its rendering-independent engine
+  owns a checked 52-card deck, deterministic Fisher-Yates shuffle, heads-up and
+  multiway blinds/order, four betting streets, complete no-limit actions,
+  minimum/full/short-all-in reopening rules, best-five-of-seven evaluation,
+  contribution-tier main/side/split pots, clockwise odd chips, eliminations,
+  explicit table reset, bounded AI, and chip conservation. Its API hides
+  opponent cards until a non-folded showdown and never exposes folded cards to
+  the view. `HOLDEM_DESIGN.md` publishes the full contract.
 
 ## Architecture
 
 Dependency direction is one way:
 
 1. Per-game model values and validated rule constructors.
-2. Rendering-independent Blackjack, Roulette, Plinko, Coop Climb, and Midnight Crossing engines and settlement.
+2. Rendering-independent Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, and Hold'em engines and settlement.
 3. Small presentation-facing APIs and sessions.
 4. Versioned local persistence isolated from rules.
 5. Reusable router, design tokens, components, lobby, settings, and per-game views.
@@ -130,13 +139,21 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
 - Debug and Release milestone-E4 validation each pass the native build,
   `rocketc check`, all 22 tests, and both formatting checks. Source website
   validation also passes with only implemented games claimed.
+- The complete post-Hold'em Rocket suite passes 26/26, preserving all 22 prior
+  regressions and adding exhaustive five-card category counts, focused
+  seven-card/tie evaluation, blinds/action/reopening rules, main/side/split/odd
+  pots, deterministic one-to-five-rival AI, privacy, chip conservation,
+  consecutive hands, and minimum-size keyboard/mouse GUI coverage.
+- Debug and Release milestone-E5 validation each pass the native build,
+  `rocketc check`, all 26 tests, and both formatting checks. Source website
+  validation also passes with all six implemented games claimed.
 
 ## Deliberate limitations
 
 - Version 0.1.0 is unsigned. Windows may show an unknown-publisher warning; trusted code signing is not claimed.
 - The game is local-only and play-money-only. Credits are not transferable and have no cash value.
-- Poker remains a noninteractive future placeholder until its mandated final
-  game milestone.
+- Hold'em AI is intentionally described as deterministic recreational play,
+  not professional, adaptive, online, or unbeatable poker.
 - The packaged application uses procedural UI art and a short generated tone; it does not ship a screenshot-baseline suite or external art/audio catalog.
 - The frozen Rocket debugger represented the scalar `status` local during acceptance; managed locals such as the argument array may display as unavailable in the native debugger.
 - The frozen LSP's formatter is exposed through its `source.format.rocket` code-action contract and the reproducible `rocketc fmt` workflow; Visual Studio's generic `Edit.FormatDocument` command is not advertised for Rocket documents.
@@ -178,11 +195,15 @@ Spacing, typography, component states, borders, timing, and responsive layout va
   Midnight Crossing, including deterministic fixed-tick simulation, real-time
   hazards and log support, checkpoints, complete UI, focused tests, and Debug
   and Release regression gates.
-- Current: expansion milestone E5, single-player No-Limit Texas Hold'em.
-- Next: implement cards and deterministic shuffling, the best-five-of-seven
-  evaluator, betting/action-order rules, contribution-tier side pots,
-  deterministic legal AI, private-card presentation, complete UI and focused
-  tests, then run the full Debug/Release regression gate.
+- Completed: expansion milestone E5, single-player No-Limit Texas Hold'em,
+  including cards/evaluator, complete no-limit betting, contribution-tier pots,
+  deterministic AI, privacy API, full UI, focused tests, and Debug/Release
+  regression gates.
+- Current: expansion milestone E6, final 0.2.0 release acceptance.
+- Next: checkpoint E5, then revalidate all six games, Visual Studio workflows,
+  packaging and sanitized relocation, the source/staged static website, final
+  documentation, ignored artifacts, and the clean local handoff without any
+  push, publication, deployment, signing, or external tester claim.
 
 ## Major decisions
 
@@ -206,7 +227,7 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 
 Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`, and this file
 completely. Inspect Git status and preserve user changes. The 0.1.0 Blackjack
-baseline remains preserved and the post-Midnight-Crossing suite passes 22/22. Continue from **Milestones**
+baseline remains preserved and the post-Hold'em suite passes 26/26. Continue from **Milestones**
 in the exact approved game order. Use frozen Rocket 2.0 and the pinned raylib
 integration, rerun all prior tests at every game gate, update this handoff, make
 logical local commits, and do not push, publish, deploy, sign, or add an

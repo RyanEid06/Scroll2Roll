@@ -1,0 +1,100 @@
+import src.holdem.model
+import std.collections
+
+pub fn minimum_players() -> Int:
+    return 2
+
+pub fn maximum_players() -> Int:
+    return 6
+
+pub fn default_stack() -> Int:
+    return 1000
+
+pub fn small_blind() -> Int:
+    return 5
+
+pub fn big_blind() -> Int:
+    return 10
+
+pub fn phase_code(phase: model.Phase) -> Int:
+    match phase:
+        case model.Ready:
+            return 0
+        case model.Betting:
+            return 1
+        case model.Settled:
+            return 2
+
+pub fn street_code(street: model.Street) -> Int:
+    match street:
+        case model.Preflop:
+            return 0
+        case model.Flop:
+            return 1
+        case model.Turn:
+            return 2
+        case model.River:
+            return 3
+        case model.Showdown:
+            return 4
+
+pub fn call_amount(game: model.Game, seat: Int) -> Int:
+    let needed = game.current_bet - game.players[seat].street_contribution
+    if needed <= 0:
+        return 0
+    if needed > game.players[seat].stack:
+        return game.players[seat].stack
+    return needed
+
+pub fn maximum_target(game: model.Game, seat: Int) -> Int:
+    return game.players[seat].street_contribution + game.players[seat].stack
+
+pub fn minimum_raise_target(game: model.Game) -> Int:
+    if game.current_bet == 0:
+        return game.big_blind
+    return game.current_bet + game.last_full_raise
+
+pub fn live_count(game: model.Game) -> Int:
+    var count = 0
+    var index = 0
+    while index < collections.length(game.players):
+        if not game.players[index].folded:
+            count = count + 1
+        index = index + 1
+    return count
+
+pub fn actionable(player: model.Player) -> Bool:
+    return not player.folded and not player.all_in and player.stack > 0
+
+pub fn can_check(game: model.Game, seat: Int) -> Bool:
+    return phase_code(game.phase) == 1 and game.active == seat and actionable(game.players[seat]) and call_amount(game, seat) == 0
+
+pub fn can_call(game: model.Game, seat: Int) -> Bool:
+    return phase_code(game.phase) == 1 and game.active == seat and actionable(game.players[seat]) and call_amount(game, seat) > 0
+
+pub fn can_fold(game: model.Game, seat: Int) -> Bool:
+    return can_call(game, seat)
+
+pub fn can_raise_to(game: model.Game, seat: Int, target: Int) -> Bool:
+    if phase_code(game.phase) != 1 or game.active != seat or not actionable(game.players[seat]) or not game.players[seat].can_raise:
+        return false
+    let maximum = maximum_target(game, seat)
+    if target <= game.current_bet or target > maximum:
+        return false
+    return target >= minimum_raise_target(game) or target == maximum
+
+pub fn can_all_in(game: model.Game, seat: Int) -> Bool:
+    if phase_code(game.phase) != 1 or game.active != seat or not actionable(game.players[seat]):
+        return false
+    let target = maximum_target(game, seat)
+    if target <= game.current_bet:
+        return true
+    return game.players[seat].can_raise
+
+pub fn pot_total(game: model.Game) -> Int:
+    var total = 0
+    var index = 0
+    while index < collections.length(game.players):
+        total = total + game.players[index].total_contribution
+        index = index + 1
+    return total

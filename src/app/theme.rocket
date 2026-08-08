@@ -48,6 +48,15 @@ pub fn card_light() -> rocket_raylib.Color:
 pub fn card_dark() -> rocket_raylib.Color:
     return rocket_raylib.color(20, 28, 43, 255)
 
+pub fn card_back() -> rocket_raylib.Color:
+    return rocket_raylib.color(79, 36, 110, 255)
+
+pub fn felt() -> rocket_raylib.Color:
+    return rocket_raylib.color(8, 91, 67, 255)
+
+pub fn felt_inner() -> rocket_raylib.Color:
+    return rocket_raylib.color(6, 71, 55, 255)
+
 pub fn overlay() -> rocket_raylib.Color:
     return rocket_raylib.color(0, 0, 0, 190)
 

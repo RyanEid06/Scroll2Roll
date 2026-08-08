@@ -12,7 +12,7 @@ pub fn name(index: Int) -> String:
         return "Coop Climb"
     if index == 4:
         return "Midnight Crossing"
-    return "Poker"
+    return "Hold'em"
 
 pub fn description(index: Int) -> String:
     if index == 0:
@@ -25,7 +25,7 @@ pub fn description(index: Int) -> String:
         return "Hidden-rung cash-out climb"
     if index == 4:
         return "Real-time traffic and canals"
-    return "Future game - not installed"
+    return "No-limit table with 1-5 rivals"
 
 pub fn available(index: Int) -> Bool:
-    return index >= 0 and index <= 4
+    return index >= 0 and index <= 5

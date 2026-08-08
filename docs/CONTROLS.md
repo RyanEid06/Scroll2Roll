@@ -88,6 +88,24 @@ Forward movement reaches checkpoints; sideways/backward movement is defensive
 and does not farm score. Cars/trams collide, canal lanes require logs, and logs
 carry the player on engine ticks. See `MIDNIGHT_CROSSING_DESIGN.md`.
 
+## No-Limit Texas Hold'em
+
+- `Enter`: deal while ready; Check or Call on the human turn.
+- `D`: Fold when facing a wager.
+- `Left` / `Right`: decrease or increase the raise-to target by 10 credits.
+- `R`: Bet/Raise to the displayed legal target; start an explicit new table
+  while ready or settled.
+- `H`: move All-in when legal.
+- `P`: open or close complete rules, pot, privacy, and AI help.
+- `N`: deal the next hand after settlement.
+- `B` / `Escape`: return to the lobby only while ready or settled.
+- Mouse: use Deal, sizing, Fold, Check/Call, Bet/Raise, All-in, Next, New Table,
+  Help, and Lobby controls.
+
+Blinds are 5/10. The table shows dealer/blind markers, private human cards,
+hidden opponent cards, community cards, contribution-tier pots, split state,
+recent actions, stacks, and disabled illegal actions. See `HOLDEM_DESIGN.md`.
+
 ## Settings
 
 - `M`: toggle audio.

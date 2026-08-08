@@ -1,0 +1,65 @@
+import src.holdem.model
+import std.collections
+import std.random
+import std.string
+
+pub fn create(rank: Int, suit: Int) -> Result[model.Card, String]:
+    if rank < 1 or rank > 13:
+        return Err("Hold'em card rank must be between 1 and 13")
+    if suit < 0 or suit > 3:
+        return Err("Hold'em card suit must be between 0 and 3")
+    return Ok(model.Card(rank, suit))
+
+pub fn ordered() -> Array[model.Card]:
+    var result: Array[model.Card] = []
+    var suit = 0
+    while suit < 4:
+        var rank = 1
+        while rank <= 13:
+            result = collections.append(result, model.Card(rank, suit))
+            rank = rank + 1
+        suit = suit + 1
+    return result
+
+pub fn shuffled(seed: Int) -> Array[model.Card]:
+    random.seed(seed)
+    var result = ordered()
+    var index = collections.length(result) - 1
+    while index > 0:
+        let other = random.int(0, index + 1)
+        let temporary = result[index]
+        result[index] = result[other]
+        result[other] = temporary
+        index = index - 1
+    return result
+
+pub fn rank_value(card: model.Card) -> Int:
+    if card.rank == 1:
+        return 14
+    return card.rank
+
+pub fn rank_name(rank: Int) -> String:
+    if rank == 1:
+        return "A"
+    if rank == 11:
+        return "J"
+    if rank == 12:
+        return "Q"
+    if rank == 13:
+        return "K"
+    return string.from_int(rank)
+
+pub fn suit_name(suit: Int) -> String:
+    if suit == 0:
+        return "S"
+    if suit == 1:
+        return "H"
+    if suit == 2:
+        return "D"
+    return "C"
+
+pub fn name(card: model.Card) -> String:
+    return string.concat(rank_name(card.rank), suit_name(card.suit))
+
+pub fn is_red(card: model.Card) -> Bool:
+    return card.suit == 1 or card.suit == 2

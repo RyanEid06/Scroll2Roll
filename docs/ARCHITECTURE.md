@@ -21,7 +21,7 @@ Circular imports, duplicated visual rules, machine-specific paths, and C++ appli
 - `src/rocket_raylib.rocket`: safe Rocket graphics/input/audio boundary.
 - `native/rocket_raylib_adapter.*`: primitive ABI and resource-token policy only.
 
-`src/app/registry.rocket` is the shell's routing boundary. Blackjack, European Roulette, Plinko, Coop Climb, and Midnight Crossing are registered as available; Poker remains an honest future placeholder until its mandated milestone. Adding a game does not require rewriting startup, lobby, settings, persistence, or common controls.
+`src/app/registry.rocket` is the shell's routing boundary. Blackjack, European Roulette, Plinko, Coop Climb, Midnight Crossing, and No-Limit Hold'em are registered as available. Adding a game does not require rewriting startup, lobby, settings, persistence, or common controls.
 
 `src/app/blackjack_view.rocket` reads engine state and emits intents through `src/blackjack/api.rocket`. It does not calculate legal moves, hand values, payouts, or dealer behavior.
 
@@ -56,13 +56,23 @@ support, checkpoints, difficulty, pause, cash-out, and settlement.
 it never advances hazards. The full contract is in
 `MIDNIGHT_CROSSING_DESIGN.md`.
 
+`src/holdem/cards.rocket` owns the checked 52-card deck and deterministic
+Fisher-Yates shuffle. `evaluator.rocket` selects and compares the best five of
+seven; `rules.rocket` validates legal actions and sizing; `engine.rocket` owns
+blinds, order, streets, contributions, all-ins, reopening, and bounded
+progression; `pots.rocket` settles contribution tiers, ties, and clockwise odd
+chips; and `ai.rocket` uses only its own cards and public state.
+`src/holdem/holdem_api.rocket` exposes privacy-safe opponents and legal human
+intents. `src/app/holdem_view.rocket` renders only that public table. The full
+contract is in `HOLDEM_DESIGN.md`.
+
 ## Money representation
 
 All play-money values are integer credits. Bets use a table unit compatible with exact 3:2 payouts. Balances must never become negative. Credits have no cash value and are not transferable.
 
 ## Determinism and testing
 
-Shoe, Roulette wheel, Plinko path, Coop Climb ladder, and Midnight Crossing world generation accept explicit seeds. Tests use deterministic state construction through checked helpers and scripted GUI input. Production rendering and audio are excluded from engine decisions. Every safety loop has a finite error-producing bound.
+Shoe, Roulette wheel, Plinko path, Coop Climb ladder, Midnight Crossing world generation, and Hold'em deck/AI variation accept explicit seeds. Tests use deterministic state construction through checked helpers and scripted GUI input. Production rendering and audio are excluded from engine decisions. Every safety loop has a finite error-producing bound.
 
 ## Native boundary
 

@@ -41,3 +41,10 @@ Midnight Crossing uses an original top-down night-city board with safe medians,
 charcoal roads, a rail lane, blue canals, procedural vehicles/logs, and a
 checkpoint band. Integer engine positions scale into the available board area;
 the minimum-size control rail remains separate. Rendering never moves hazards.
+
+Hold'em adds an original emerald oval table, purple S2R card backs, compact
+opponent seat panels, dealer/blind/all-in markers, private human cards, five
+community positions, pot/split labels, recent actions, and a dedicated action
+rail. At 800x600 up to five opponents, sizing, legal action buttons, help,
+settlement, reset, and lobby controls remain distinct. The view receives only
+the privacy-safe public table and never the shuffled deck.

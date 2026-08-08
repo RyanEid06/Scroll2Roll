@@ -1,0 +1,116 @@
+import src.holdem.engine
+import src.holdem.holdem_api
+import src.holdem.model
+import src.holdem.pots
+import src.holdem.rules
+import std.collections
+
+fn card(rank: Int, suit: Int) -> model.Card:
+    return model.Card(rank, suit)
+
+fn test_player(id: Int, contribution: Int, folded: Bool, first: model.Card, second: model.Card) -> model.Player:
+    let hole: Array[model.Card] = [first, second]
+    return model.Player(id, "Seat", id == 0, 0, hole, folded, true, contribution, contribution, true, false, "All-in")
+
+fn side_pot_settlement() -> Result[Bool, String]:
+    var players: Array[model.Player] = []
+    players = collections.append(players, test_player(0, 100, false, card(12, 0), card(12, 1)))
+    players = collections.append(players, test_player(1, 60, false, card(13, 0), card(13, 1)))
+    players = collections.append(players, test_player(2, 20, false, card(1, 0), card(1, 1)))
+    let board: Array[model.Card] = [card(2, 0), card(4, 1), card(7, 2), card(9, 3), card(11, 0)]
+    let result = pots.settle(players, board, 0)?
+    return Ok(collections.length(result.pots) == 3 and result.pots[0].amount == 60 and result.pots[1].amount == 80 and result.pots[2].amount == 40 and result.players[2].stack == 60 and result.players[1].stack == 80 and result.players[0].stack == 40)
+
+fn odd_chip_settlement() -> Result[Bool, String]:
+    var players: Array[model.Player] = []
+    players = collections.append(players, test_player(0, 5, true, card(8, 0), card(8, 1)))
+    players = collections.append(players, test_player(1, 5, false, card(10, 0), card(11, 1)))
+    players = collections.append(players, test_player(2, 5, false, card(12, 0), card(13, 1)))
+    let board: Array[model.Card] = [card(2, 0), card(3, 1), card(4, 2), card(5, 3), card(6, 0)]
+    let result = pots.settle(players, board, 0)?
+    return Ok(collections.length(result.pots) == 1 and collections.length(result.pots[0].eligible) == 2 and collections.length(result.pots[0].winners) == 2 and result.players[1].stack == 8 and result.players[2].stack == 7 and result.players[0].stack == 0)
+
+fn same_card(left: model.Card, right: model.Card) -> Bool:
+    return left.rank == right.rank and left.suit == right.suit
+
+fn same_session(left: holdem_api.Session, right: holdem_api.Session) -> Bool:
+    if holdem_api.phase_code(left) != holdem_api.phase_code(right) or left.game.active != right.game.active or left.game.hand_number != right.game.hand_number:
+        return false
+    if collections.length(left.game.community) != collections.length(right.game.community):
+        return false
+    var index = 0
+    while index < collections.length(left.game.community):
+        if not same_card(left.game.community[index], right.game.community[index]):
+            return false
+        index = index + 1
+    index = 0
+    while index < collections.length(left.game.players):
+        if left.game.players[index].stack != right.game.players[index].stack or left.game.players[index].folded != right.game.players[index].folded:
+            return false
+        index = index + 1
+    return true
+
+fn passive_action(session: holdem_api.Session) -> Int:
+    if holdem_api.call_amount(session) > 0:
+        return 2
+    return 1
+
+fn play_passive(source: holdem_api.Session) -> Result[holdem_api.Session, String]:
+    var session = source
+    var actions = 0
+    while holdem_api.phase_code(session) == 1 and actions < 20:
+        if not holdem_api.human_turn(session):
+            return Err("Hold'em API did not stop at the human or settlement")
+        session = holdem_api.with_human_action(session, passive_action(session), 0)?
+        actions = actions + 1
+    if actions >= 20:
+        return Err("Passive Hold'em hand exceeded its action bound")
+    return Ok(session)
+
+fn run() -> Result[Int, String]:
+    if not side_pot_settlement()?:
+        return Ok(1)
+    if not odd_chip_settlement()?:
+        return Ok(2)
+    var poor = holdem_api.new_session(5, 1, 9)?
+    match holdem_api.with_deal(poor):
+        case Ok(session):
+            return Ok(3)
+        case Err(error):
+            let expected = true
+    poor = holdem_api.with_reset_table(poor)?
+    if poor.game.players[0].stack != rules.default_stack() or poor.game.players[1].stack != rules.default_stack():
+        return Ok(4)
+    var first = holdem_api.with_deal(holdem_api.new_session(1000, 1, 2026)?)?
+    var second = holdem_api.with_deal(holdem_api.new_session(1000, 1, 2026)?)?
+    if not same_session(first, second):
+        return Ok(5)
+    let public = holdem_api.public_table(first)
+    if collections.length(public.players[0].cards) != 2 or public.players[1].card_count != 2 or collections.length(public.players[1].cards) != 0:
+        return Ok(6)
+    first = play_passive(first)?
+    second = play_passive(second)?
+    if holdem_api.phase_code(first) != 2 or not same_session(first, second) or engine.chips_in_play(first.game) != 2000:
+        return Ok(7)
+    let revealed = holdem_api.public_table(first)
+    if collections.length(revealed.action_history) < 3 or revealed.pot_count < 1:
+        return Ok(11)
+    if revealed.players[1].folded and collections.length(revealed.players[1].cards) != 0:
+        return Ok(8)
+    if not revealed.players[1].folded and collections.length(revealed.players[1].cards) != 2:
+        return Ok(9)
+    let next = holdem_api.with_next_hand(first)?
+    if next.game.hand_number != 2 or engine.chips_in_play(next.game) != 2000:
+        return Ok(10)
+    let six_seat = play_passive(holdem_api.with_deal(holdem_api.new_session(1000, 5, 3030)?)?)?
+    if holdem_api.phase_code(six_seat) != 2 or engine.chips_in_play(six_seat.game) != 6000:
+        return Ok(12)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

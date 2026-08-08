@@ -1,0 +1,95 @@
+import src.holdem.evaluator
+import src.holdem.model
+import std.collections
+
+fn with_stack(player: model.Player, stack: Int) -> model.Player:
+    return model.Player(player.id, player.name, player.is_human, stack, player.hole, player.folded, player.all_in, player.street_contribution, player.total_contribution, player.acted, player.can_raise, player.last_action)
+
+fn contains(values: Array[Int], target: Int) -> Bool:
+    var index = 0
+    while index < collections.length(values):
+        if values[index] == target:
+            return true
+        index = index + 1
+    return false
+
+fn combined(player: model.Player, community: Array[model.Card]) -> Array[model.Card]:
+    var result = player.hole
+    var index = 0
+    while index < collections.length(community):
+        result = collections.append(result, community[index])
+        index = index + 1
+    return result
+
+fn winners_for(players: Array[model.Player], community: Array[model.Card], eligible: Array[Int]) -> Result[Array[Int], String]:
+    var winners: Array[Int] = []
+    if collections.length(eligible) == 1:
+        return Ok(collections.append(winners, eligible[0]))
+    let first = eligible[0]
+    var best = evaluator.evaluate(combined(players[first], community))?
+    winners = collections.append(winners, first)
+    var index = 1
+    while index < collections.length(eligible):
+        let seat = eligible[index]
+        let candidate = evaluator.evaluate(combined(players[seat], community))?
+        let comparison = evaluator.compare(candidate, best)
+        if comparison > 0:
+            winners = []
+            winners = collections.append(winners, seat)
+            best = candidate
+        else:
+            if comparison == 0:
+                winners = collections.append(winners, seat)
+        index = index + 1
+    return Ok(winners)
+
+fn next_level(players: Array[model.Player], previous: Int) -> Int:
+    var result = 0
+    var index = 0
+    while index < collections.length(players):
+        let amount = players[index].total_contribution
+        if amount > previous and(result == 0 or amount < result):
+            result = amount
+        index = index + 1
+    return result
+
+fn wrap(value: Int, length: Int) -> Int:
+    return value - value / length * length
+
+pub fn settle(source: Array[model.Player], community: Array[model.Card], dealer: Int) -> Result[model.Settlement, String]:
+    var players = source
+    var pots: Array[model.Pot] = []
+    var previous = 0
+    var level = next_level(players, previous)
+    while level > 0:
+        var contributors = 0
+        var eligible: Array[Int] = []
+        var index = 0
+        while index < collections.length(players):
+            if players[index].total_contribution >= level:
+                contributors = contributors + 1
+                if not players[index].folded:
+                    eligible = collections.append(eligible, index)
+            index = index + 1
+        let amount =(level - previous) * contributors
+        if collections.length(eligible) == 0:
+            return Err("A Hold'em pot has no eligible player")
+        let winners = winners_for(players, community, eligible)?
+        let share = amount / collections.length(winners)
+        var remainder = amount - share * collections.length(winners)
+        index = 0
+        while index < collections.length(winners):
+            let seat = winners[index]
+            players[seat] = with_stack(players[seat], players[seat].stack + share)
+            index = index + 1
+        var offset = 1
+        while remainder > 0 and offset <= collections.length(players):
+            let seat = wrap(dealer + offset, collections.length(players))
+            if contains(winners, seat):
+                players[seat] = with_stack(players[seat], players[seat].stack + 1)
+                remainder = remainder - 1
+            offset = offset + 1
+        pots = collections.append(pots, model.Pot(amount, eligible, winners))
+        previous = level
+        level = next_level(players, previous)
+    return Ok(model.Settlement(players, pots))

@@ -1,0 +1,199 @@
+import src.app.components
+import src.app.theme
+import src.holdem.cards
+import src.holdem.model
+import src.rocket_raylib
+import std.collections
+import std.string
+
+pub fn help_rect(width: Int) -> components.Rect:
+    return components.rect(width - 118, 24, 86, 38)
+
+pub fn deal_rect(width: Int) -> components.Rect:
+    return components.rect(width - 210, 170, 178, 48)
+
+pub fn target_minus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 210, 252, 48, 40)
+
+pub fn target_plus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 80, 252, 48, 40)
+
+pub fn fold_rect(width: Int) -> components.Rect:
+    return components.rect(width - 210, 314, 84, 44)
+
+pub fn call_rect(width: Int) -> components.Rect:
+    return components.rect(width - 116, 314, 84, 44)
+
+pub fn raise_rect(width: Int) -> components.Rect:
+    return components.rect(width - 210, 370, 178, 44)
+
+pub fn all_in_rect(width: Int) -> components.Rect:
+    return components.rect(width - 210, 426, 178, 44)
+
+pub fn reset_rect(width: Int) -> components.Rect:
+    return components.rect(width - 210, 482, 178, 40)
+
+pub fn next_rect(height: Int) -> components.Rect:
+    return components.rect(32, height - 62, 142, 40)
+
+pub fn lobby_rect(height: Int) -> components.Rect:
+    return components.rect(184, height - 62, 112, 40)
+
+fn street_name(code: Int) -> String:
+    if code == 0:
+        return "Preflop"
+    if code == 1:
+        return "Flop"
+    if code == 2:
+        return "Turn"
+    if code == 3:
+        return "River"
+    return "Showdown"
+
+fn draw_card(window: rocket_raylib.Window, frame: rocket_raylib.Frame, card: model.Card, x: Int, y: Int, hidden: Bool) -> Result[Bool, String]:
+    var fill = theme.card_light()
+    var ink = theme.card_dark()
+    var label = cards.name(card)
+    if hidden:
+        fill = theme.card_back()
+        ink = theme.gold()
+        label = "S2R"
+    rocket_raylib.draw_rectangle(frame, x - 1, y - 1, 43, 59, theme.border())?
+    rocket_raylib.draw_rectangle(frame, x, y, 41, 57, fill)?
+    if not hidden and cards.is_red(card):
+        ink = theme.danger()
+    let width = rocket_raylib.measure_text(window, label, theme.small_size())?
+    return rocket_raylib.draw_text(frame, label, x +(41 - width) / 2, y + 19, theme.small_size(), ink)
+
+fn markers(player: model.PublicPlayer) -> String:
+    var result = ""
+    if player.dealer:
+        result = "D"
+    if player.small_blind:
+        result = string.concat(result, " SB")
+    if player.big_blind:
+        result = string.concat(result, " BB")
+    if player.all_in:
+        result = string.concat(result, " ALL-IN")
+    if player.folded:
+        result = string.concat(result, " FOLD")
+    return result
+
+fn opponent_x(index: Int, opponent_count: Int) -> Int:
+    if opponent_count <= 1:
+        return 250
+    return 30 +(index - 1) * 430 /(opponent_count - 1)
+
+fn draw_opponents(window: rocket_raylib.Window, frame: rocket_raylib.Frame, table: model.PublicTable) -> Result[Bool, String]:
+    let count = collections.length(table.players)
+    var index = 1
+    while index < count:
+        let player = table.players[index]
+        let x = opponent_x(index, count - 1)
+        var fill = theme.panel()
+        if player.active:
+            fill = theme.panel_hover()
+            rocket_raylib.draw_rectangle(frame, x - 3, 92, 102, 126, theme.gold())?
+        rocket_raylib.draw_rectangle(frame, x - 1, 94, 98, 122, theme.border())?
+        rocket_raylib.draw_rectangle(frame, x, 95, 96, 120, fill)?
+        rocket_raylib.draw_text(frame, player.name, x + 6, 102, theme.small_size(), theme.text())?
+        rocket_raylib.draw_text(frame, string.concat("Stack ", string.from_int(player.stack)), x + 6, 124, theme.small_size(), theme.emerald())?
+        rocket_raylib.draw_text(frame, markers(player), x + 6, 145, 12, theme.gold())?
+        if player.card_count > 0:
+            if collections.length(player.cards) == 2:
+                draw_card(window, frame, player.cards[0], x + 4, 163, false)?
+                draw_card(window, frame, player.cards[1], x + 48, 163, false)?
+            else:
+                draw_card(window, frame, model.Card(1, 0), x + 4, 163, true)?
+                draw_card(window, frame, model.Card(1, 0), x + 48, 163, true)?
+        index = index + 1
+    return Ok(true)
+
+fn draw_board(window: rocket_raylib.Window, frame: rocket_raylib.Frame, table: model.PublicTable) -> Result[Bool, String]:
+    rocket_raylib.draw_rectangle(frame, 82, 238, 430, 142, theme.felt())?
+    rocket_raylib.draw_rectangle(frame, 92, 248, 410, 122, theme.felt_inner())?
+    rocket_raylib.draw_text(frame, string.concat("Pot ", string.from_int(table.pot_total)), 102, 258, theme.body_size(), theme.gold())?
+    rocket_raylib.draw_text(frame, street_name(table.street_code), 400, 258, theme.small_size(), theme.muted())?
+    var index = 0
+    while index < collections.length(table.community):
+        draw_card(window, frame, table.community[index], 174 + index * 48, 294, false)?
+        index = index + 1
+    return Ok(true)
+
+fn draw_human(window: rocket_raylib.Window, frame: rocket_raylib.Frame, player: model.PublicPlayer) -> Result[Bool, String]:
+    var fill = theme.panel()
+    if player.active:
+        fill = theme.panel_hover()
+        rocket_raylib.draw_rectangle(frame, 176, 399, 320, 126, theme.gold())?
+    rocket_raylib.draw_rectangle(frame, 180, 403, 312, 118, fill)?
+    rocket_raylib.draw_text(frame, string.concat(player.name, string.concat("  Stack ", string.from_int(player.stack))), 194, 414, theme.body_size(), theme.text())?
+    rocket_raylib.draw_text(frame, string.concat(markers(player), string.concat("  Street ", string.from_int(player.street_contribution))), 194, 442, theme.small_size(), theme.gold())?
+    if collections.length(player.cards) == 2:
+        draw_card(window, frame, player.cards[0], 382, 450, false)?
+        draw_card(window, frame, player.cards[1], 430, 450, false)?
+    rocket_raylib.draw_text(frame, player.last_action, 194, 477, theme.small_size(), theme.muted())?
+    return Ok(true)
+
+fn draw_history(frame: rocket_raylib.Frame, table: model.PublicTable, width: Int) -> Result[Bool, String]:
+    let length = collections.length(table.action_history)
+    var first = length - 3
+    if first < 0:
+        first = 0
+    var index = first
+    while index < length:
+        rocket_raylib.draw_text(frame, table.action_history[index], width - 210, 176 +(index - first) * 22, 12, theme.muted())?
+        index = index + 1
+    return Ok(true)
+
+fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.overlay())?
+    let box = components.rect(width / 2 - 350, 62, 700, 490)
+    components.panel(frame, box)?
+    rocket_raylib.draw_text(frame, "NO-LIMIT HOLD'EM RULES", box.x + 26, box.y + 22, theme.heading_size(), theme.gold())?
+    let lines = ["One human and 1-5 deterministic recreational AI rivals.", "Blinds are 5/10; heads-up dealer posts small blind and acts first preflop.", "Best five cards from seven win: high card through straight flush.", "Full raises reopen action; a short all-in does not reopen prior action.", "Folded chips stay in contribution-tier pots but folded cards stay hidden.", "Side pots split equally; odd chips move clockwise left of the dealer.", "Enter check/call | D fold | R raise-to | H all-in | Left/Right size.", "N next hand | B lobby at a safe boundary | P closes help.", "Table Reset explicitly restores every seat to 1000 local play credits."]
+    var index = 0
+    while index < collections.length(lines):
+        rocket_raylib.draw_text(frame, lines[index], box.x + 26, box.y + 76 + index * 40, theme.body_size(), theme.text())?
+        index = index + 1
+    return Ok(true)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, table: model.PublicTable, target: Int, can_fold: Bool, can_call_check: Bool, can_raise: Bool, can_all_in: Bool, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_text(frame, "NO-LIMIT HOLD'EM", 32, 24, theme.heading_size(), theme.gold())?
+    rocket_raylib.draw_text(frame, table.message, 32, 58, theme.small_size(), theme.muted())?
+    components.button(window, frame, help_rect(width), "Help [P]", true, components.contains(help_rect(width), mouse_x, mouse_y), false)?
+    draw_opponents(window, frame, table)?
+    draw_board(window, frame, table)?
+    draw_human(window, frame, table.players[0])?
+    components.panel(frame, components.rect(width - 226, 112, 210, 424))?
+    rocket_raylib.draw_text(frame, string.concat("Current bet ", string.from_int(table.current_bet)), width - 210, 128, theme.small_size(), theme.text())?
+    var pot_label = string.concat("Pots ", string.from_int(table.pot_count))
+    if table.split_pot:
+        pot_label = string.concat(pot_label, "  SPLIT")
+    rocket_raylib.draw_text(frame, pot_label, width - 210, 150, 12, theme.gold())?
+    draw_history(frame, table, width)?
+    if table.phase_code == 0:
+        components.button(window, frame, deal_rect(width), "Deal [Enter]", table.players[0].stack >= 10, components.contains(deal_rect(width), mouse_x, mouse_y), true)?
+    if table.phase_code == 1:
+        rocket_raylib.draw_text(frame, string.concat("Raise to ", string.from_int(target)), width - 150, 262, theme.body_size(), theme.text())?
+        components.button(window, frame, target_minus_rect(width), "-", true, components.contains(target_minus_rect(width), mouse_x, mouse_y), false)?
+        components.button(window, frame, target_plus_rect(width), "+", true, components.contains(target_plus_rect(width), mouse_x, mouse_y), false)?
+        components.button(window, frame, fold_rect(width), "Fold [D]", can_fold, components.contains(fold_rect(width), mouse_x, mouse_y), false)?
+        var call_label = "Check [Enter]"
+        if table.current_bet > table.players[0].street_contribution:
+            call_label = "Call [Enter]"
+        components.button(window, frame, call_rect(width), call_label, can_call_check, components.contains(call_rect(width), mouse_x, mouse_y), true)?
+        components.button(window, frame, raise_rect(width), "Bet / Raise [R]", can_raise, components.contains(raise_rect(width), mouse_x, mouse_y), false)?
+        components.button(window, frame, all_in_rect(width), "All-in [H]", can_all_in, components.contains(all_in_rect(width), mouse_x, mouse_y), false)?
+    if table.phase_code != 1:
+        components.button(window, frame, reset_rect(width), "New table [R]", true, components.contains(reset_rect(width), mouse_x, mouse_y), false)?
+    if table.phase_code == 2:
+        components.button(window, frame, next_rect(height), "Next [N]", true, components.contains(next_rect(height), mouse_x, mouse_y), true)?
+    if table.phase_code != 1:
+        components.button(window, frame, lobby_rect(height), "Lobby [B]", true, components.contains(lobby_rect(height), mouse_x, mouse_y), false)?
+    if help:
+        draw_help(window, frame)?
+    return Ok(true)
