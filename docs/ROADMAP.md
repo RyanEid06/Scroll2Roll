@@ -24,5 +24,5 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
 - [x] Complete the original real-time Midnight Crossing arcade game.
 - [x] Complete single-player No-Limit Texas Hold'em against 1-5 bounded AI
   opponents.
-- [ ] Revalidate all six games, Visual Studio, packaging, relocation, and the
+- [x] Revalidate all six games, Visual Studio, packaging, relocation, and the
   static Cloudflare product/download site for 0.2.0.

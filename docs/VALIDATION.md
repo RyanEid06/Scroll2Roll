@@ -134,9 +134,10 @@ baseline for every game milestone in `EXPANSION_PLAN.md`.
 - Source website validation passes with all six implemented games claimed. No
   package publication or deployment was performed.
 
-## Visual Studio Community 2026
+## Visual Studio Community 2026 cumulative acceptance
 
-The installed Rocket Language 2.0.3 extension was exercised from this repository with `src/main.rocket` active:
+The installed Rocket Language 2.0.3 extension was first exercised interactively
+from this repository with `src/main.rocket` active during the 0.1.0 acceptance:
 
 - all seven Rocket commands were present; Build, Run, Test, Debug, environment validation, and options were available, while Stop became available only during an active process;
 - GUI Build refreshed `.rocketc/Scroll2Roll.exe`, its PDB, and its Rocket source map;
@@ -149,17 +150,90 @@ The installed Rocket Language 2.0.3 extension was exercised from this repository
 - Debug stopped at a Rocket source breakpoint, F11 entered `src.app.application.run`, the call stack exposed six frames, the Locals collection represented `status = 0`, and Stop returned to design mode with no game process left;
 - formatting is enforced by `rocketc fmt` in both validation configurations; the frozen LSP exposes its whole-document formatter through the `source.format.rocket` code-action contract rather than Visual Studio's generic `Edit.FormatDocument` command.
 
-## Version 0.1.0 Windows package baseline
+The final 0.2.0 pass then exercised the unchanged extension against the expanded
+repository with the pinned compiler and language-server environment variables:
 
-The prior 0.1.0 acceptance run of `scripts/package-windows.ps1` created `out/package/Scroll2Roll-0.1.0-windows-x64.zip`. The archive included the executable, README, notices, version, controls, troubleshooting, and per-file checksums. It excluded source dependencies, generated bindings, compiler/build trees, `.vs`, `.rocketc`, caches, objects, PDBs, and machine paths. The updated script now targets 0.2.0; its final archive evidence will be recorded only after all five expansion games pass.
+```powershell
+$env:ROCKET_COMPILER = "<frozen-rocket>\out\build\windows-release\rocketc.exe"
+$env:ROCKET_LANGUAGE_SERVER = "<frozen-rocket>\out\build\windows-release\rocket-lsp.exe"
+devenv.exe "<checkout>\src\main.rocket" /Command Build.BuildRocketProject
+devenv.exe "<checkout>\src\main.rocket" /Command Rocket.TestRocketProject
+devenv.exe "<checkout>\src\main.rocket" /Command Rocket.RunRocketProject
+node .\scripts\test-lsp.mjs
+```
 
-`scripts/test-package.ps1` extracts the archive into ignored `out/relocation`, scans for forbidden content, and runs the relocated headless smoke path. The final archive is 1,507,358 bytes with SHA-256 `6408d68501e02005164ff2bb016026d71b90ae6e49dfe43e2f324c0dc96d4ac7`.
+- Build recreated a deliberately removed `Scroll2Roll.exe`, PDB, and source map;
+  the final map includes the new Hold'em view and API sources.
+- Test recreated a deliberately removed Hold'em test executable and completed
+  the same 26-test project suite proven by both release gates.
+- Run launched `.rocketc/Scroll2Roll.exe` through the Visual Studio-owned
+  `rocketc run` process, with the pinned `rocket-lsp.exe` attached to the same
+  IDE instance. No PowerShell, Windows Terminal, `cmd`, or external debug
+  console was launched; Windows did create hidden `conhost` processes for the
+  redirected compiler and language-server streams.
+- The portable framed LSP check against the new Hold'em view returned 21 matching
+  workspace symbols, hover data, one definition into `components.rocket`, 529
+  completion items, 6,350 semantic-token integers, and three live diagnostics
+  across two notifications, with empty protocol stderr.
+- Fresh PDB/source-map generation and the Rocket Debug command surface were
+  rechecked. The complete source-breakpoint, F11, call-stack, Locals, Stop, Error
+  List, and Go To Definition interaction remains the preceding full acceptance
+  baseline; the final automation runtime could not acquire a top-level Visual
+  Studio window to replay those clicks, so this is an explicit UI-automation
+  limitation rather than a new product claim.
+
+## Version 0.2.0 Windows package
+
+The final packaging commands were:
+
+```powershell
+.\scripts\package-windows.ps1 -RocketRoot "<frozen-rocket>"
+.\scripts\test-package.ps1
+```
+
+`out/package/Scroll2Roll-0.2.0-windows-x64.zip` is 1,688,614 bytes
+with SHA-256
+`1F90A9EB0814A7C138A48B85F96B1D29AA19069738452EC73BC8567B682E565C`.
+It contains `Scroll2Roll.exe`, README, controls, troubleshooting, version,
+notices, and `SHA256SUMS.txt`. Every internal checksum was recomputed and
+matched. The archive excludes sources, dependencies, compiler/build trees,
+`.vs`, `.rocketc`, caches, objects, PDBs, maps, and machine paths.
+
+`scripts/test-package.ps1` extracted the archive into ignored `out/relocation`,
+passed its forbidden-content scan, and passed the relocated `--headless-smoke`
+launch without relying on the source checkout.
 
 No trusted code signature is claimed.
 
 ## Static website
 
-- The source `website/` validation passes for its three files.
-- The staged `out/cloudflare-site` validation passes with the release archive included.
-- The script enforces Cloudflare Pages Free's 20,000-file and 25-MiB-per-asset ceilings and rejects browser-playable or real-money wording.
+- `.\scripts\test-website.ps1` passes the three source `website/` files.
+- `.\scripts\prepare-cloudflare-site.ps1` and
+  `.\scripts\test-website.ps1 -Site .\out\cloudflare-site` pass the four staged
+  files with the 1,688,614-byte release archive included.
+- The validator enforces the current Cloudflare Pages Free ceilings of 20,000
+  files and 25 MiB per asset, rechecked against official Cloudflare
+  documentation on 2026-08-09, and rejects browser-playable or real-money
+  wording.
 - No Cloudflare deployment, Git push, GitHub release, or other publication was performed.
+
+## Expansion milestone E6 - final 0.2.0 acceptance
+
+The exact release gates were:
+
+```powershell
+.\scripts\validate.ps1 -Configuration Debug -RocketRoot "<frozen-rocket>"
+.\scripts\validate.ps1 -Configuration Release -RocketRoot "<frozen-rocket>"
+.\scripts\package-windows.ps1 -RocketRoot "<frozen-rocket>"
+.\scripts\test-package.ps1
+.\scripts\test-website.ps1
+.\scripts\prepare-cloudflare-site.ps1
+.\scripts\test-website.ps1 -Site .\out\cloudflare-site
+```
+
+Both validation configurations passed native generation/build, `rocketc check`,
+all 26 tests, source formatting, and test formatting. Those tests include
+deterministic complete rounds/sessions and keyboard/mouse GUI paths for all six
+games, save-v1 migration and corrupt/unsupported recovery, missing assets,
+native resource lifetimes, and clean shutdown. Package relocation and both site
+trees passed as described above. The frozen Rocket checkout remained clean.

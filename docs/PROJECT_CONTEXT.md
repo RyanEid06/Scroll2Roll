@@ -12,12 +12,17 @@ Read this file and `MASTER_PLAN.md` completely at the start of every Scroll2Roll
 - Graphics/input/audio: Rocket's reviewed raylib 6.0 integration
 - Target: Windows x64
 - IDE: Visual Studio Community 2026 with Rocket Language 2.0.3
-- Current released baseline: 0.1.0
+- Current local acceptance version: 0.2.0; no public release is claimed
 - Expansion target: 0.2.0
 
 ## Product vision and completed scope
 
-Scroll2Roll is a polished, local, single-player, play-money casino shell that can add owner-approved games one at a time. Version 0.1.0 completes Blackjack first with a branded startup experience, reusable lobby and settings, deterministic headless engine tests, a native raylib table, versioned local persistence, portable Windows packaging, and a prepared Cloudflare product/download website.
+Scroll2Roll is a polished, local, single-player, play-money casino shell. Version
+0.2.0 includes complete Blackjack, European Roulette, Plinko, Coop Climb,
+Midnight Crossing, and No-Limit Texas Hold'em games behind a reusable lobby and
+settings shell, with deterministic headless engines, native raylib presentation,
+versioned local persistence, portable Windows packaging, and a prepared static
+Cloudflare product/download website.
 
 All 13 implementation and validation milestones in `MASTER_PLAN.md` are complete locally. No push, release publication, Cloudflare deployment, or signing was performed.
 
@@ -111,11 +116,14 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
 - The Rocket repository was clean on `master` at `cbf7b1a` before Scroll2Roll changes, and no casino file was placed there.
 - The source master plan and `docs/MASTER_PLAN.md` both have SHA-256 `48D1E92041299ED413FA6947E4342783B29B142041D1A445C049EA259D50C4C9`.
 - The preserved original `legacy/Blackjack-v1/src/blackjack.rocket` has SHA-256 `11D7291C9F222C77BCCC5A7AF8C457F0083FC6BE42DB3CA6458B80B5C3FAB5CC` and still reproduces its original Rocket parser failure.
-- Debug and Release validation each pass build/check, 10/10 Rocket tests, and formatting checks.
+- The original 0.1.0 Debug and Release baseline passed build/check, 10/10
+  Rocket tests, and formatting checks.
 - Visual Studio GUI Build/Run/Test/Stop/Debug, Error List navigation, Go To Definition, source breakpoints, stepping, six-frame call stack, one represented scalar local, clean stop, and terminal-free processes were verified from this repository.
 - A framed Scroll2Roll LSP session verified project discovery, completion, hover, definition, references, rename, symbols, semantic tokens, and live diagnostics without protocol errors.
 - The portable package passes forbidden-content scanning and a relocated `--headless-smoke` launch outside the source checkout.
-- The final `Scroll2Roll-0.1.0-windows-x64.zip` is 1,507,358 bytes with SHA-256 `6408d68501e02005164ff2bb016026d71b90ae6e49dfe43e2f324c0dc96d4ac7`.
+- The preserved 0.1.0 package baseline was 1,507,358 bytes with SHA-256
+  `6408d68501e02005164ff2bb016026d71b90ae6e49dfe43e2f324c0dc96d4ac7`;
+  current 0.2.0 package evidence is recorded below.
 - Source and staged website validation pass current Cloudflare Pages Free file-count and per-asset limits.
 - Detailed evidence and exact commands are in `docs/VALIDATION.md`.
 - The 0.2.0 expansion baseline was rerun on 2026-08-08: Debug and Release each
@@ -147,10 +155,28 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
 - Debug and Release milestone-E5 validation each pass the native build,
   `rocketc check`, all 26 tests, and both formatting checks. Source website
   validation also passes with all six implemented games claimed.
+- Final milestone-E6 Debug and Release validation each pass native generation
+  and build, `rocketc check`, all 26 tests, and both formatting checks. Visual
+  Studio 18.8.2 with Rocket Language 2.0.3 recreated a cleanly removed app
+  executable/PDB/source map, recreated a removed Hold'em test executable through
+  its Test command, launched the native app through Run, and hosted the pinned
+  LSP. The current framed Hold'em-view session verified symbols, completion,
+  hover, definition, semantic tokens, and live diagnostics without protocol
+  stderr; the earlier full interactive Stop/Error List/navigation/source-debug
+  baseline remains the durable interaction proof.
+- `Scroll2Roll-0.2.0-windows-x64.zip` is 1,688,614 bytes with SHA-256
+  `1F90A9EB0814A7C138A48B85F96B1D29AA19069738452EC73BC8567B682E565C`.
+  Its internal checksums, forbidden-content scan, and relocated headless smoke
+  all pass.
+- The three-file source site and four-file staged site pass validation with the
+  release archive. The staged tree remains below Cloudflare Pages Free's
+  officially rechecked 20,000-file and 25-MiB-per-asset limits. Nothing was
+  pushed, published, deployed, released, or signed.
 
 ## Deliberate limitations
 
-- Version 0.1.0 is unsigned. Windows may show an unknown-publisher warning; trusted code signing is not claimed.
+- Version 0.2.0 is unsigned. Windows may show an unknown-publisher warning;
+  trusted code signing is not claimed.
 - The game is local-only and play-money-only. Credits are not transferable and have no cash value.
 - Hold'em AI is intentionally described as deterministic recreational play,
   not professional, adaptive, online, or unbeatable poker.
@@ -199,11 +225,12 @@ Spacing, typography, component states, borders, timing, and responsive layout va
   including cards/evaluator, complete no-limit betting, contribution-tier pots,
   deterministic AI, privacy API, full UI, focused tests, and Debug/Release
   regression gates.
-- Current: expansion milestone E6, final 0.2.0 release acceptance.
-- Next: checkpoint E5, then revalidate all six games, Visual Studio workflows,
-  packaging and sanitized relocation, the source/staged static website, final
-  documentation, ignored artifacts, and the clean local handoff without any
-  push, publication, deployment, signing, or external tester claim.
+- Completed: expansion milestone E6, including final Debug/Release gates,
+  cumulative Visual Studio acceptance, LSP checks, portable package and internal
+  hashes, sanitized relocation, source/staged site validation, exact archive
+  evidence, and the clean local handoff.
+- Next: owner review of the local 0.2.0 handoff. Do not push, publish, deploy,
+  create a release, or claim trusted signing without explicit approval.
 
 ## Major decisions
 
@@ -227,8 +254,8 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 
 Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`, and this file
 completely. Inspect Git status and preserve user changes. The 0.1.0 Blackjack
-baseline remains preserved and the post-Hold'em suite passes 26/26. Continue from **Milestones**
-in the exact approved game order. Use frozen Rocket 2.0 and the pinned raylib
-integration, rerun all prior tests at every game gate, update this handoff, make
-logical local commits, and do not push, publish, deploy, sign, or add an
-unapproved game.
+baseline remains preserved and the complete 0.2.0 six-game suite passes 26/26
+in Debug and Release. The package, relocation, Visual Studio/LSP, and
+source/staged website evidence is complete in `VALIDATION.md`. Keep using frozen
+Rocket 2.0 and the pinned raylib integration. Do not push, publish, deploy, sign,
+or add an unapproved game.
