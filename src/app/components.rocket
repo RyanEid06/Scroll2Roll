@@ -1,0 +1,51 @@
+import src.app.theme
+import src.rocket_raylib
+
+pub struct Rect:
+    x: Int
+    y: Int
+    width: Int
+    height: Int
+
+pub fn rect(x: Int, y: Int, width: Int, height: Int) -> Rect:
+    return Rect(x, y, width, height)
+
+pub fn contains(value: Rect, x: Int, y: Int) -> Bool:
+    return x >= value.x and x <= value.x + value.width and y >= value.y and y <= value.y + value.height
+
+pub fn panel(frame: rocket_raylib.Frame, value: Rect) -> Result[Bool, String]:
+    rocket_raylib.draw_rectangle(frame, value.x - 1, value.y - 1, value.width + 2, value.height + 2, theme.border())?
+    return rocket_raylib.draw_rectangle(frame, value.x, value.y, value.width, value.height, theme.panel())
+
+pub fn label(frame: rocket_raylib.Frame, text: String, x: Int, y: Int, size: Int, color: rocket_raylib.Color) -> Result[Bool, String]:
+    return rocket_raylib.draw_text(frame, text, x, y, size, color)
+
+pub fn centered_label(window: rocket_raylib.Window, frame: rocket_raylib.Frame, text: String, y: Int, size: Int, color: rocket_raylib.Color) -> Result[Bool, String]:
+    let width = rocket_raylib.measure_text(window, text, size)?
+    return rocket_raylib.draw_text(frame, text,(rocket_raylib.window_width(window) - width) / 2, y, size, color)
+
+pub fn button(window: rocket_raylib.Window, frame: rocket_raylib.Frame, value: Rect, text: String, enabled: Bool, hovered: Bool, primary: Bool) -> Result[Bool, String]:
+    var fill = theme.panel()
+    var ink = theme.muted()
+    if enabled:
+        ink = theme.text()
+        if primary:
+            fill = theme.gold()
+            ink = theme.background()
+        else:
+            if hovered:
+                fill = theme.panel_hover()
+    rocket_raylib.draw_rectangle(frame, value.x - 1, value.y - 1, value.width + 2, value.height + 2, theme.border())?
+    rocket_raylib.draw_rectangle(frame, value.x, value.y, value.width, value.height, fill)?
+    let text_width = rocket_raylib.measure_text(window, text, theme.body_size())?
+    return rocket_raylib.draw_text(frame, text, value.x +(value.width - text_width) / 2, value.y +(value.height - theme.body_size()) / 2, theme.body_size(), ink)
+
+pub fn modal(window: rocket_raylib.Window, frame: rocket_raylib.Frame, title: String, message: String) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.overlay())?
+    let box = rect(width / 2 - 260, height / 2 - 100, 520, 200)
+    panel(frame, box)?
+    centered_label(window, frame, title, box.y + 34, theme.heading_size(), theme.gold())?
+    centered_label(window, frame, message, box.y + 86, theme.body_size(), theme.text())?
+    return centered_label(window, frame, "Enter confirms | Escape cancels", box.y + 138, theme.small_size(), theme.muted())

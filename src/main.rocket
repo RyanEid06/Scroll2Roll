@@ -1,0 +1,15 @@
+import src.app.application
+import src.smoke
+import std.collections
+import std.process
+
+fn main() -> Int:
+    let arguments = process.arguments()
+    if collections.length(arguments) == 1 and arguments[0] == "--headless-smoke":
+        match smoke.run():
+            case Ok(status):
+                return status
+            case Err(error):
+                print(error)
+                return 2
+    return application.run()

@@ -1,0 +1,122 @@
+import std.collections
+import std.file
+import std.path
+import std.process
+import std.string
+
+pub struct Settings:
+    version: Int
+    audio_enabled: Bool
+    volume_percent: Int
+    window_width: Int
+    window_height: Int
+    ai_count: Int
+    play_balance: Int
+    first_run: Bool
+
+pub struct LoadResult:
+    settings: Settings
+    recovered: Bool
+    message: String
+
+pub fn defaults() -> Settings:
+    return Settings(1, true, 70, 1280, 720, 3, 1000, true)
+
+fn bool_text(value: Bool) -> String:
+    if value:
+        return "1"
+    return "0"
+
+fn encode(value: Settings) -> String:
+    var lines: Array[String] = []
+    lines = collections.append(lines, "scroll2roll-save-1")
+    lines = collections.append(lines, bool_text(value.audio_enabled))
+    lines = collections.append(lines, string.from_int(value.volume_percent))
+    lines = collections.append(lines, string.from_int(value.window_width))
+    lines = collections.append(lines, string.from_int(value.window_height))
+    lines = collections.append(lines, string.from_int(value.ai_count))
+    lines = collections.append(lines, string.from_int(value.play_balance))
+    lines = collections.append(lines, bool_text(value.first_run))
+    return string.concat(collections.join(lines, "\n"), "\n")
+
+pub fn parse(text: String) -> Result[Settings, String]:
+    let lines = string.split(string.trim(text), "\n")
+    if collections.length(lines) != 8:
+        return Err("Save data has an unexpected field count")
+    if lines[0] != "scroll2roll-save-1":
+        return Err("Save data version is unsupported")
+    let audio = string.parse_int(lines[1])?
+    let volume = string.parse_int(lines[2])?
+    let width = string.parse_int(lines[3])?
+    let height = string.parse_int(lines[4])?
+    let ai_count = string.parse_int(lines[5])?
+    let balance = string.parse_int(lines[6])?
+    let first = string.parse_int(lines[7])?
+    if audio < 0 or audio > 1 or first < 0 or first > 1:
+        return Err("Save data contains an invalid boolean")
+    if volume < 0 or volume > 100:
+        return Err("Save data volume is out of range")
+    if width < 800 or height < 600:
+        return Err("Save data display size is below the supported minimum")
+    if ai_count < 0 or ai_count > 5:
+        return Err("Save data AI count is out of range")
+    if balance < 10 or balance > 1000000:
+        return Err("Save data play balance is out of range")
+    return Ok(Settings(1, audio == 1, volume, width, height, ai_count, balance, first == 1))
+
+pub fn load(file_path: String) -> LoadResult:
+    if not file.exists(file_path):
+        return LoadResult(defaults(), false, "No local save found; defaults loaded")
+    match file.read_text(file_path):
+        case Ok(text):
+            match parse(text):
+                case Ok(settings):
+                    return LoadResult(settings, false, "Local settings loaded")
+                case Err(error):
+                    return LoadResult(defaults(), true, error)
+        case Err(error):
+            return LoadResult(defaults(), true, error)
+
+pub fn save(file_path: String, value: Settings) -> Result[Bool, String]:
+    return file.write_text(file_path, encode(value))
+
+pub fn data_directory() -> Result[String, String]:
+    match process.environment("LOCALAPPDATA"):
+        case Some(root):
+            let directory = path.join(root, "Scroll2Roll")
+            file.create_directory(directory)?
+            return Ok(directory)
+        case None:
+            let directory = path.join("local", "Scroll2Roll")
+            file.create_directory(directory)?
+            return Ok(directory)
+
+pub fn default_path() -> Result[String, String]:
+    return Ok(path.join(data_directory()?, "settings.s2r"))
+
+pub fn with_audio(value: Settings, enabled: Bool) -> Settings:
+    return Settings(1, enabled, value.volume_percent, value.window_width, value.window_height, value.ai_count, value.play_balance, false)
+
+pub fn with_volume(value: Settings, volume: Int) -> Settings:
+    var clamped = volume
+    if clamped < 0:
+        clamped = 0
+    if clamped > 100:
+        clamped = 100
+    return Settings(1, value.audio_enabled, clamped, value.window_width, value.window_height, value.ai_count, value.play_balance, false)
+
+pub fn with_ai_count(value: Settings, count: Int) -> Settings:
+    var clamped = count
+    if clamped < 0:
+        clamped = 0
+    if clamped > 5:
+        clamped = 5
+    return Settings(1, value.audio_enabled, value.volume_percent, value.window_width, value.window_height, clamped, value.play_balance, false)
+
+pub fn with_balance(value: Settings, balance: Int) -> Settings:
+    var safe = balance
+    if safe < 10:
+        safe = 1000
+    if safe > 1000000:
+        safe = 1000000
+    return Settings(1, value.audio_enabled, value.volume_percent, value.window_width, value.window_height, value.ai_count, safe, false)

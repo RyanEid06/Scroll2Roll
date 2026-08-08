@@ -1,0 +1,429 @@
+import src.app.blackjack_view
+import src.app.components
+import src.app.registry
+import src.app.theme
+import src.blackjack.engine
+import src.blackjack.model
+import src.persistence
+import src.rocket_raylib
+import std.string
+
+pub struct State:
+    screen: Int
+    game: model.Game
+    selected_bet: Int
+    settings: persistence.Settings
+    save_path: String
+    notice: String
+    error: String
+    exit_prompt: Bool
+    running: Bool
+    next_step: Float
+    saved_round: Int
+
+fn rebuild(state: State, screen: Int, game: model.Game, selected_bet: Int, settings: persistence.Settings, notice: String, error: String, exit_prompt: Bool, running: Bool, next_step: Float, saved_round: Int) -> State:
+    return State(screen, game, selected_bet, settings, state.save_path, notice, error, exit_prompt, running, next_step, saved_round)
+
+fn new_table(settings: persistence.Settings, seed: Int) -> Result[model.Game, String]:
+    let game = engine.new_game("Player", settings.play_balance, settings.ai_count, seed)?
+    return engine.set_bet(game, 0, game.rules.minimum_bet)
+
+fn initial(settings: persistence.Settings, save_path: String, notice: String) -> Result[State, String]:
+    let game = new_table(settings, 20260808)?
+    return Ok(State(0, game, game.rules.minimum_bet, settings, save_path, notice, "", false, true, 0.0, 0))
+
+fn save_settings(state: State, settings: persistence.Settings) -> State:
+    match persistence.save(state.save_path, settings):
+        case Ok(saved):
+            return rebuild(state, state.screen, state.game, state.selected_bet, settings, "Settings saved locally", "", state.exit_prompt, state.running, state.next_step, state.saved_round)
+        case Err(error):
+            return rebuild(state, state.screen, state.game, state.selected_bet, settings, state.notice, error, state.exit_prompt, state.running, state.next_step, state.saved_round)
+
+fn with_game(state: State, game: model.Game, next_step: Float) -> State:
+    return rebuild(state, state.screen, game, state.selected_bet, state.settings, state.notice, "", state.exit_prompt, state.running, next_step, state.saved_round)
+
+fn with_error(state: State, error: String) -> State:
+    return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, error, state.exit_prompt, state.running, state.next_step, state.saved_round)
+
+fn enter_game(state: State, seed: Int) -> State:
+    match new_table(state.settings, seed):
+        case Ok(game):
+            return rebuild(state, 2, game, game.rules.minimum_bet, state.settings, "Blackjack table ready", "", false, true, 0.0, 0)
+        case Err(error):
+            return with_error(state, error)
+
+fn route_game(state: State, index: Int) -> State:
+    if registry.available(index):
+        return enter_game(state, 20260808 + index)
+    return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, "That game is a future placeholder", "", state.exit_prompt, state.running, state.next_step, state.saved_round)
+
+fn change_bet(state: State, delta: Int) -> State:
+    let player = state.game.players[0]
+    let available = player.balance + player.pending_bet
+    var amount = state.selected_bet + delta
+    if amount < state.game.rules.minimum_bet:
+        amount = state.game.rules.minimum_bet
+    if amount > state.game.rules.maximum_bet:
+        amount = state.game.rules.maximum_bet
+    if amount > available:
+        amount = available / state.game.rules.bet_unit * state.game.rules.bet_unit
+    match engine.set_bet(state.game, 0, amount):
+        case Ok(game):
+            return rebuild(state, state.screen, game, amount, state.settings, "Bet changed", "", state.exit_prompt, state.running, state.next_step, state.saved_round)
+        case Err(error):
+            return with_error(state, error)
+
+fn deal(state: State, now: Float) -> State:
+    match engine.place_ai_bets(state.game):
+        case Ok(with_ai_bets):
+            match engine.start_round(with_ai_bets):
+                case Ok(game):
+                    return with_game(state, game, now + theme.turn_delay_seconds())
+                case Err(error):
+                    return with_error(state, error)
+        case Err(error):
+            return with_error(state, error)
+
+fn apply_action_code(state: State, code: Int, now: Float) -> State:
+    let actions = engine.available_actions(state.game)
+    var index = 0
+    while index < actions.length():
+        if engine.action_code(actions[index]) == code:
+            match engine.apply_action(state.game, actions[index]):
+                case Ok(game):
+                    return with_game(state, game, now + theme.turn_delay_seconds())
+                case Err(error):
+                    return with_error(state, error)
+        index = index + 1
+    return with_error(state, "That action is not legal for the active hand")
+
+fn next_round(state: State) -> State:
+    match engine.begin_next_round(state.game):
+        case Ok(game):
+            match engine.set_bet(game, 0, game.rules.minimum_bet):
+                case Ok(with_bet):
+                    return rebuild(state, 2, with_bet, with_bet.rules.minimum_bet, state.settings, "New round ready", "", false, true, 0.0, state.saved_round)
+                case Err(error):
+                    return with_error(state, error)
+        case Err(error):
+            return with_error(state, error)
+
+fn restart_table(state: State) -> State:
+    let current_balance = state.game.players[0].balance + state.game.players[0].pending_bet
+    let settings = persistence.with_balance(state.settings, current_balance)
+    match new_table(settings, state.game.seed + state.game.round_number * 104729):
+        case Ok(game):
+            return save_settings(rebuild(state, 2, game, game.rules.minimum_bet, settings, "Table restarted", "", false, true, 0.0, state.saved_round), settings)
+        case Err(error):
+            return with_error(state, error)
+
+fn return_to_lobby(state: State) -> State:
+    let balance = state.game.players[0].balance + state.game.players[0].pending_bet
+    let settings = persistence.with_balance(state.settings, balance)
+    return save_settings(rebuild(state, 1, state.game, state.selected_bet, settings, "Progress saved; welcome back", "", false, true, state.next_step, state.saved_round), settings)
+
+fn settings_audio(state: State) -> State:
+    return save_settings(state, persistence.with_audio(state.settings, not state.settings.audio_enabled))
+
+fn settings_volume(state: State, delta: Int) -> State:
+    return save_settings(state, persistence.with_volume(state.settings, state.settings.volume_percent + delta))
+
+fn settings_ai(state: State, delta: Int) -> State:
+    return save_settings(state, persistence.with_ai_count(state.settings, state.settings.ai_count + delta))
+
+fn lobby_tile(index: Int, width: Int) -> components.Rect:
+    let tile_width =(width - 128) / 3
+    return components.rect(32 + index *(tile_width + 32), 220, tile_width, 210)
+
+fn settings_button(width: Int) -> components.Rect:
+    return components.rect(width - 190, 32, 158, 44)
+
+fn exit_button(height: Int) -> components.Rect:
+    return components.rect(32, height - 76, 140, 44)
+
+fn setting_row_button(row: Int, side: Int, width: Int) -> components.Rect:
+    let x = width / 2 + 110 + side * 64
+    return components.rect(x, 210 + row * 92, 54, 44)
+
+fn update_lobby(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int) -> State:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_l()):
+        return route_game(state, 0)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(settings_button(width), mouse_x, mouse_y):
+        return rebuild(state, 3, state.game, state.selected_bet, state.settings, "Settings", "", false, true, state.next_step, state.saved_round)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(exit_button(height), mouse_x, mouse_y):
+        return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, "", true, state.running, state.next_step, state.saved_round)
+    if clicked:
+        var index = 0
+        while index < registry.game_count():
+            if components.contains(lobby_tile(index, width), mouse_x, mouse_y):
+                return route_game(state, index)
+            index = index + 1
+    return state
+
+fn update_settings(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int) -> State:
+    let width = rocket_raylib.window_width(window)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()):
+        return rebuild(state, 1, state.game, state.selected_bet, state.settings, "Settings saved locally", "", false, true, state.next_step, state.saved_round)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_m()):
+        return settings_audio(state)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()):
+        return settings_volume(state, -10)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()):
+        return settings_volume(state, 10)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()):
+        return settings_ai(state, -1)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()):
+        return settings_ai(state, 1)
+    if clicked:
+        if components.contains(setting_row_button(0, 0, width), mouse_x, mouse_y):
+            return settings_audio(state)
+        if components.contains(setting_row_button(1, 0, width), mouse_x, mouse_y):
+            return settings_volume(state, -10)
+        if components.contains(setting_row_button(1, 1, width), mouse_x, mouse_y):
+            return settings_volume(state, 10)
+        if components.contains(setting_row_button(2, 0, width), mouse_x, mouse_y):
+            return settings_ai(state, -1)
+        if components.contains(setting_row_button(2, 1, width), mouse_x, mouse_y):
+            return settings_ai(state, 1)
+    return state
+
+fn update_game(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int, now: Float) -> State:
+    let phase = engine.phase_code(state.game.phase)
+    let height = rocket_raylib.window_height(window)
+    if phase == 0:
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(blackjack_view.bet_minus_rect(height), mouse_x, mouse_y):
+            return change_bet(state, 10 - 20)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(blackjack_view.bet_plus_rect(height), mouse_x, mouse_y):
+            return change_bet(state, 10)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(blackjack_view.deal_rect(height), mouse_x, mouse_y):
+            return deal(state, now)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()):
+            return return_to_lobby(state)
+    if phase == 1 and engine.active_player_is_human(state.game):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()):
+            return apply_action_code(state, 0, now)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()):
+            return apply_action_code(state, 1, now)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_d()):
+            return apply_action_code(state, 2, now)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()):
+            return apply_action_code(state, 3, now)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()):
+            return apply_action_code(state, 4, now)
+        if clicked:
+            var code = 0
+            while code < 5:
+                if components.contains(blackjack_view.action_rect(code, height), mouse_x, mouse_y):
+                    return apply_action_code(state, code, now)
+                code = code + 1
+    if phase == 1 and not engine.active_player_is_human(state.game) and now >= state.next_step:
+        match engine.ai_step(state.game):
+            case Ok(game):
+                return with_game(state, game, now + theme.turn_delay_seconds())
+            case Err(error):
+                return with_error(state, error)
+    if phase == 2 and now >= state.next_step:
+        match engine.dealer_step(state.game):
+            case Ok(game):
+                return with_game(state, game, now + theme.turn_delay_seconds())
+            case Err(error):
+                return with_error(state, error)
+    if phase == 3:
+        var settled_state = state
+        if state.saved_round != state.game.round_number:
+            let settings = persistence.with_balance(state.settings, state.game.players[0].balance)
+            settled_state = save_settings(rebuild(state, state.screen, state.game, state.selected_bet, settings, "Round progress saved", "", state.exit_prompt, state.running, state.next_step, state.game.round_number), settings)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(blackjack_view.next_rect(height), mouse_x, mouse_y):
+            return next_round(settled_state)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()):
+            return restart_table(settled_state)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(blackjack_view.lobby_rect(height), mouse_x, mouse_y):
+            return return_to_lobby(settled_state)
+        return settled_state
+    return state
+
+fn update(state: State, window: rocket_raylib.Window) -> State:
+    let clicked = rocket_raylib.is_mouse_pressed(window, rocket_raylib.mouse_left())
+    let mouse_x = rocket_raylib.mouse_x(window)
+    let mouse_y = rocket_raylib.mouse_y(window)
+    if state.error != "":
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked:
+            return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round)
+        return state
+    if state.exit_prompt:
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()):
+            return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, "", false, false, state.next_step, state.saved_round)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()):
+            return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, "", false, true, state.next_step, state.saved_round)
+        return state
+    let now = rocket_raylib.elapsed_time(window)
+    if state.screen == 0:
+        if now >= theme.startup_seconds() or rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_space()):
+            return rebuild(state, 1, state.game, state.selected_bet, state.settings, "Choose a game", "", false, true, state.next_step, state.saved_round)
+        return state
+    if state.screen == 1:
+        return update_lobby(state, window, clicked, mouse_x, mouse_y)
+    if state.screen == 2:
+        return update_game(state, window, clicked, mouse_x, mouse_y, now)
+    return update_settings(state, window, clicked, mouse_x, mouse_y)
+
+fn draw_startup(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
+    let height = rocket_raylib.window_height(window)
+    components.centered_label(window, frame, "SCROLL2ROLL", height / 2 - 70, theme.title_size(), theme.gold())?
+    components.centered_label(window, frame, "A local play-money casino", height / 2, theme.body_size(), theme.text())?
+    return components.centered_label(window, frame, "Loading the tables...", height / 2 + 46, theme.small_size(), theme.muted())
+
+fn draw_lobby(window: rocket_raylib.Window, frame: rocket_raylib.Frame, state: State, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_text(frame, "SCROLL2ROLL", 32, 34, theme.heading_size(), theme.gold())?
+    rocket_raylib.draw_text(frame, string.concat("Play credits ", string.from_int(state.settings.play_balance)), 32, 96, theme.body_size(), theme.emerald())?
+    rocket_raylib.draw_text(frame, "Choose a table", 32, 158, theme.heading_size(), theme.text())?
+    let settings = settings_button(width)
+    components.button(window, frame, settings, "Settings [S]", true, components.contains(settings, mouse_x, mouse_y), false)?
+    var index = 0
+    while index < registry.game_count():
+        let tile = lobby_tile(index, width)
+        components.panel(frame, tile)?
+        rocket_raylib.draw_text(frame, registry.name(index), tile.x + 22, tile.y + 26, theme.heading_size(), theme.text())?
+        rocket_raylib.draw_text(frame, registry.description(index), tile.x + 22, tile.y + 84, theme.small_size(), theme.muted())?
+        var status = "Coming later"
+        var ink = theme.muted()
+        if registry.available(index):
+            status = "Play now"
+            ink = theme.gold()
+        rocket_raylib.draw_text(frame, status, tile.x + 22, tile.y + 154, theme.body_size(), ink)?
+        index = index + 1
+    let exit = exit_button(height)
+    components.button(window, frame, exit, "Exit", true, components.contains(exit, mouse_x, mouse_y), false)?
+    rocket_raylib.draw_text(frame, state.notice, 196, height - 62, theme.small_size(), theme.muted())?
+    return rocket_raylib.draw_text(frame, "Local, account-free, play-money entertainment", width - 416, height - 62, theme.small_size(), theme.muted())
+
+fn draw_settings(window: rocket_raylib.Window, frame: rocket_raylib.Frame, state: State, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    rocket_raylib.draw_text(frame, "SETTINGS", 32, 34, theme.heading_size(), theme.gold())?
+    components.panel(frame, components.rect(width / 2 - 330, 150, 660, 350))?
+    rocket_raylib.draw_text(frame, "Audio [M]", width / 2 - 280, 218, theme.body_size(), theme.text())?
+    var audio = "On"
+    if not state.settings.audio_enabled:
+        audio = "Off"
+    rocket_raylib.draw_text(frame, audio, width / 2 + 20, 218, theme.body_size(), theme.emerald())?
+    rocket_raylib.draw_text(frame, "Volume [Left/Right]", width / 2 - 280, 310, theme.body_size(), theme.text())?
+    rocket_raylib.draw_text(frame, string.concat(string.from_int(state.settings.volume_percent), "%"), width / 2 + 20, 310, theme.body_size(), theme.emerald())?
+    rocket_raylib.draw_text(frame, "AI players [Down/Up]", width / 2 - 280, 402, theme.body_size(), theme.text())?
+    rocket_raylib.draw_text(frame, string.from_int(state.settings.ai_count), width / 2 + 20, 402, theme.body_size(), theme.emerald())?
+    var row = 0
+    while row < 3:
+        let minus = setting_row_button(row, 0, width)
+        components.button(window, frame, minus, "-", true, components.contains(minus, mouse_x, mouse_y), false)?
+        if row > 0:
+            let plus = setting_row_button(row, 1, width)
+            components.button(window, frame, plus, "+", true, components.contains(plus, mouse_x, mouse_y), false)?
+        row = row + 1
+    return rocket_raylib.draw_text(frame, "Escape or B returns to the lobby", 32, 540, theme.body_size(), theme.muted())
+
+fn draw(window: rocket_raylib.Window, state: State) -> Result[Bool, String]:
+    let mouse_x = rocket_raylib.mouse_x(window)
+    let mouse_y = rocket_raylib.mouse_y(window)
+    let frame = rocket_raylib.begin_frame(window)?
+    rocket_raylib.clear(frame, theme.background())?
+    if state.screen == 0:
+        draw_startup(window, frame)?
+    if state.screen == 1:
+        draw_lobby(window, frame, state, mouse_x, mouse_y)?
+    if state.screen == 2:
+        blackjack_view.draw(window, frame, state.game, state.selected_bet, mouse_x, mouse_y)?
+    if state.screen == 3:
+        draw_settings(window, frame, state, mouse_x, mouse_y)?
+    if state.error != "":
+        components.modal(window, frame, "Something needs attention", state.error)?
+    if state.exit_prompt:
+        components.modal(window, frame, "Leave Scroll2Roll?", "Your local settings and settled progress are saved")?
+    rocket_raylib.end_frame(frame)?
+    return Ok(true)
+
+pub fn initial_for_test(save_path: String) -> Result[State, String]:
+    return initial(persistence.defaults(), save_path, "Deterministic test session")
+
+pub fn step_for_test(state: State, window: rocket_raylib.Window) -> State:
+    return update(state, window)
+
+pub fn draw_for_test(window: rocket_raylib.Window, state: State) -> Result[Bool, String]:
+    return draw(window, state)
+
+fn volume_value(percent: Int) -> Float:
+    if percent <= 0:
+        return 0.0
+    if percent <= 25:
+        return 0.25
+    if percent <= 50:
+        return 0.5
+    if percent <= 75:
+        return 0.75
+    return 1.0
+
+fn event_sound(previous: State, current: State, sound: rocket_raylib.Sound, audio_ready: Bool) -> Bool:
+    if audio_ready and current.settings.audio_enabled and previous.game.message != current.game.message:
+        let volume = rocket_raylib.set_sound_volume(sound, volume_value(current.settings.volume_percent))
+        let played = rocket_raylib.play_sound(sound)
+    return true
+
+fn loop(window: rocket_raylib.Window, initial_state: State, sound: rocket_raylib.Sound, audio_ready: Bool) -> Int:
+    var state = initial_state
+    while state.running and not rocket_raylib.window_should_close(window):
+        let previous = state
+        state = update(state, window)
+        let sounded = event_sound(previous, state, sound, audio_ready)
+        match draw(window, state):
+            case Ok(drawn):
+                let expected = drawn
+            case Err(error):
+                print(error)
+                return 21
+    return 0
+
+fn run_silent(window: rocket_raylib.Window, state: State) -> Int:
+    let status = loop(window, state, rocket_raylib.Sound(0), false)
+    let closed = rocket_raylib.close_window(window)
+    return status
+
+fn run_with_audio(window: rocket_raylib.Window, state: State, audio: rocket_raylib.AudioDevice, sound: rocket_raylib.Sound) -> Int:
+    let status = loop(window, state, sound, true)
+    let stopped = rocket_raylib.stop_sound(sound)
+    let sound_closed = rocket_raylib.unload_sound(sound)
+    let audio_closed = rocket_raylib.close_audio(audio)
+    let window_closed = rocket_raylib.close_window(window)
+    return status
+
+pub fn run() -> Int:
+    var save_path = "settings.s2r"
+    var loaded = persistence.LoadResult(persistence.defaults(), true, "Using fallback local settings path")
+    match persistence.default_path():
+        case Ok(path):
+            save_path = path
+            loaded = persistence.load(path)
+        case Err(error):
+            let expected = error
+    match initial(loaded.settings, save_path, loaded.message):
+        case Ok(state):
+            match rocket_raylib.open_window(state.settings.window_width, state.settings.window_height, "Scroll2Roll"):
+                case Ok(window):
+                    let fps = rocket_raylib.set_target_fps(window, 60)
+                    match rocket_raylib.open_audio():
+                        case Ok(audio):
+                            match rocket_raylib.create_tone(audio, 523.25, 0.08):
+                                case Ok(sound):
+                                    return run_with_audio(window, state, audio, sound)
+                                case Err(error):
+                                    let audio_closed = rocket_raylib.close_audio(audio)
+                                    return run_silent(window, state)
+                        case Err(error):
+                            return run_silent(window, state)
+                case Err(error):
+                    print(error)
+                    return 11
+        case Err(error):
+            print(error)
+            return 12

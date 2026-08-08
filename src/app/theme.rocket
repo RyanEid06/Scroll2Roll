@@ -1,0 +1,64 @@
+import src.rocket_raylib
+
+pub fn background() -> rocket_raylib.Color:
+    return rocket_raylib.color(8, 11, 20, 255)
+
+pub fn panel() -> rocket_raylib.Color:
+    return rocket_raylib.color(17, 24, 39, 255)
+
+pub fn panel_hover() -> rocket_raylib.Color:
+    return rocket_raylib.color(25, 35, 53, 255)
+
+pub fn gold() -> rocket_raylib.Color:
+    return rocket_raylib.color(245, 197, 66, 255)
+
+pub fn emerald() -> rocket_raylib.Color:
+    return rocket_raylib.color(16, 185, 129, 255)
+
+pub fn danger() -> rocket_raylib.Color:
+    return rocket_raylib.color(239, 68, 68, 255)
+
+pub fn text() -> rocket_raylib.Color:
+    return rocket_raylib.color(243, 244, 246, 255)
+
+pub fn muted() -> rocket_raylib.Color:
+    return rocket_raylib.color(156, 163, 175, 255)
+
+pub fn border() -> rocket_raylib.Color:
+    return rocket_raylib.color(41, 50, 65, 255)
+
+pub fn card_light() -> rocket_raylib.Color:
+    return rocket_raylib.color(248, 250, 252, 255)
+
+pub fn card_dark() -> rocket_raylib.Color:
+    return rocket_raylib.color(20, 28, 43, 255)
+
+pub fn overlay() -> rocket_raylib.Color:
+    return rocket_raylib.color(0, 0, 0, 190)
+
+pub fn margin() -> Int:
+    return 32
+
+pub fn gap() -> Int:
+    return 16
+
+pub fn control_height() -> Int:
+    return 48
+
+pub fn title_size() -> Int:
+    return 42
+
+pub fn heading_size() -> Int:
+    return 28
+
+pub fn body_size() -> Int:
+    return 18
+
+pub fn small_size() -> Int:
+    return 15
+
+pub fn startup_seconds() -> Float:
+    return 1.2
+
+pub fn turn_delay_seconds() -> Float:
+    return 0.35

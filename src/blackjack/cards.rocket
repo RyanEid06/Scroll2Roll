@@ -1,0 +1,66 @@
+import src.blackjack.model
+import std.collections
+import std.string
+
+pub fn create(rank: Int, suit: Int) -> Result[model.Card, String]:
+    if rank < 1 or rank > 13:
+        return Err("Card rank must be between 1 and 13")
+    if suit < 0 or suit > 3:
+        return Err("Card suit must be between 0 and 3")
+    return Ok(model.Card(rank, suit))
+
+pub fn make_hand(values: Array[model.Card], bet: Int, from_split: Bool) -> model.Hand:
+    return model.Hand(values, bet, false, false, false, from_split, false, 0, false)
+
+pub fn empty_hand(bet: Int, from_split: Bool) -> model.Hand:
+    let values: Array[model.Card] = []
+    return make_hand(values, bet, from_split)
+
+pub fn blackjack_value(card: model.Card) -> Int:
+    if card.rank == 1:
+        return 11
+    if card.rank >= 10:
+        return 10
+    return card.rank
+
+pub fn value(hand: model.Hand) -> model.HandValue:
+    var total = 0
+    var aces = 0
+    var index = 0
+    while index < collections.length(hand.cards):
+        let card = hand.cards[index]
+        total = total + blackjack_value(card)
+        if card.rank == 1:
+            aces = aces + 1
+        index = index + 1
+    while total > 21 and aces > 0:
+        total = total - 10
+        aces = aces - 1
+    let natural = collections.length(hand.cards) == 2 and total == 21 and not hand.from_split
+    return model.HandValue(total, aces > 0, natural, total > 21)
+
+pub fn rank_name(rank: Int) -> String:
+    if rank == 1:
+        return "A"
+    if rank == 11:
+        return "J"
+    if rank == 12:
+        return "Q"
+    if rank == 13:
+        return "K"
+    return string.from_int(rank)
+
+pub fn suit_name(suit: Int) -> String:
+    if suit == 0:
+        return "S"
+    if suit == 1:
+        return "H"
+    if suit == 2:
+        return "D"
+    return "C"
+
+pub fn name(card: model.Card) -> String:
+    return string.concat(rank_name(card.rank), suit_name(card.suit))
+
+pub fn is_red(card: model.Card) -> Bool:
+    return card.suit == 1 or card.suit == 2

@@ -1,0 +1,151 @@
+import src.app.components
+import src.app.theme
+import src.blackjack.cards
+import src.blackjack.engine
+import src.blackjack.model
+import src.blackjack.settlement
+import src.rocket_raylib
+import std.collections
+import std.string
+
+pub fn action_rect(code: Int, height: Int) -> components.Rect:
+    return components.rect(32 + code * 132, height - 76, 120, 44)
+
+pub fn bet_minus_rect(height: Int) -> components.Rect:
+    return components.rect(32, height - 76, 54, 44)
+
+pub fn bet_plus_rect(height: Int) -> components.Rect:
+    return components.rect(96, height - 76, 54, 44)
+
+pub fn deal_rect(height: Int) -> components.Rect:
+    return components.rect(170, height - 76, 148, 44)
+
+pub fn next_rect(height: Int) -> components.Rect:
+    return components.rect(32, height - 76, 170, 44)
+
+pub fn lobby_rect(height: Int) -> components.Rect:
+    return components.rect(214, height - 76, 170, 44)
+
+fn action_available(game: model.Game, code: Int) -> Bool:
+    let actions = engine.available_actions(game)
+    var index = 0
+    while index < collections.length(actions):
+        if engine.action_code(actions[index]) == code:
+            return true
+        index = index + 1
+    return false
+
+fn draw_card(frame: rocket_raylib.Frame, card: model.Card, x: Int, y: Int, hidden: Bool, active: Bool) -> Result[Bool, String]:
+    let width = 64
+    let height = 88
+    var border = theme.border()
+    if active:
+        border = theme.gold()
+    rocket_raylib.draw_rectangle(frame, x - 2, y - 2, width + 4, height + 4, border)?
+    if hidden:
+        rocket_raylib.draw_rectangle(frame, x, y, width, height, theme.card_dark())?
+        rocket_raylib.draw_rectangle(frame, x + 9, y + 9, width - 18, height - 18, theme.border())?
+        return rocket_raylib.draw_text(frame, "S2R", x + 15, y + 34, 16, theme.gold())
+    rocket_raylib.draw_rectangle(frame, x, y, width, height, theme.card_light())?
+    var ink = theme.card_dark()
+    if cards.is_red(card):
+        ink = theme.danger()
+    rocket_raylib.draw_text(frame, cards.rank_name(card.rank), x + 8, y + 8, 23, ink)?
+    return rocket_raylib.draw_text(frame, cards.suit_name(card.suit), x + 9, y + 52, 20, ink)
+
+fn draw_hand(frame: rocket_raylib.Frame, hand: model.Hand, x: Int, y: Int, active: Bool) -> Result[Bool, String]:
+    var index = 0
+    while index < collections.length(hand.cards):
+        draw_card(frame, hand.cards[index], x + index * 46, y, false, active)?
+        index = index + 1
+    let value = cards.value(hand)
+    var summary = string.concat("Total ", string.from_int(value.total))
+    if value.soft:
+        summary = string.concat(summary, " soft")
+    if value.busted:
+        summary = string.concat(summary, " | BUST")
+    if value.blackjack:
+        summary = string.concat(summary, " | BLACKJACK")
+    return rocket_raylib.draw_text(frame, summary, x, y + 98, theme.small_size(), theme.text())
+
+fn draw_dealer(frame: rocket_raylib.Frame, game: model.Game, width: Int) -> Result[Bool, String]:
+    rocket_raylib.draw_text(frame, "DEALER", 40, 92, theme.small_size(), theme.muted())?
+    var index = 0
+    let hide_hole = engine.phase_code(game.phase) == 1
+    while index < collections.length(game.dealer_hand.cards):
+        draw_card(frame, game.dealer_hand.cards[index], 40 + index * 74, 118, hide_hole and index == 1, false)?
+        index = index + 1
+    if not hide_hole:
+        let value = cards.value(game.dealer_hand)
+        rocket_raylib.draw_text(frame, string.concat("Total ", string.from_int(value.total)), 40, 216, theme.body_size(), theme.text())?
+    return rocket_raylib.draw_text(frame, "Dealer stands on soft 17", width - 254, 96, theme.small_size(), theme.muted())
+
+fn draw_ai(frame: rocket_raylib.Frame, game: model.Game, width: Int) -> Result[Bool, String]:
+    var index = 1
+    var x = 260
+    while index < collections.length(game.players):
+        let player = game.players[index]
+        let active = engine.phase_code(game.phase) == 1 and game.active_player == index
+        var ink = theme.muted()
+        if active:
+            ink = theme.gold()
+        rocket_raylib.draw_text(frame, player.name, x, 120, theme.small_size(), ink)?
+        rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(player.balance)), x, 144, theme.small_size(), theme.text())?
+        if collections.length(player.hands) > 0:
+            rocket_raylib.draw_text(frame, string.concat("Hands ", string.from_int(collections.length(player.hands))), x, 168, theme.small_size(), theme.muted())?
+        x = x +(width - 300) / 5
+        index = index + 1
+    return Ok(true)
+
+fn draw_results(frame: rocket_raylib.Frame, game: model.Game, x: Int, y: Int) -> Result[Bool, String]:
+    var index = 0
+    while index < collections.length(game.results):
+        let result = game.results[index]
+        if result.player_index == 0:
+            let label = string.concat(string.concat("Hand ", string.from_int(result.hand_index + 1)), string.concat(": ", settlement.outcome_name(result.outcome)))
+            rocket_raylib.draw_text(frame, label, x, y + index * 24, theme.body_size(), theme.gold())?
+        index = index + 1
+    return Ok(true)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: model.Game, selected_bet: Int, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    components.panel(frame, components.rect(24, 72, width - 48, height - 166))?
+    rocket_raylib.draw_text(frame, "BLACKJACK", 40, 28, theme.heading_size(), theme.gold())?
+    rocket_raylib.draw_text(frame, game.message, 252, 38, theme.body_size(), theme.text())?
+    rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(game.players[0].balance)), width - 230, 38, theme.body_size(), theme.emerald())?
+    draw_dealer(frame, game, width)?
+    draw_ai(frame, game, width)?
+    let player_y = height - 330
+    rocket_raylib.draw_text(frame, "YOUR HANDS", 40, player_y - 28, theme.small_size(), theme.muted())?
+    var hand_index = 0
+    while hand_index < collections.length(game.players[0].hands):
+        let active = engine.phase_code(game.phase) == 1 and game.active_player == 0 and game.players[0].active_hand == hand_index
+        draw_hand(frame, game.players[0].hands[hand_index], 40 + hand_index * 248, player_y, active)?
+        hand_index = hand_index + 1
+    let phase = engine.phase_code(game.phase)
+    if phase == 0:
+        rocket_raylib.draw_text(frame, string.concat("Bet ", string.from_int(selected_bet)), 338, height - 66, theme.body_size(), theme.text())?
+        let minus = bet_minus_rect(height)
+        let plus = bet_plus_rect(height)
+        let deal = deal_rect(height)
+        components.button(window, frame, minus, "-", true, components.contains(minus, mouse_x, mouse_y), false)?
+        components.button(window, frame, plus, "+", true, components.contains(plus, mouse_x, mouse_y), false)?
+        components.button(window, frame, deal, "Deal", true, components.contains(deal, mouse_x, mouse_y), true)?
+    if phase == 1:
+        var code = 0
+        while code < 5:
+            let button = action_rect(code, height)
+            let names = ["Hit [H]", "Stand [S]", "Double [D]", "Split [P]", "Surrender [R]"]
+            components.button(window, frame, button, names[code], action_available(game, code), components.contains(button, mouse_x, mouse_y), code == 0)?
+            code = code + 1
+    if phase == 2:
+        rocket_raylib.draw_text(frame, "Dealer is completing the round...", 40, height - 64, theme.body_size(), theme.gold())?
+    if phase == 3:
+        draw_results(frame, game, width - 330, player_y)?
+        let next = next_rect(height)
+        let lobby = lobby_rect(height)
+        components.button(window, frame, next, "Next round [N]", true, components.contains(next, mouse_x, mouse_y), true)?
+        components.button(window, frame, lobby, "Lobby [B]", true, components.contains(lobby, mouse_x, mouse_y), false)?
+        rocket_raylib.draw_text(frame, "R restarts the table", 410, height - 64, theme.small_size(), theme.muted())?
+    return Ok(true)

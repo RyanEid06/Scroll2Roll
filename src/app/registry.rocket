@@ -1,0 +1,17 @@
+pub fn game_count() -> Int:
+    return 3
+
+pub fn name(index: Int) -> String:
+    if index == 0:
+        return "Blackjack"
+    if index == 1:
+        return "Roulette"
+    return "Poker"
+
+pub fn description(index: Int) -> String:
+    if index == 0:
+        return "Complete table rules, AI players, and split hands"
+    return "Future game - not installed"
+
+pub fn available(index: Int) -> Bool:
+    return index == 0

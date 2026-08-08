@@ -1,0 +1,51 @@
+import src.blackjack.model
+import std.collections
+import std.random
+
+pub fn ordered(deck_count: Int) -> Array[model.Card]:
+    var result: Array[model.Card] = []
+    var deck = 0
+    while deck < deck_count:
+        var suit = 0
+        while suit < 4:
+            var rank = 1
+            while rank <= 13:
+                result = collections.append(result, model.Card(rank, suit))
+                rank = rank + 1
+            suit = suit + 1
+        deck = deck + 1
+    return result
+
+pub fn shuffled(values: Array[model.Card], seed: Int) -> Array[model.Card]:
+    random.seed(seed)
+    var result = values
+    var index = collections.length(result) - 1
+    while index > 0:
+        let other = random.int(0, index + 1)
+        let temporary = result[index]
+        result[index] = result[other]
+        result[other] = temporary
+        index = index - 1
+    return result
+
+pub fn create(table: model.Rules, seed: Int) -> model.Shoe:
+    let values = shuffled(ordered(table.deck_count), seed)
+    return model.Shoe(values, 0, collections.length(values) * table.cut_percent / 100)
+
+pub fn draw(source: model.Shoe) -> Result[model.DrawResult, String]:
+    if source.next_index >= collections.length(source.cards):
+        return Err("The shoe has no cards remaining")
+    let card = source.cards[source.next_index]
+    return Ok(model.DrawResult(model.Shoe(source.cards, source.next_index + 1, source.cut_index), card))
+
+pub fn remaining(source: model.Shoe) -> Int:
+    return collections.length(source.cards) - source.next_index
+
+pub fn should_shuffle(source: model.Shoe, minimum_remaining: Int) -> Bool:
+    return source.next_index >= source.cut_index or remaining(source) < minimum_remaining
+
+pub fn prepared(source: model.Shoe, table: model.Rules, seed: Int, round_number: Int, player_count: Int) -> model.Shoe:
+    let minimum_remaining = player_count * 20 + 20
+    if should_shuffle(source, minimum_remaining):
+        return create(table, seed + round_number * 7919)
+    return source

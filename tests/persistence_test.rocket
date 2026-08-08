@@ -1,0 +1,42 @@
+import src.persistence
+import std.file
+import std.testing
+
+fn run() -> Result[Int, String]:
+    let temporary = testing.temp_directory("scroll2roll-persistence")?
+    let save_path = testing.fixture_path(temporary, "settings.s2r")?
+    let missing = persistence.load(save_path)
+    if missing.recovered or not missing.settings.first_run or missing.settings.play_balance != 1000:
+        return Ok(1)
+    let changed = persistence.with_balance(persistence.with_ai_count(persistence.with_volume(persistence.with_audio(missing.settings, false), 35), 5), 1250)
+    persistence.save(save_path, changed)?
+    let loaded = persistence.load(save_path)
+    if loaded.recovered or loaded.settings.audio_enabled or loaded.settings.volume_percent != 35:
+        return Ok(2)
+    if loaded.settings.ai_count != 5 or loaded.settings.play_balance != 1250 or loaded.settings.first_run:
+        return Ok(3)
+    file.write_text(save_path, "scroll2roll-save-0\n1\n70\n1280\n720\n3\n1000\n0\n")?
+    let old = persistence.load(save_path)
+    if not old.recovered or old.settings.play_balance != 1000:
+        return Ok(4)
+    file.write_text(save_path, "scroll2roll-save-1\n2\n999\n1\n1\n99\n-5\n8\n")?
+    let invalid = persistence.load(save_path)
+    if not invalid.recovered or invalid.settings.volume_percent != 70:
+        return Ok(5)
+    match persistence.parse("not-save-data"):
+        case Ok(value):
+            return Ok(6)
+        case Err(error):
+            let expected = true
+    testing.cleanup_temp(temporary)?
+    if file.exists(temporary):
+        return Ok(7)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

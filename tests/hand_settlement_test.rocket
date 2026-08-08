@@ -1,0 +1,79 @@
+import src.blackjack.cards
+import src.blackjack.engine
+import src.blackjack.model
+import src.blackjack.rules
+import src.blackjack.settlement
+
+fn hand2(first_rank: Int, second_rank: Int, bet: Int, split: Bool) -> Result[model.Hand, String]:
+    let values = [cards.create(first_rank, 0)?, cards.create(second_rank, 1)?]
+    return Ok(cards.make_hand(values, bet, split))
+
+fn hand3(first_rank: Int, second_rank: Int, third_rank: Int, bet: Int) -> Result[model.Hand, String]:
+    let values = [cards.create(first_rank, 0)?, cards.create(second_rank, 1)?, cards.create(third_rank, 2)?]
+    return Ok(cards.make_hand(values, bet, false))
+
+fn run() -> Result[Int, String]:
+    let soft = cards.value(hand2(1, 6, 20, false)?)
+    if soft.total != 17 or not soft.soft:
+        return Ok(1)
+    let reduced = cards.value(hand3(1, 9, 8, 20)?)
+    if reduced.total != 18 or reduced.soft:
+        return Ok(2)
+    let multi_ace = cards.value(hand3(1, 1, 9, 20)?)
+    if multi_ace.total != 21 or not multi_ace.soft:
+        return Ok(3)
+    let bust = cards.value(hand3(10, 8, 5, 20)?)
+    if not bust.busted or bust.total != 23:
+        return Ok(4)
+    let natural = cards.value(hand2(1, 13, 20, false)?)
+    if not natural.blackjack:
+        return Ok(5)
+    let split_twenty_one = cards.value(hand2(1, 13, 20, true)?)
+    if split_twenty_one.blackjack or split_twenty_one.total != 21:
+        return Ok(6)
+    let table = rules.standard()
+    let dealer_eighteen = hand2(10, 8, 0, false)?
+    let blackjack_result = settlement.hand(hand2(1, 13, 20, false)?, dealer_eighteen, table)
+    if settlement.outcome_code(blackjack_result.outcome) != 0 or blackjack_result.payout != 50:
+        return Ok(7)
+    let win = settlement.hand(hand2(10, 9, 20, false)?, dealer_eighteen, table)
+    if settlement.outcome_code(win.outcome) != 1 or win.payout != 40:
+        return Ok(8)
+    let push = settlement.hand(hand2(10, 8, 20, false)?, dealer_eighteen, table)
+    if settlement.outcome_code(push.outcome) != 2 or push.payout != 20:
+        return Ok(9)
+    let loss = settlement.hand(hand2(10, 7, 20, false)?, dealer_eighteen, table)
+    if settlement.outcome_code(loss.outcome) != 3 or loss.payout != 0:
+        return Ok(10)
+    let player_bust = settlement.hand(hand3(10, 8, 5, 20)?, dealer_eighteen, table)
+    if settlement.outcome_code(player_bust.outcome) != 3:
+        return Ok(11)
+    let dealer_bust = settlement.hand(hand2(10, 9, 20, false)?, hand3(10, 8, 5, 0)?, table)
+    if settlement.outcome_code(dealer_bust.outcome) != 1 or dealer_bust.payout != 40:
+        return Ok(12)
+    let base_surrender = hand2(10, 6, 20, false)?
+    let surrendered = model.Hand(base_surrender.cards, 20, false, true, false, false, false, 1, true)
+    let surrender_result = settlement.hand(surrendered, dealer_eighteen, table)
+    if settlement.outcome_code(surrender_result.outcome) != 4 or surrender_result.payout != 10:
+        return Ok(13)
+    let dealer_blackjack = hand2(1, 10, 0, false)?
+    let dealer_win = settlement.hand(hand2(10, 9, 20, false)?, dealer_blackjack, table)
+    if settlement.outcome_code(dealer_win.outcome) != 3:
+        return Ok(14)
+    let both_blackjack = settlement.hand(hand2(1, 13, 20, false)?, dealer_blackjack, table)
+    if settlement.outcome_code(both_blackjack.outcome) != 2 or both_blackjack.payout != 20:
+        return Ok(15)
+    if engine.dealer_should_hit(hand2(1, 6, 0, false)?, table):
+        return Ok(16)
+    let hit_soft = rules.create(6, true, 4, true, true, false, 10, 1000, 75, 2)?
+    if not engine.dealer_should_hit(hand2(1, 6, 0, false)?, hit_soft):
+        return Ok(17)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

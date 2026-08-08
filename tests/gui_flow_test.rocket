@@ -1,0 +1,99 @@
+import src.app.application
+import src.blackjack.engine
+import src.rocket_raylib
+import src.rocket_raylib_testing
+import std.file
+import std.testing
+
+fn press(window: rocket_raylib.Window, key: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_key(key, true, false)
+    return application.step_for_test(state, window)
+
+fn draw_step(window: rocket_raylib.Window, state: application.State) -> Result[application.State, String]:
+    application.draw_for_test(window, state)?
+    return Ok(application.step_for_test(state, window))
+
+fn run() -> Result[Int, String]:
+    if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
+        return Ok(1)
+    let temporary = testing.temp_directory("scroll2roll-gui")?
+    let save_path = testing.fixture_path(temporary, "settings.s2r")?
+    match rocket_raylib.open_window(1280, 720, "Scroll2Roll scripted GUI"):
+        case Ok(window):
+            var state = application.initial_for_test(save_path)?
+            application.draw_for_test(window, state)?
+            state = press(window, rocket_raylib.key_enter(), state)
+            if state.screen != 1:
+                return Ok(2)
+            state = press(window, rocket_raylib.key_s(), state)
+            if state.screen != 3:
+                return Ok(3)
+            let audio_before = state.settings.audio_enabled
+            state = press(window, rocket_raylib.key_m(), state)
+            if state.settings.audio_enabled == audio_before:
+                return Ok(4)
+            let volume_before = state.settings.volume_percent
+            state = press(window, rocket_raylib.key_right(), state)
+            if state.settings.volume_percent <= volume_before:
+                return Ok(5)
+            state = press(window, rocket_raylib.key_b(), state)
+            if state.screen != 1:
+                return Ok(6)
+            let mouse = rocket_raylib_testing.set_mouse(100, 300, true)
+            state = application.step_for_test(state, window)
+            if state.screen != 2 or engine.phase_code(state.game.phase) != 0:
+                return Ok(7)
+            state = press(window, rocket_raylib.key_right(), state)
+            if state.selected_bet <= state.game.rules.minimum_bet:
+                return Ok(8)
+            state = press(window, rocket_raylib.key_enter(), state)
+            var guard = 0
+            while engine.phase_code(state.game.phase) != 3 and guard < 1000:
+                if engine.phase_code(state.game.phase) == 1 and engine.active_player_is_human(state.game):
+                    let action = engine.choose_basic_action(state.game)?
+                    let code = engine.action_code(action)
+                    var key = rocket_raylib.key_h()
+                    if code == 1:
+                        key = rocket_raylib.key_s()
+                    if code == 2:
+                        key = rocket_raylib.key_d()
+                    if code == 3:
+                        key = rocket_raylib.key_p()
+                    if code == 4:
+                        key = rocket_raylib.key_r()
+                    state = press(window, key, state)
+                else:
+                    state = draw_step(window, state)?
+                guard = guard + 1
+            if guard >= 1000 or engine.phase_code(state.game.phase) != 3:
+                return Ok(9)
+            application.draw_for_test(window, state)?
+            state = press(window, rocket_raylib.key_n(), state)
+            if engine.phase_code(state.game.phase) != 0 or state.game.round_number != 2:
+                return Ok(10)
+            state = press(window, rocket_raylib.key_b(), state)
+            if state.screen != 1:
+                return Ok(11)
+            state = press(window, rocket_raylib.key_escape(), state)
+            if not state.exit_prompt:
+                return Ok(12)
+            state = press(window, rocket_raylib.key_enter(), state)
+            if state.running:
+                return Ok(13)
+            let closed = rocket_raylib.close_window(window)
+            if not file.exists(save_path):
+                return Ok(14)
+            testing.cleanup_temp(temporary)?
+            if rocket_raylib_testing.buffer_live_count() != 0:
+                return Ok(15)
+            return Ok(0)
+        case Err(error):
+            return Err(error)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

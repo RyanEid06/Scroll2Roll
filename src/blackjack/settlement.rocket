@@ -1,0 +1,48 @@
+import src.blackjack.cards
+import src.blackjack.model
+
+pub fn hand(player: model.Hand, dealer: model.Hand, table: model.Rules) -> model.HandSettlement:
+    let player_value = cards.value(player)
+    let dealer_value = cards.value(dealer)
+    if player.surrendered:
+        return model.HandSettlement(model.Surrendered(), player.bet / 2, player_value.total, dealer_value.total)
+    if dealer_value.blackjack:
+        if player_value.blackjack:
+            return model.HandSettlement(model.Push(), player.bet, player_value.total, dealer_value.total)
+        return model.HandSettlement(model.Lose(), 0, player_value.total, dealer_value.total)
+    if player_value.blackjack:
+        let profit = player.bet * table.blackjack_numerator / table.blackjack_denominator
+        return model.HandSettlement(model.BlackjackWin(), player.bet + profit, player_value.total, dealer_value.total)
+    if player_value.busted:
+        return model.HandSettlement(model.Lose(), 0, player_value.total, dealer_value.total)
+    if dealer_value.busted or player_value.total > dealer_value.total:
+        return model.HandSettlement(model.Win(), player.bet * 2, player_value.total, dealer_value.total)
+    if player_value.total == dealer_value.total:
+        return model.HandSettlement(model.Push(), player.bet, player_value.total, dealer_value.total)
+    return model.HandSettlement(model.Lose(), 0, player_value.total, dealer_value.total)
+
+pub fn outcome_code(value: model.Outcome) -> Int:
+    match value:
+        case model.BlackjackWin:
+            return 0
+        case model.Win:
+            return 1
+        case model.Push:
+            return 2
+        case model.Lose:
+            return 3
+        case model.Surrendered:
+            return 4
+
+pub fn outcome_name(value: model.Outcome) -> String:
+    match value:
+        case model.BlackjackWin:
+            return "Blackjack"
+        case model.Win:
+            return "Win"
+        case model.Push:
+            return "Push"
+        case model.Lose:
+            return "Lose"
+        case model.Surrendered:
+            return "Surrender"

@@ -1,0 +1,107 @@
+pub enum Phase:
+    Betting
+    PlayerTurns
+    DealerTurn
+    Settled
+
+pub enum Action:
+    Hit
+    Stand
+    Double
+    Split
+    Surrender
+
+pub enum Outcome:
+    BlackjackWin
+    Win
+    Push
+    Lose
+    Surrendered
+
+pub struct Rules:
+    deck_count: Int
+    dealer_hits_soft_17: Bool
+    blackjack_numerator: Int
+    blackjack_denominator: Int
+    max_split_hands: Int
+    allow_double_after_split: Bool
+    allow_surrender: Bool
+    allow_resplit_aces: Bool
+    minimum_bet: Int
+    maximum_bet: Int
+    cut_percent: Int
+    bet_unit: Int
+
+pub struct Card:
+    rank: Int
+    suit: Int
+
+pub struct Hand:
+    cards: Array[Card]
+    bet: Int
+    stood: Bool
+    surrendered: Bool
+    doubled: Bool
+    from_split: Bool
+    split_aces: Bool
+    action_count: Int
+    finished: Bool
+
+pub struct HandValue:
+    total: Int
+    soft: Bool
+    blackjack: Bool
+    busted: Bool
+
+pub struct Player:
+    id: Int
+    name: String
+    is_human: Bool
+    balance: Int
+    pending_bet: Int
+    hands: Array[Hand]
+    active_hand: Int
+
+pub struct Shoe:
+    cards: Array[Card]
+    next_index: Int
+    cut_index: Int
+
+pub struct DrawResult:
+    shoe: Shoe
+    card: Card
+
+pub struct HandSettlement:
+    outcome: Outcome
+    payout: Int
+    player_total: Int
+    dealer_total: Int
+
+pub struct HandResult:
+    player_index: Int
+    hand_index: Int
+    outcome: Outcome
+    payout: Int
+    player_total: Int
+    dealer_total: Int
+
+pub struct ChipStack:
+    total: Int
+    purple_500: Int
+    black_100: Int
+    green_25: Int
+    blue_10: Int
+    red_5: Int
+    white_1: Int
+
+pub struct Game:
+    rules: Rules
+    shoe: Shoe
+    dealer_hand: Hand
+    players: Array[Player]
+    phase: Phase
+    active_player: Int
+    round_number: Int
+    seed: Int
+    message: String
+    results: Array[HandResult]

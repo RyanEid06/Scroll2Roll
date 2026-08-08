@@ -1,0 +1,100 @@
+import src.blackjack.cards
+import src.blackjack.model
+import src.blackjack.rules
+import src.blackjack.shoe
+import std.collections
+
+fn same(left: model.Card, right: model.Card) -> Bool:
+    return left.rank == right.rank and left.suit == right.suit
+
+fn run() -> Result[Int, String]:
+    match cards.create(0, 0):
+        case Ok(value):
+            return Ok(1)
+        case Err(error):
+            let expected = true
+    match cards.create(14, 0):
+        case Ok(value):
+            return Ok(2)
+        case Err(error):
+            let expected = true
+    match cards.create(1, -1):
+        case Ok(value):
+            return Ok(3)
+        case Err(error):
+            let expected = true
+    match cards.create(1, 4):
+        case Ok(value):
+            return Ok(4)
+        case Err(error):
+            let expected = true
+    let valid = cards.create(13, 3)?
+    if valid.rank != 13 or valid.suit != 3:
+        return Ok(5)
+    let deck = shoe.ordered(1)
+    if collections.length(deck) != 52:
+        return Ok(6)
+    var seen = 0
+    var index = 0
+    while index < collections.length(deck):
+        if deck[index].rank == 1 and deck[index].suit == 0:
+            seen = seen + 1
+        index = index + 1
+    if seen != 1:
+        return Ok(7)
+    let six = shoe.ordered(6)
+    if collections.length(six) != 312:
+        return Ok(8)
+    seen = 0
+    index = 0
+    while index < collections.length(six):
+        if six[index].rank == 13 and six[index].suit == 2:
+            seen = seen + 1
+        index = index + 1
+    if seen != 6:
+        return Ok(9)
+    let first = shoe.shuffled(deck, 4242)
+    let second = shoe.shuffled(deck, 4242)
+    let different = shoe.shuffled(deck, 4243)
+    var difference_found = false
+    index = 0
+    while index < collections.length(first):
+        if not same(first[index], second[index]):
+            return Ok(10)
+        if not same(first[index], different[index]):
+            difference_found = true
+        index = index + 1
+    if not difference_found:
+        return Ok(11)
+    var one: Array[model.Card] = []
+    one = collections.append(one, valid)
+    let one_shoe = model.Shoe(one, 0, 1)
+    let drawn = shoe.draw(one_shoe)?
+    if not same(drawn.card, valid):
+        return Ok(12)
+    match shoe.draw(drawn.shoe):
+        case Ok(value):
+            return Ok(13)
+        case Err(error):
+            let expected = true
+    let table = rules.standard()
+    let full = shoe.create(table, 77)
+    if shoe.should_shuffle(full, 20):
+        return Ok(14)
+    let cut = model.Shoe(full.cards, full.cut_index, full.cut_index)
+    if not shoe.should_shuffle(cut, 20):
+        return Ok(15)
+    let prepared = shoe.prepared(cut, table, 77, 2, 4)
+    if prepared.next_index != 0:
+        return Ok(16)
+    if same(prepared.cards[0], full.cards[0]) and same(prepared.cards[1], full.cards[1]):
+        return Ok(17)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90
