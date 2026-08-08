@@ -39,6 +39,11 @@ cmake --build out/build/windows-release
 
 CMake targets are `scroll2roll_build`, `scroll2roll_check`, and `scroll2roll_test`. Native libraries and generated bindings are placed under ignored `.rocketc`/`generated` paths and must never be committed.
 
+The application forces raylib's `SUPPORT_CUSTOM_FRAME_CONTROL` option off.
+`rocket_raylib.end_frame` relies on raylib's standard `EndDrawing()` contract to
+swap buffers, enforce frame timing, and poll Windows events. The forced setting
+also repairs an older CMake cache where that option was enabled.
+
 ## Visual Studio Community 2026
 
 Open the repository folder, then open any `.rocket` file. The installed Rocket Language 2.0.3 extension discovers the nearest `rocket.toml`. Its Build, Run, Test, Stop, Debug, environment validation, and options commands are available from the normal Visual Studio UI. Run and Debug use hidden redirected processes and do not open an external terminal.

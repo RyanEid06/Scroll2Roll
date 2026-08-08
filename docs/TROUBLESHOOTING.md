@@ -6,6 +6,15 @@ Scroll2Roll version 0.2.0 targets Windows x64. Extract the complete ZIP to a wri
 
 If Windows displays an unknown-publisher warning, that is expected for this local unsigned build. Scroll2Roll does not claim trusted code signing. Verify the files against `SHA256SUMS.txt` before running.
 
+## The window is white or Windows reports Not Responding
+
+Reconfigure and rebuild through CMake or `scripts/validate.ps1`. Scroll2Roll
+forces raylib custom frame control off so `EndDrawing()` swaps the frame, limits
+the loop, and pumps Windows events. A stale native library built while
+`SUPPORT_CUSTOM_FRAME_CONTROL` was enabled will open a white window and run an
+unbounded eventless loop; a normal Rocket-only relink does not rebuild that
+library.
+
 ## Audio is unavailable
 
 The game continues silently if Windows cannot open an audio device. Audio can be disabled or adjusted in Settings.

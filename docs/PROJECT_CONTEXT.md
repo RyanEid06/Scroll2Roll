@@ -164,8 +164,8 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
   hover, definition, semantic tokens, and live diagnostics without protocol
   stderr; the earlier full interactive Stop/Error List/navigation/source-debug
   baseline remains the durable interaction proof.
-- `Scroll2Roll-0.2.0-windows-x64.zip` is 1,689,013 bytes with SHA-256
-  `0106CDE2DD01A784BBE087D3061A4A3E42CECD6F303466F6B1628FFB66AE9071`.
+- `Scroll2Roll-0.2.0-windows-x64.zip` is 1,733,465 bytes with SHA-256
+  `901AD7600017EB227A7DDB755B56D65490CB978797228A6C3EBA60E2089CDA4B`.
   Its internal checksums, forbidden-content scan, and relocated headless smoke
   all pass.
 - The three-file source site and four-file staged site pass validation with the
@@ -238,6 +238,11 @@ Spacing, typography, component states, borders, timing, and responsive layout va
   cumulative Visual Studio acceptance, LSP checks, portable package and internal
   hashes, sanitized relocation, source/staged site validation, exact archive
   evidence, and the clean local handoff.
+- Completed: post-acceptance native frame-loop repair. Scroll2Roll now forces
+  raylib custom frame control off so the standard `EndDrawing()` lifecycle
+  swaps buffers, limits FPS, and pumps Windows events. The previously white,
+  nonresponsive window now renders responsively with stable memory, and both
+  Debug and Release gates pass 26/26.
 - Next: owner review of the local 0.2.0 handoff. Do not push, publish, deploy,
   create a release, or claim trusted signing without explicit approval.
 
@@ -256,6 +261,9 @@ Spacing, typography, component states, borders, timing, and responsive layout va
   engine-defined safe settlement/cash-out/hand boundaries.
 - Keep every compiled Rocket source basename unique so frozen CodeView records
   remain unambiguous without changing Rocket 2.0 or its Visual Studio extension.
+- Force raylib `SUPPORT_CUSTOM_FRAME_CONTROL` off because the safe Rocket adapter
+  intentionally delegates buffer swapping, frame pacing, and event polling to
+  raylib's standard `EndDrawing()` behavior.
 
 ## Files that must remain out of Git
 
@@ -268,5 +276,6 @@ completely. Inspect Git status and preserve user changes. The 0.1.0 Blackjack
 baseline remains preserved and the complete 0.2.0 six-game suite passes 26/26
 in Debug and Release. The package, relocation, Visual Studio/LSP, and
 source/staged website evidence is complete in `VALIDATION.md`. Keep using frozen
-Rocket 2.0 and the pinned raylib integration. Do not push, publish, deploy, sign,
-or add an unapproved game.
+Rocket 2.0 and the pinned raylib integration with custom frame control forced
+off. Do not push, publish, deploy, sign, or add an unapproved game without owner
+approval.

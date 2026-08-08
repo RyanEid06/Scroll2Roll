@@ -203,6 +203,24 @@ Two owner-reported dialogs were reproduced and repaired on 2026-08-09:
   build, `rocketc check`, all 26 tests, and both formatting checks. The portable
   LSP check also remained clean.
 
+### Native frame-loop repair
+
+The owner-visible white `Scroll2Roll (Not Responding)` window was reproduced on
+2026-08-09. Startup markers proved window creation, WASAPI initialization, every
+Rocket update, and every Rocket draw completed. A five-second direct C++/raylib
+probe reproduced the same failure without any Rocket or casino state, isolating
+the native frame contract.
+
+Both generated CMake caches had `SUPPORT_CUSTOM_FRAME_CONTROL=ON`. In that mode
+raylib's `EndDrawing()` deliberately omits buffer swapping, target-FPS timing,
+and event polling, while Scroll2Roll's adapter relies on the standard
+`EndDrawing()` contract. `CMakeLists.txt` now forces the option off. After a
+native rebuild, six consecutive live-process samples reported
+`Responding=True`; working memory stayed near 89-94 MiB instead of rising toward
+900 MiB, and the rendered window closed normally. Fresh Debug and Release
+validation each passed the native build, `rocketc check`, all 26 tests, and both
+formatting checks.
+
 ## Version 0.2.0 Windows package
 
 The final packaging commands were:
@@ -212,9 +230,9 @@ The final packaging commands were:
 .\scripts\test-package.ps1
 ```
 
-`out/package/Scroll2Roll-0.2.0-windows-x64.zip` is 1,689,013 bytes
+`out/package/Scroll2Roll-0.2.0-windows-x64.zip` is 1,733,465 bytes
 with SHA-256
-`0106CDE2DD01A784BBE087D3061A4A3E42CECD6F303466F6B1628FFB66AE9071`.
+`901AD7600017EB227A7DDB755B56D65490CB978797228A6C3EBA60E2089CDA4B`.
 It contains `Scroll2Roll.exe`, README, controls, troubleshooting, version,
 notices, and `SHA256SUMS.txt`. Every internal checksum was recomputed and
 matched. The archive excludes sources, dependencies, compiler/build trees,
@@ -231,7 +249,7 @@ No trusted code signature is claimed.
 - `.\scripts\test-website.ps1` passes the three source `website/` files.
 - `.\scripts\prepare-cloudflare-site.ps1` and
   `.\scripts\test-website.ps1 -Site .\out\cloudflare-site` pass the four staged
-  files with the 1,689,013-byte release archive included.
+  files with the 1,733,465-byte release archive included.
 - The validator enforces the current Cloudflare Pages Free ceilings of 20,000
   files and 25 MiB per asset, rechecked against official Cloudflare
   documentation on 2026-08-09, and rejects browser-playable or real-money
