@@ -15,7 +15,8 @@ Scroll2Roll uses a premium, modern, dark, original casino treatment with accessi
 | `COLOR_MUTED` | `#9CA3AF` | Supporting text |
 | `COLOR_BORDER` | `#293241` | Dividers and outlines |
 
-Spacing, font sizes, radii, borders, button states, animation timings, and responsive breakpoints belong in the design-token module. Procedural raylib shapes and text are replaceable presentation assets; they do not leak into engine APIs.
+Spacing, font sizes, radii, borders, button states, timing, and responsive breakpoints are centralized in `src/app/theme.rocket`. Reusable panels, buttons, cards, labels, and modals live in `src/app/components.rocket`. Procedural raylib shapes and text are replaceable presentation assets; they do not leak into engine APIs.
 
 Keyboard focus, disabled states, hover/pressed states, readable hand totals, suit differentiation, and resolution-aware layout are required. Motion must never obscure legal actions or round state.
 
+The implemented startup, lobby, settings, exit confirmation, and Blackjack table use the same token system. The table renders dealer and player/AI regions, a hidden hole card before reveal, split hands, active-hand highlighting, ranks/suits/totals, balance and limits, legal-action states, outcomes, and next/restart/lobby flows. The website preview intentionally echoes this system without claiming browser play.

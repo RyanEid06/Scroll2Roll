@@ -6,19 +6,24 @@ The application follows one-way dependencies: reusable shell and Blackjack prese
 
 Circular imports, duplicated visual rules, machine-specific paths, and C++ application state are prohibited.
 
-## Planned modules
+## Implemented modules
 
 - `src/blackjack/model.rocket`: public state and result values.
 - `src/blackjack/cards.rocket`: validated cards, names, and hand evaluation.
 - `src/blackjack/shoe.rocket`: deck construction, deterministic shuffling, draw, and cut-card policy.
 - `src/blackjack/rules.rocket`: table limits and rule configuration.
-- `src/blackjack/engine.rocket`: betting, legal actions, state transitions, dealer, settlement, and round cleanup.
+- `src/blackjack/settlement.rocket`: outcome resolution and exact integer-credit payouts.
+- `src/blackjack/engine.rocket`: betting, legal actions, state transitions, dealer progression, AI turns, and round cleanup.
 - `src/blackjack/strategy.rocket`: deterministic basic strategy.
 - `src/blackjack/api.rocket`: intentionally small presentation-facing facade.
 - `src/app/*`: router, screens, reusable components, design tokens, and input flow.
 - `src/persistence.rocket`: versioned local settings/save parsing and safe recovery.
 - `src/rocket_raylib.rocket`: safe Rocket graphics/input/audio boundary.
 - `native/rocket_raylib_adapter.*`: primitive ABI and resource-token policy only.
+
+`src/app/registry.rocket` is the shell's routing boundary. Blackjack is registered as available; Roulette and Poker appear only as honest future placeholders. Adding a game does not require rewriting startup, lobby, settings, persistence, or common controls.
+
+`src/app/blackjack_view.rocket` reads engine state and emits intents through `src/blackjack/api.rocket`. It does not calculate legal moves, hand values, payouts, or dealer behavior.
 
 ## Money representation
 
@@ -28,3 +33,6 @@ All play-money values are integer credits. Bets use a table unit compatible with
 
 Shoe generation accepts an explicit seed. Tests use deterministic state construction through checked helpers and scripted GUI input. Production rendering and audio are excluded from engine decisions. Every safety loop has a finite error-producing bound.
 
+## Native boundary
+
+The C++ adapter owns only raylib calls, primitive C ABI translation, and validated resource tokens. Window, audio, sound, texture, and callback lifetimes are exercised by focused tests. Application state, Blackjack rules, persistence, routing, and rendering composition remain in Rocket.

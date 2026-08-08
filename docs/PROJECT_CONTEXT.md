@@ -12,12 +12,13 @@ Read this file and `MASTER_PLAN.md` completely at the start of every Scroll2Roll
 - Graphics/input/audio: Rocket's reviewed raylib 6.0 integration
 - Target: Windows x64
 - IDE: Visual Studio Community 2026 with Rocket Language 2.0.3
+- Current version: 0.1.0
 
-## Product vision and current scope
+## Product vision and completed scope
 
-Scroll2Roll will provide a polished reusable casino shell and add games one at a time. Version 1 completes Blackjack first, with a branded startup experience, lobby, settings, local play-money presentation, reusable controls, deterministic engine tests, native packaging, and a Cloudflare-hosted product/download website.
+Scroll2Roll is a polished, local, single-player, play-money casino shell that can add owner-approved games one at a time. Version 0.1.0 completes Blackjack first with a branded startup experience, reusable lobby and settings, deterministic headless engine tests, a native raylib table, versioned local persistence, portable Windows packaging, and a prepared Cloudflare product/download website.
 
-Current scope is execution of the complete first-release master plan. The current milestone is repository foundation and preservation of the original draft.
+All 13 implementation and validation milestones in `MASTER_PLAN.md` are complete locally. No push, release publication, Cloudflare deployment, or signing was performed.
 
 ## Explicit non-goals
 
@@ -26,50 +27,60 @@ Current scope is execution of the complete first-release master plan. The curren
 - No online multiplayer or gambling service.
 - No browser implementation of the Rocket casino.
 - No Rocket syntax, compiler, runtime ABI, LSP, diagnostic, package, CodeView/PDB, source-map, or Phase 19 changes.
-- No additional unfinished casino games before Blackjack is complete.
+- No additional casino game implementation before future owner direction.
 - No push, publication, deployment, or unsupported signing claim without owner approval.
 
 ## Rocket and raylib constraints
 
-Rocket 2.0 is frozen. Scroll2Roll adapts to its four-space indentation, single-line call/signature/expression syntax, explicit `Result` failures, deterministic package layout, Windows x64 C ABI, and reviewed primitive-only raylib adapter. Casino behavior remains in Rocket. Native C++ code is restricted to primitive policy/ABI adaptation and resource-token validation. The pinned Rocket checkout supplies MSVC, Ninja, LLVM/Clang 22.1.6, and raylib 6.0; no arbitrary raylib download is permitted.
-
-## Hosting decision
-
-The Rocket application is a portable native Windows executable. Cloudflare will host a small static product/download website, screenshots, documentation, and release links. The site must never imply that the native application runs in a browser. Release-file placement will be chosen only after checking current Cloudflare free-tier asset limits.
-
-## Architecture
-
-The planned dependency direction is:
-
-1. Rules-free shared model values and small module APIs.
-2. Cards, hand evaluation, shoe, rules, betting, legal actions, turns, dealer, settlement, and strategy modules.
-3. A presentation-facing Blackjack game API that owns state transitions.
-4. Local settings/persistence isolated from game rules.
-5. A reusable application router, design tokens, components, lobby, and Blackjack screen.
-6. The safe Rocket raylib wrapper over a primitive-only C++ adapter.
-
-Rendering never owns Blackjack rules, and deterministic headless tests do not require raylib.
+Rocket 2.0 remains frozen and the original Rocket repository remains untouched by casino implementation. Scroll2Roll adapts to four-space indentation, single-line call/signature/expression syntax, explicit `Result` failures, deterministic package layout, the Windows x64 C ABI, and the reviewed primitive-only raylib adapter. Casino behavior stays in Rocket. Native C++ is restricted to primitive raylib adaptation and validated resource tokens. The configurable Rocket checkout supplies pinned MSVC, Ninja, LLVM/Clang 22.1.6, and raylib 6.0; Scroll2Roll does not download a second raylib copy.
 
 ## Implemented functionality
 
-- Empty GitHub repository cloned into the required isolated sibling workspace.
-- Authoritative master plan copied byte-for-byte to `docs/MASTER_PLAN.md`.
-- Untouched original draft copied to `legacy/Blackjack-v1` without moving or changing the Rocket-repository source.
-- Permanent documentation and repository policy established.
+- The authoritative master plan is preserved byte-for-byte as `docs/MASTER_PLAN.md`.
+- The untouched original failing draft is preserved under `legacy/Blackjack-v1`.
+- A modular rendering-independent Blackjack engine implements checked cards, exact hand values, a deterministic six-deck shoe, cut-card reshuffling, table limits, player/AI betting, legal actions, Hit, Stand, Double Down, Split, Double After Split, a four-hand maximum, split-Ace one-card behavior, no standard resplit, Late Surrender, dealer stand on soft 17, naturals, exact 3:2 settlement, and deterministic AI/basic-strategy progression.
+- Complete and consecutive rounds have bounded transitions and nonnegative play-money balances.
+- A small `src/blackjack/api.rocket` facade is the only rules boundary used by the visual table.
+- The raylib application implements startup, reusable lobby routing, settings, exit confirmation, keyboard/mouse controls, honest Roulette/Poker future placeholders, zero-to-five AI players, dealer and split-hand presentation, hidden/revealed hole card, disabled illegal actions, outcomes, next round, restart, and lobby return.
+- Versioned local persistence stores display/audio preferences, AI count, first-run state, and approved play-money progress at `%LOCALAPPDATA%\Scroll2Roll\settings.s2r`, with safe missing/invalid/older-data recovery.
+- The static website and Cloudflare Pages staging flow are implemented without claiming browser play.
+- Release packaging includes the native executable, version, notices, controls, troubleshooting, and checksums, and passes relocated headless smoke validation.
 
-No Blackjack feature is currently claimed complete.
+## Architecture
+
+Dependency direction is one way:
+
+1. Shared Blackjack model values.
+2. Cards/hand evaluation, rules, shoe, settlement, and strategy.
+3. The engine state machine and presentation-facing API.
+4. Versioned local persistence isolated from rules.
+5. Reusable router, design tokens, components, lobby, settings, and Blackjack view.
+6. The safe Rocket raylib wrapper over a primitive C++ adapter.
+
+Rendering never owns Blackjack rules. The C++ adapter never owns application or casino state. Deterministic headless tests do not require a real window or audio device.
 
 ## Verified evidence
 
-- Rocket repository was clean on `master` at `cbf7b1a` before Scroll2Roll changes.
-- Scroll2Roll remote clone reported an empty repository and created local `main` with no commits.
-- `docs/MASTER_PLAN.md` and the source plan both have SHA-256 `48D1E92041299ED413FA6947E4342783B29B142041D1A445C049EA259D50C4C9`.
-- The untouched draft reproduces Rocket parser diagnostics; `rocketc test` reports `0 passed; 1 failed` because the package does not compile.
+- The Rocket repository was clean on `master` at `cbf7b1a` before Scroll2Roll changes, and no casino file was placed there.
+- The source master plan and `docs/MASTER_PLAN.md` both have SHA-256 `48D1E92041299ED413FA6947E4342783B29B142041D1A445C049EA259D50C4C9`.
+- The preserved original `legacy/Blackjack-v1/src/blackjack.rocket` has SHA-256 `11D7291C9F222C77BCCC5A7AF8C457F0083FC6BE42DB3CA6458B80B5C3FAB5CC` and still reproduces its original Rocket parser failure.
+- Debug and Release validation each pass build/check, 10/10 Rocket tests, and formatting checks.
+- Visual Studio GUI Build/Run/Test/Stop/Debug, Error List navigation, Go To Definition, source breakpoints, stepping, six-frame call stack, one represented scalar local, clean stop, and terminal-free processes were verified from this repository.
+- A framed Scroll2Roll LSP session verified project discovery, completion, hover, definition, references, rename, symbols, semantic tokens, and live diagnostics without protocol errors.
+- The portable package passes forbidden-content scanning and a relocated `--headless-smoke` launch outside the source checkout.
+- The final `Scroll2Roll-0.1.0-windows-x64.zip` is 1,507,358 bytes with SHA-256 `6408d68501e02005164ff2bb016026d71b90ae6e49dfe43e2f324c0dc96d4ac7`.
+- Source and staged website validation pass current Cloudflare Pages Free file-count and per-asset limits.
+- Detailed evidence and exact commands are in `docs/VALIDATION.md`.
 
-## Known limitations
+## Deliberate limitations
 
-- The active repaired engine, comprehensive test suite, raylib UI, persistence, packaging, website, and Visual Studio project validation are not implemented yet.
-- The original draft is monolithic, uses invalid multiline Rocket syntax, contains corrupted README tree characters, and has a test helper that hides invalid card construction.
+- Version 0.1.0 is unsigned. Windows may show an unknown-publisher warning; trusted code signing is not claimed.
+- The game is local-only and play-money-only. Credits are not transferable and have no cash value.
+- Roulette and Poker are noninteractive future placeholders, not implemented games.
+- The packaged application uses procedural UI art and a short generated tone; it does not ship a screenshot-baseline suite or external art/audio catalog.
+- The frozen Rocket debugger represented the scalar `status` local during acceptance; managed locals such as the argument array may display as unavailable in the native debugger.
+- The frozen LSP's formatter is exposed through its `source.format.rocket` code-action contract and the reproducible `rocketc fmt` workflow; Visual Studio's generic `Edit.FormatDocument` command is not advertised for Rocket documents.
+- No public release, Cloudflare site, remote download, external production user, or certificate signature is claimed.
 
 ## Visual design tokens
 
@@ -82,20 +93,26 @@ No Blackjack feature is currently claimed complete.
 - Muted text: `#9CA3AF`
 - Border: `#293241`
 
-Spacing, typography, component states, borders, animation timing, and responsive layout values will be centralized in named tokens.
+Spacing, typography, component states, borders, timing, and responsive layout values are centralized in `src/app/theme.rocket`.
 
 ## Milestones
 
-- Completed: authoritative discovery, repository separation, clone, original-draft preservation, initial failure reproduction, master-plan preservation.
-- Current: finish repository foundation and commit recoverable baseline history.
-- Next: import the reviewed raylib scaffold, repair and modularize the headless Blackjack engine, then add comprehensive deterministic tests.
+- Completed: repository foundation and original-draft preservation.
+- Completed: Rocket 2.0 repair, modular Blackjack engine, focused tests, and deterministic round flows.
+- Completed: reviewed raylib integration, reusable shell, full visual Blackjack, settings, and local persistence.
+- Completed: Visual Studio Community 2026 repository acceptance.
+- Completed: Windows packaging, relocated smoke validation, static website, and Cloudflare Pages preparation.
+- Current: final local commits and owner review.
+- Next: only with explicit owner approval, push the local commits and publish/deploy the prepared release/site. Later games require separate owner direction.
 
 ## Major decisions
 
-- Preserve the draft under `legacy/Blackjack-v1` so repairs can proceed without losing original evidence.
+- Preserve the draft under `legacy/Blackjack-v1` so the repaired implementation never destroys historical evidence.
 - Use integer credits and even bet units so Blackjack 3:2 payouts remain exact.
-- Keep the casino economy local and deliberately small; persistence will store only versioned settings and approved play-money progress.
-- Keep the Cloudflare site static and separate from native Rocket application behavior.
+- Keep the casino economy local and deliberately small; persistence contains only versioned preferences, first-run state, AI count, and play-money progress.
+- Keep rendering dependent on the tested Blackjack API instead of duplicating game rules.
+- Keep the native adapter narrow and reusable; new UI operations were added only when demonstrated necessary.
+- Keep the Cloudflare site static and separate from native application behavior. The current archive fits Pages Free's verified 25 MiB per-asset limit.
 
 ## Files that must remain out of Git
 
@@ -103,5 +120,4 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 
 ## New-chat handoff
 
-Read `AGENTS.md`, `docs/MASTER_PLAN.md`, and this file completely. Inspect Git status and preserve user changes. Continue from **Milestones**, use frozen Rocket 2.0 and the pinned raylib integration, validate each claim, update this handoff after meaningful progress, make logical local commits, and do not push or publish.
-
+Read `AGENTS.md`, `docs/MASTER_PLAN.md`, and this file completely. Inspect Git status and preserve user changes. The complete 0.1.0 implementation is locally validated; continue only from **Milestones**. Use frozen Rocket 2.0 and the pinned raylib integration, rerun proportionate validation for changes, update this handoff, make logical local commits, and do not push, publish, deploy, sign, or start another game without explicit owner approval.

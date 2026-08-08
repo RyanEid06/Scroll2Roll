@@ -1,0 +1,23 @@
+# Troubleshooting
+
+## The application does not start
+
+Scroll2Roll version 0.1.0 targets Windows x64. Extract the complete ZIP to a writable local folder, then run `Scroll2Roll.exe`. Do not run the executable from inside the ZIP.
+
+If Windows displays an unknown-publisher warning, that is expected for this local unsigned build. Scroll2Roll does not claim trusted code signing. Verify the files against `SHA256SUMS.txt` before running.
+
+## Audio is unavailable
+
+The game continues silently if Windows cannot open an audio device. Audio can be disabled or adjusted in Settings.
+
+## Settings are damaged or need resetting
+
+Version 1 stores only local, non-sensitive settings and play-money progress in `%LOCALAPPDATA%\Scroll2Roll\settings.s2r`. Delete that file while Scroll2Roll is closed to restore defaults. Missing, older, or invalid data is recovered safely.
+
+## Controls appear disabled
+
+The engine enables only legal actions for the active hand. Double Down requires enough remaining credits; Split requires an equal-rank pair and respects the four-hand limit; Surrender is available only as the first action on an unsplit two-card hand.
+
+## Reporting a problem
+
+Record the version, the exact action sequence, and whether the problem occurs in the portable package or a development build. Never attach personal or sensitive data; Scroll2Roll does not need any.

@@ -1,0 +1,5 @@
+Scroll2Roll 0.1.0
+Windows x64
+Rocket 2.0
+raylib 6.0
+Local unsigned development release candidate

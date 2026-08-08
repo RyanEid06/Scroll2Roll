@@ -11,13 +11,21 @@ Do not download a separate raylib distribution.
 
 ## Headless Rocket workflow
 
-From the repository root, with `rocketc` available:
+From the repository root, after activating the pinned Rocket toolchain:
 
 ```powershell
 rocketc check .
 rocketc build .
 rocketc test .
 rocketc fmt . --check
+```
+
+The repository validation script is the preferred complete entry point:
+
+```powershell
+$rocketRoot = "C:\path\to\frozen-rocket"
+.\scripts\validate.ps1 -Configuration Debug -RocketRoot $rocketRoot
+.\scripts\validate.ps1 -Configuration Release -RocketRoot $rocketRoot
 ```
 
 ## Native raylib workflow
@@ -29,5 +37,26 @@ cmake -S . -B out/build/windows-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DRO
 cmake --build out/build/windows-release
 ```
 
-The exact implemented scripts and targets will be recorded here as milestones complete.
+CMake targets are `scroll2roll_build`, `scroll2roll_check`, and `scroll2roll_test`. Native libraries and generated bindings are placed under ignored `.rocketc`/`generated` paths and must never be committed.
 
+## Visual Studio Community 2026
+
+Open the repository folder, then open any `.rocket` file. The installed Rocket Language 2.0.3 extension discovers the nearest `rocket.toml`. Its Build, Run, Test, Stop, Debug, environment validation, and options commands are available from the normal Visual Studio UI. Run and Debug use hidden redirected processes and do not open an external terminal.
+
+Set portable Rocket paths through the extension settings or environment:
+
+```powershell
+$env:ROCKET_COMPILER = "C:\path\to\frozen-rocket\out\build\windows-release\rocketc.exe"
+$env:ROCKET_LANGUAGE_SERVER = "C:\path\to\frozen-rocket\out\build\windows-release\rocket-lsp.exe"
+```
+
+## Packaging
+
+```powershell
+.\scripts\package-windows.ps1 -RocketRoot $rocketRoot
+.\scripts\test-package.ps1
+.\scripts\prepare-cloudflare-site.ps1
+.\scripts\test-website.ps1 -Site .\out\cloudflare-site
+```
+
+Generated builds, packages, staged sites, dependencies, PDBs, maps, and user saves remain ignored.

@@ -6,16 +6,21 @@ The native application targets Windows x64. It has no accounts, deposits, withdr
 
 ## Project status
 
-Implementation is being executed against the authoritative [master plan](docs/MASTER_PLAN.md). The untouched original Blackjack draft is preserved under `legacy/Blackjack-v1`; its initial Rocket 2.0 compiler failure is recorded in [project context](docs/PROJECT_CONTEXT.md).
+The complete version-0.1.0 master-plan implementation is present and locally validated. It includes the modular Blackjack engine, deterministic tests, raylib desktop UI, reusable casino shell, versioned local persistence, Windows packaging workflow, and prepared static product/download website. The untouched original Blackjack draft remains preserved under `legacy/Blackjack-v1`; its initial Rocket 2.0 compiler failure is recorded in [project context](docs/PROJECT_CONTEXT.md).
 
 Read `AGENTS.md`, `docs/MASTER_PLAN.md`, and `docs/PROJECT_CONTEXT.md` before changing the project.
 
-## Planned developer entry points
+## Developer entry points
 
-- `rocketc check .`, `rocketc build .`, and `rocketc test .` validate the Rocket package.
-- CMake accepts configurable `ROCKET_ROOT` and `ROCKETC` inputs for the pinned raylib integration.
-- Repository scripts will provide repeatable validation, packaging, and relocation checks.
-- `website/` will contain the static Cloudflare product and download site; it is not the casino implementation.
+- `scripts/build.ps1` configures and builds the native Rocket/raylib application.
+- `scripts/validate.ps1` runs the build, Rocket check, all 10 tests, and formatting checks.
+- `scripts/package-windows.ps1` creates the portable Windows x64 archive.
+- `scripts/test-package.ps1` extracts the archive to an ignored relocation directory and runs its headless smoke path.
+- `scripts/prepare-cloudflare-site.ps1` stages the validated package with the static website.
+- `scripts/test-website.ps1` checks required claims and Cloudflare Pages asset limits.
 
-No release has been published and no code-signing claim is made.
+The scripts accept portable `-RocketRoot` and `-Rocketc` inputs; no machine-specific path is committed. See [building](docs/BUILDING.md), [testing](docs/TESTING.md), and [validation evidence](docs/VALIDATION.md).
 
+`website/` is the static product/download site. It is not a browser implementation of the Rocket casino.
+
+No release has been pushed, published, deployed, or signed. Those actions require explicit owner approval.
