@@ -1,21 +1,21 @@
-import src.blackjack.cards
-import src.blackjack.model
+import src.blackjack.blackjack_cards
+import src.blackjack.blackjack_model
 import std.collections
 
-fn action_code(value: model.Action) -> Int:
+fn action_code(value: blackjack_model.Action) -> Int:
     match value:
-        case model.Hit:
+        case blackjack_model.Hit:
             return 0
-        case model.Stand:
+        case blackjack_model.Stand:
             return 1
-        case model.Double:
+        case blackjack_model.Double:
             return 2
-        case model.Split:
+        case blackjack_model.Split:
             return 3
-        case model.Surrender:
+        case blackjack_model.Surrender:
             return 4
 
-fn contains(actions: Array[model.Action], code: Int) -> Bool:
+fn contains(actions: Array[blackjack_model.Action], code: Int) -> Bool:
     var index = 0
     while index < collections.length(actions):
         if action_code(actions[index]) == code:
@@ -40,50 +40,50 @@ fn pair_split(rank: Int, dealer: Int) -> Bool:
         return dealer >= 2 and dealer <= 6 or dealer == 8 or dealer == 9
     return false
 
-fn hard(total: Int, dealer: Int, actions: Array[model.Action]) -> model.Action:
+fn hard(total: Int, dealer: Int, actions: Array[blackjack_model.Action]) -> blackjack_model.Action:
     if total >= 17:
-        return model.Stand()
+        return blackjack_model.Stand()
     if total >= 13 and total <= 16 and dealer >= 2 and dealer <= 6:
-        return model.Stand()
+        return blackjack_model.Stand()
     if total == 12 and dealer >= 4 and dealer <= 6:
-        return model.Stand()
+        return blackjack_model.Stand()
     if total == 11 and dealer >= 2 and dealer <= 10 and contains(actions, 2):
-        return model.Double()
+        return blackjack_model.Double()
     if total == 10 and dealer >= 2 and dealer <= 9 and contains(actions, 2):
-        return model.Double()
+        return blackjack_model.Double()
     if total == 9 and dealer >= 3 and dealer <= 6 and contains(actions, 2):
-        return model.Double()
-    return model.Hit()
+        return blackjack_model.Double()
+    return blackjack_model.Hit()
 
-fn soft(total: Int, dealer: Int, actions: Array[model.Action]) -> model.Action:
+fn soft(total: Int, dealer: Int, actions: Array[blackjack_model.Action]) -> blackjack_model.Action:
     if total >= 19:
-        return model.Stand()
+        return blackjack_model.Stand()
     if total == 18:
         if dealer >= 3 and dealer <= 6 and contains(actions, 2):
-            return model.Double()
+            return blackjack_model.Double()
         if dealer == 2 or dealer == 7 or dealer == 8:
-            return model.Stand()
-        return model.Hit()
+            return blackjack_model.Stand()
+        return blackjack_model.Hit()
     if total == 17 and dealer >= 3 and dealer <= 6 and contains(actions, 2):
-        return model.Double()
+        return blackjack_model.Double()
     if(total == 15 or total == 16) and dealer >= 4 and dealer <= 6 and contains(actions, 2):
-        return model.Double()
+        return blackjack_model.Double()
     if(total == 13 or total == 14) and(dealer == 5 or dealer == 6) and contains(actions, 2):
-        return model.Double()
-    return model.Hit()
+        return blackjack_model.Double()
+    return blackjack_model.Hit()
 
-pub fn choose(hand: model.Hand, dealer_up: model.Card, actions: Array[model.Action]) -> Result[model.Action, String]:
+pub fn choose(hand: blackjack_model.Hand, dealer_up: blackjack_model.Card, actions: Array[blackjack_model.Action]) -> Result[blackjack_model.Action, String]:
     if collections.length(actions) == 0:
         return Err("Basic strategy requires at least one legal action")
-    let dealer = cards.blackjack_value(dealer_up)
+    let dealer = blackjack_cards.blackjack_value(dealer_up)
     if contains(actions, 3) and collections.length(hand.cards) == 2 and pair_split(hand.cards[0].rank, dealer):
-        return Ok(model.Split())
-    let value = cards.value(hand)
+        return Ok(blackjack_model.Split())
+    let value = blackjack_cards.value(hand)
     if contains(actions, 4):
         if value.total == 16 and dealer >= 9:
-            return Ok(model.Surrender())
+            return Ok(blackjack_model.Surrender())
         if value.total == 15 and dealer == 10:
-            return Ok(model.Surrender())
+            return Ok(blackjack_model.Surrender())
     if value.soft:
         return Ok(soft(value.total, dealer, actions))
     return Ok(hard(value.total, dealer, actions))

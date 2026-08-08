@@ -1,160 +1,160 @@
-import src.crossing.engine
-import src.crossing.model
-import src.crossing.rules
+import src.crossing.crossing_engine
+import src.crossing.crossing_model
+import src.crossing.crossing_rules
 import std.collections
 
-fn same_hazards(left: Array[model.Hazard], right: Array[model.Hazard]) -> Bool:
+fn same_hazards(left: Array[crossing_model.Hazard], right: Array[crossing_model.Hazard]) -> Bool:
     if collections.length(left) != collections.length(right):
         return false
     var index = 0
     while index < collections.length(left):
         let a = left[index]
         let b = right[index]
-        if a.lane != b.lane or rules.hazard_code(a.kind) != rules.hazard_code(b.kind):
+        if a.lane != b.lane or crossing_rules.hazard_code(a.kind) != crossing_rules.hazard_code(b.kind):
             return false
         if a.position != b.position or a.length != b.length or a.speed != b.speed:
             return false
         index = index + 1
     return true
 
-fn fixture(game: model.Game, hazards: Array[model.Hazard], player_x: Int, lane: Int, checkpoints: Int, difficulty: Int) -> Result[model.Game, String]:
-    if player_x < rules.player_width() / 2 or player_x > rules.world_width() - rules.player_width() / 2:
+fn fixture(game: crossing_model.Game, hazards: Array[crossing_model.Hazard], player_x: Int, lane: Int, checkpoints: Int, difficulty: Int) -> Result[crossing_model.Game, String]:
+    if player_x < crossing_rules.player_width() / 2 or player_x > crossing_rules.world_width() - crossing_rules.player_width() / 2:
         return Err("Fixture player x is outside the world")
-    if lane < 0 or lane >= rules.lane_count():
+    if lane < 0 or lane >= crossing_rules.lane_count():
         return Err("Fixture lane is outside the world")
-    if checkpoints < 0 or checkpoints >= rules.max_checkpoints():
+    if checkpoints < 0 or checkpoints >= crossing_rules.max_checkpoints():
         return Err("Fixture checkpoints are outside the active range")
     if difficulty < 1 or difficulty > 4:
         return Err("Fixture difficulty is outside the active range")
     var index = 0
     while index < collections.length(hazards):
-        if not rules.valid_hazard(hazards[index]):
+        if not crossing_rules.valid_hazard(hazards[index]):
             return Err("Fixture contains an invalid hazard")
         index = index + 1
-    return Ok(model.Game(game.balance, game.bet, model.Running(), false, hazards, player_x, lane, checkpoints, rules.multiplier_for(checkpoints), game.bet, 0, false, false, game.tick_count, difficulty, game.round_number, game.seed, "Checked simulation fixture"))
+    return Ok(crossing_model.Game(game.balance, game.bet, crossing_model.Running(), false, hazards, player_x, lane, checkpoints, crossing_rules.multiplier_for(checkpoints), game.bet, 0, false, false, game.tick_count, difficulty, game.round_number, game.seed, "Checked simulation fixture"))
 
-fn same_state(left: model.Game, right: model.Game) -> Bool:
+fn same_state(left: crossing_model.Game, right: crossing_model.Game) -> Bool:
     if left.balance != right.balance or left.player_x != right.player_x or left.player_lane != right.player_lane:
         return false
     if left.checkpoints != right.checkpoints or left.tick_count != right.tick_count:
         return false
-    if engine.phase_code(left.phase) != engine.phase_code(right.phase) or left.failed != right.failed:
+    if crossing_engine.phase_code(left.phase) != crossing_engine.phase_code(right.phase) or left.failed != right.failed:
         return false
     return same_hazards(left.hazards, right.hazards)
 
 fn run() -> Result[Int, String]:
-    match engine.new_game(4, 1):
+    match crossing_engine.new_game(4, 1):
         case Ok(game):
             return Ok(1)
         case Err(error):
             let expected = true
-    let generated = engine.generated_hazards(77, 1)
-    let repeated = engine.generated_hazards(77, 1)
+    let generated = crossing_engine.generated_hazards(77, 1)
+    let repeated = crossing_engine.generated_hazards(77, 1)
     if collections.length(generated) != 11 or not same_hazards(generated, repeated):
         return Ok(2)
-    var game = engine.new_game(5000, 77)?
-    match engine.with_bet(game, 11):
+    var game = crossing_engine.new_game(5000, 77)?
+    match crossing_engine.with_bet(game, 11):
         case Ok(value):
             return Ok(3)
         case Err(error):
             let expected = true
-    game = engine.with_bet(game, 25)?
-    let active = engine.start(game)?
-    if engine.phase_code(active.phase) != 1 or active.balance != 4975 or active.wager != 25:
+    game = crossing_engine.with_bet(game, 25)?
+    let active = crossing_engine.start(game)?
+    if crossing_engine.phase_code(active.phase) != 1 or active.balance != 4975 or active.wager != 25:
         return Ok(4)
-    match engine.with_bet(active, 50):
+    match crossing_engine.with_bet(active, 50):
         case Ok(value):
             return Ok(5)
         case Err(error):
             let expected = true
     var replay_a = active
-    var replay_b = engine.start(engine.with_bet(engine.new_game(5000, 77)?, 25)?)?
+    var replay_b = crossing_engine.start(crossing_engine.with_bet(crossing_engine.new_game(5000, 77)?, 25)?)?
     var step = 0
-    while step < 12 and engine.phase_code(replay_a.phase) == 1:
+    while step < 12 and crossing_engine.phase_code(replay_a.phase) == 1:
         if step == 2:
-            replay_a = engine.move_player(replay_a, -1, 0)?
-            replay_b = engine.move_player(replay_b, -1, 0)?
+            replay_a = crossing_engine.move_player(replay_a, -1, 0)?
+            replay_b = crossing_engine.move_player(replay_b, -1, 0)?
         else:
-            replay_a = engine.tick_many(replay_a, 1)?
-            replay_b = engine.tick_many(replay_b, 1)?
+            replay_a = crossing_engine.tick_many(replay_a, 1)?
+            replay_b = crossing_engine.tick_many(replay_b, 1)?
         step = step + 1
     if not same_state(replay_a, replay_b):
         return Ok(6)
-    let car: Array[model.Hazard] = [model.Hazard(1, model.Car(), 430, 70, 6)]
+    let car: Array[crossing_model.Hazard] = [crossing_model.Hazard(1, crossing_model.Car(), 430, 70, 6)]
     var collision = fixture(active, car, 450, 0, 0, 1)?
-    collision = engine.move_player(collision, 0, 1)?
-    if engine.phase_code(collision.phase) != 2 or not collision.failed:
+    collision = crossing_engine.move_player(collision, 0, 1)?
+    if crossing_engine.phase_code(collision.phase) != 2 or not collision.failed:
         return Ok(7)
-    let tram: Array[model.Hazard] = [model.Hazard(3, model.Tram(), 380, 280, -12)]
+    let tram: Array[crossing_model.Hazard] = [crossing_model.Hazard(3, crossing_model.Tram(), 380, 280, -12)]
     collision = fixture(active, tram, 450, 2, 0, 1)?
-    collision = engine.move_player(collision, 0, 1)?
-    if engine.phase_code(collision.phase) != 2 or not collision.failed:
+    collision = crossing_engine.move_player(collision, 0, 1)?
+    if crossing_engine.phase_code(collision.phase) != 2 or not collision.failed:
         return Ok(8)
-    let far_log: Array[model.Hazard] = [model.Hazard(5, model.Log(), 0, 180, 4)]
+    let far_log: Array[crossing_model.Hazard] = [crossing_model.Hazard(5, crossing_model.Log(), 0, 180, 4)]
     collision = fixture(active, far_log, 450, 4, 0, 1)?
-    collision = engine.move_player(collision, 0, 1)?
-    if engine.phase_code(collision.phase) != 2 or not collision.failed:
+    collision = crossing_engine.move_player(collision, 0, 1)?
+    if crossing_engine.phase_code(collision.phase) != 2 or not collision.failed:
         return Ok(9)
-    let support: Array[model.Hazard] = [model.Hazard(5, model.Log(), 380, 180, 4)]
+    let support: Array[crossing_model.Hazard] = [crossing_model.Hazard(5, crossing_model.Log(), 380, 180, 4)]
     var supported = fixture(active, support, 450, 4, 0, 1)?
-    supported = engine.move_player(supported, 0, 1)?
-    supported = engine.tick_many(supported, 1)?
-    if engine.phase_code(supported.phase) != 1 or supported.player_x != 454 or not engine.safe_at(supported, 454, 5):
+    supported = crossing_engine.move_player(supported, 0, 1)?
+    supported = crossing_engine.tick_many(supported, 1)?
+    if crossing_engine.phase_code(supported.phase) != 1 or supported.player_x != 454 or not crossing_engine.safe_at(supported, 454, 5):
         return Ok(10)
-    let no_hazards: Array[model.Hazard] = []
+    let no_hazards: Array[crossing_model.Hazard] = []
     var checkpoint = fixture(active, no_hazards, 450, 6, 0, 1)?
-    checkpoint = engine.move_player(checkpoint, 0, 1)?
+    checkpoint = crossing_engine.move_player(checkpoint, 0, 1)?
     if checkpoint.checkpoints != 1 or checkpoint.player_lane != 0 or checkpoint.multiplier_basis_points != 12500:
         return Ok(11)
-    match engine.cash_out(active):
+    match crossing_engine.cash_out(active):
         case Ok(value):
             return Ok(12)
         case Err(error):
             let expected = true
-    let cashed = engine.cash_out(checkpoint)?
-    if engine.phase_code(cashed.phase) != 2 or cashed.payout != 31 or cashed.balance != active.balance + 31:
+    let cashed = crossing_engine.cash_out(checkpoint)?
+    if crossing_engine.phase_code(cashed.phase) != 2 or cashed.payout != 31 or cashed.balance != active.balance + 31:
         return Ok(13)
-    var paused = engine.toggle_pause(active)?
-    let paused_ticks = engine.tick_many(paused, 5)?
+    var paused = crossing_engine.toggle_pause(active)?
+    let paused_ticks = crossing_engine.tick_many(paused, 5)?
     if paused_ticks.tick_count != paused.tick_count:
         return Ok(14)
-    match engine.move_player(paused, 1, 0):
+    match crossing_engine.move_player(paused, 1, 0):
         case Ok(value):
             return Ok(15)
         case Err(error):
             let expected = true
-    paused = engine.toggle_pause(paused)?
-    let capped = engine.tick_many(fixture(paused, no_hazards, 450, 0, 0, 1)?, 100)?
+    paused = crossing_engine.toggle_pause(paused)?
+    let capped = crossing_engine.tick_many(fixture(paused, no_hazards, 450, 0, 0, 1)?, 100)?
     if capped.tick_count != 8:
         return Ok(16)
-    match engine.tick_many(active, -1):
+    match crossing_engine.tick_many(active, -1):
         case Ok(value):
             return Ok(17)
         case Err(error):
             let expected = true
-    match engine.move_player(active, 1, 1):
+    match crossing_engine.move_player(active, 1, 1):
         case Ok(value):
             return Ok(18)
         case Err(error):
             let expected = true
     var completed = active
     var checkpoint_count = 0
-    while checkpoint_count < rules.max_checkpoints():
+    while checkpoint_count < crossing_rules.max_checkpoints():
         completed = fixture(completed, no_hazards, 450, 6, checkpoint_count, 1)?
-        completed = engine.move_player(completed, 0, 1)?
+        completed = crossing_engine.move_player(completed, 0, 1)?
         checkpoint_count = checkpoint_count + 1
-    if engine.phase_code(completed.phase) != 2 or not completed.completed or completed.checkpoints != 5:
+    if crossing_engine.phase_code(completed.phase) != 2 or not completed.completed or completed.checkpoints != 5:
         return Ok(19)
-    if completed.payout != rules.payout(25, 22500) or completed.balance < 0:
+    if completed.payout != crossing_rules.payout(25, 22500) or completed.balance < 0:
         return Ok(20)
     var current = cashed
     var round = 1
     while round < 15:
-        current = engine.next_round(current)?
-        current = engine.start(current)?
+        current = crossing_engine.next_round(current)?
+        current = crossing_engine.start(current)?
         current = fixture(current, no_hazards, 450, 6, 0, 1)?
-        current = engine.move_player(current, 0, 1)?
-        current = engine.cash_out(current)?
+        current = crossing_engine.move_player(current, 0, 1)?
+        current = crossing_engine.cash_out(current)?
         if current.balance < 0:
             return Ok(21)
         round = round + 1

@@ -8,6 +8,15 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repository = Split-Path $PSScriptRoot -Parent
+$duplicateSourceNames = Get-ChildItem -LiteralPath (Join-Path $repository 'src') -Filter '*.rocket' -File -Recurse |
+    Group-Object Name |
+    Where-Object Count -gt 1
+if ($duplicateSourceNames) {
+    $details = $duplicateSourceNames | ForEach-Object {
+        "$($_.Name): $($_.Group.FullName -join ', ')"
+    }
+    throw "Rocket debug sources must have unique basenames. Duplicate source names: $($details -join '; ')"
+}
 & (Join-Path $PSScriptRoot 'build.ps1') -Configuration $Configuration -RocketRoot $RocketRoot -Rocketc $Rocketc
 if (-not $Rocketc) { $Rocketc = Join-Path ([System.IO.Path]::GetFullPath($RocketRoot)) 'out\build\windows-release\rocketc.exe' }
 

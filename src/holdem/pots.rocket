@@ -1,9 +1,9 @@
 import src.holdem.evaluator
-import src.holdem.model
+import src.holdem.holdem_model
 import std.collections
 
-fn with_stack(player: model.Player, stack: Int) -> model.Player:
-    return model.Player(player.id, player.name, player.is_human, stack, player.hole, player.folded, player.all_in, player.street_contribution, player.total_contribution, player.acted, player.can_raise, player.last_action)
+fn with_stack(player: holdem_model.Player, stack: Int) -> holdem_model.Player:
+    return holdem_model.Player(player.id, player.name, player.is_human, stack, player.hole, player.folded, player.all_in, player.street_contribution, player.total_contribution, player.acted, player.can_raise, player.last_action)
 
 fn contains(values: Array[Int], target: Int) -> Bool:
     var index = 0
@@ -13,7 +13,7 @@ fn contains(values: Array[Int], target: Int) -> Bool:
         index = index + 1
     return false
 
-fn combined(player: model.Player, community: Array[model.Card]) -> Array[model.Card]:
+fn combined(player: holdem_model.Player, community: Array[holdem_model.Card]) -> Array[holdem_model.Card]:
     var result = player.hole
     var index = 0
     while index < collections.length(community):
@@ -21,7 +21,7 @@ fn combined(player: model.Player, community: Array[model.Card]) -> Array[model.C
         index = index + 1
     return result
 
-fn winners_for(players: Array[model.Player], community: Array[model.Card], eligible: Array[Int]) -> Result[Array[Int], String]:
+fn winners_for(players: Array[holdem_model.Player], community: Array[holdem_model.Card], eligible: Array[Int]) -> Result[Array[Int], String]:
     var winners: Array[Int] = []
     if collections.length(eligible) == 1:
         return Ok(collections.append(winners, eligible[0]))
@@ -43,7 +43,7 @@ fn winners_for(players: Array[model.Player], community: Array[model.Card], eligi
         index = index + 1
     return Ok(winners)
 
-fn next_level(players: Array[model.Player], previous: Int) -> Int:
+fn next_level(players: Array[holdem_model.Player], previous: Int) -> Int:
     var result = 0
     var index = 0
     while index < collections.length(players):
@@ -56,9 +56,9 @@ fn next_level(players: Array[model.Player], previous: Int) -> Int:
 fn wrap(value: Int, length: Int) -> Int:
     return value - value / length * length
 
-pub fn settle(source: Array[model.Player], community: Array[model.Card], dealer: Int) -> Result[model.Settlement, String]:
+pub fn settle(source: Array[holdem_model.Player], community: Array[holdem_model.Card], dealer: Int) -> Result[holdem_model.Settlement, String]:
     var players = source
-    var pots: Array[model.Pot] = []
+    var pots: Array[holdem_model.Pot] = []
     var previous = 0
     var level = next_level(players, previous)
     while level > 0:
@@ -89,7 +89,7 @@ pub fn settle(source: Array[model.Player], community: Array[model.Card], dealer:
                 players[seat] = with_stack(players[seat], players[seat].stack + 1)
                 remainder = remainder - 1
             offset = offset + 1
-        pots = collections.append(pots, model.Pot(amount, eligible, winners))
+        pots = collections.append(pots, holdem_model.Pot(amount, eligible, winners))
         previous = level
         level = next_level(players, previous)
-    return Ok(model.Settlement(players, pots))
+    return Ok(holdem_model.Settlement(players, pots))

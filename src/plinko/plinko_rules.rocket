@@ -1,22 +1,22 @@
-import src.plinko.model
+import src.plinko.plinko_model
 import std.collections
 
-pub fn risk_code(risk: model.Risk) -> Int:
+pub fn risk_code(risk: plinko_model.Risk) -> Int:
     match risk:
-        case model.Low:
+        case plinko_model.Low:
             return 0
-        case model.Medium:
+        case plinko_model.Medium:
             return 1
-        case model.High:
+        case plinko_model.High:
             return 2
 
-pub fn risk_name(risk: model.Risk) -> String:
+pub fn risk_name(risk: plinko_model.Risk) -> String:
     match risk:
-        case model.Low:
+        case plinko_model.Low:
             return "Low"
-        case model.Medium:
+        case plinko_model.Medium:
             return "Medium"
-        case model.High:
+        case plinko_model.High:
             return "High"
 
 pub fn target_return_basis_points() -> Int:
@@ -54,7 +54,7 @@ fn absolute(value: Int) -> Int:
         return 0 - value
     return value
 
-fn raw_score(rows: Int, bucket: Int, risk: model.Risk) -> Int:
+fn raw_score(rows: Int, bucket: Int, risk: plinko_model.Risk) -> Int:
     let distance = absolute(bucket * 2 - rows)
     let square = distance * distance
     let code = risk_code(risk)
@@ -64,7 +64,7 @@ fn raw_score(rows: Int, bucket: Int, risk: model.Risk) -> Int:
         return 5000 + square * 300
     return 1000 + square * square * 10
 
-fn weighted_raw_total(rows: Int, risk: model.Risk) -> Int:
+fn weighted_raw_total(rows: Int, risk: plinko_model.Risk) -> Int:
     var total = 0
     var bucket = 0
     while bucket <= rows:
@@ -72,7 +72,7 @@ fn weighted_raw_total(rows: Int, risk: model.Risk) -> Int:
         bucket = bucket + 1
     return total
 
-pub fn multipliers(rows: Int, risk: model.Risk) -> Result[Array[Int], String]:
+pub fn multipliers(rows: Int, risk: plinko_model.Risk) -> Result[Array[Int], String]:
     if not valid_rows(rows):
         return Err("Plinko rows must be between 8 and 16")
     let outcomes = outcome_count(rows)
@@ -85,7 +85,7 @@ pub fn multipliers(rows: Int, risk: model.Risk) -> Result[Array[Int], String]:
         bucket = bucket + 1
     return Ok(values)
 
-pub fn expected_return_basis_points(rows: Int, risk: model.Risk) -> Result[Int, String]:
+pub fn expected_return_basis_points(rows: Int, risk: plinko_model.Risk) -> Result[Int, String]:
     let values = multipliers(rows, risk)?
     var weighted = 0
     var bucket = 0

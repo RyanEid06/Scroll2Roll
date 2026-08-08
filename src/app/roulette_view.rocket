@@ -1,8 +1,8 @@
 import src.app.components
 import src.app.theme
-import src.roulette.engine
-import src.roulette.model
-import src.roulette.rules
+import src.roulette.roulette_engine
+import src.roulette.roulette_model
+import src.roulette.roulette_rules
 import src.rocket_raylib
 import std.collections
 import std.string
@@ -83,44 +83,44 @@ pub fn is_bet_target(x: Int, y: Int, width: Int) -> Bool:
         return true
     return false
 
-pub fn mouse_bet(x: Int, y: Int, width: Int, stake: Int) -> Result[model.Bet, String]:
+pub fn mouse_bet(x: Int, y: Int, width: Int, stake: Int) -> Result[roulette_model.Bet, String]:
     let zero = components.rect(24, grid_y(), 42, row_height() * 3)
     if components.contains(zero, x, y):
         if x >= 60:
             let row =(y - grid_y()) / row_height()
-            return rules.split(0, 3 - row, stake)
-        return rules.straight(0, stake)
+            return roulette_rules.split(0, 3 - row, stake)
+        return roulette_rules.straight(0, stake)
     if components.contains(basket_rect(), x, y):
-        return rules.basket(stake)
+        return roulette_rules.basket(stake)
     var index = 0
     while index < 6:
         if components.contains(outside_rect(index, width), x, y):
             if index == 0:
-                return rules.outside(model.Low(), stake)
+                return roulette_rules.outside(roulette_model.Low(), stake)
             if index == 1:
-                return rules.outside(model.Even(), stake)
+                return roulette_rules.outside(roulette_model.Even(), stake)
             if index == 2:
-                return rules.outside(model.Red(), stake)
+                return roulette_rules.outside(roulette_model.Red(), stake)
             if index == 3:
-                return rules.outside(model.Black(), stake)
+                return roulette_rules.outside(roulette_model.Black(), stake)
             if index == 4:
-                return rules.outside(model.Odd(), stake)
-            return rules.outside(model.High(), stake)
+                return roulette_rules.outside(roulette_model.Odd(), stake)
+            return roulette_rules.outside(roulette_model.High(), stake)
         index = index + 1
     index = 0
     while index < 3:
         if components.contains(dozen_rect(index, width), x, y):
-            return rules.dozen(index + 1, stake)
+            return roulette_rules.dozen(index + 1, stake)
         if components.contains(column_rect(index, width), x, y):
-            return rules.column(3 - index, stake)
+            return roulette_rules.column(3 - index, stake)
         index = index + 1
     let cell = cell_width(width)
     if y >= grid_bottom() and y <= grid_bottom() + 20 and x >= grid_x() and x < grid_right(width):
         let local_x = x - grid_x()
         let column = local_x / cell
         if remainder(local_x, cell) < 5 and column > 0:
-            return rules.six_line((column - 1) * 3 + 1, stake)
-        return rules.street(column * 3 + 1, stake)
+            return roulette_rules.six_line((column - 1) * 3 + 1, stake)
+        return roulette_rules.street(column * 3 + 1, stake)
     if x >= grid_x() and x < grid_right(width) and y >= grid_y() and y < grid_bottom():
         let local_x = x - grid_x()
         let local_y = y - grid_y()
@@ -129,14 +129,14 @@ pub fn mouse_bet(x: Int, y: Int, width: Int, stake: Int) -> Result[model.Bet, St
         let near_left = remainder(local_x, cell) < 5 and column > 0
         let near_top = remainder(local_y, row_height()) < 5 and row > 0
         if near_left and near_top:
-            return rules.corner((column - 1) * 3 +(3 - row), stake)
+            return roulette_rules.corner((column - 1) * 3 +(3 - row), stake)
         if near_left:
             let left =(column - 1) * 3 +(3 - row)
-            return rules.split(left, left + 3, stake)
+            return roulette_rules.split(left, left + 3, stake)
         if near_top:
             let lower = column * 3 +(3 - row)
-            return rules.split(lower, lower + 1, stake)
-        return rules.straight(number_for_cell(column, row), stake)
+            return roulette_rules.split(lower, lower + 1, stake)
+        return roulette_rules.straight(number_for_cell(column, row), stake)
     return Err("Choose a Roulette table position")
 
 pub fn focus_count(kind: Int) -> Int:
@@ -156,51 +156,51 @@ pub fn focus_count(kind: Int) -> Int:
         return 1
     return 3
 
-fn kind_from_code(kind: Int) -> model.BetKind:
+fn kind_from_code(kind: Int) -> roulette_model.BetKind:
     if kind == 6:
-        return model.Red()
+        return roulette_model.Red()
     if kind == 7:
-        return model.Black()
+        return roulette_model.Black()
     if kind == 8:
-        return model.Odd()
+        return roulette_model.Odd()
     if kind == 9:
-        return model.Even()
+        return roulette_model.Even()
     if kind == 10:
-        return model.Low()
-    return model.High()
+        return roulette_model.Low()
+    return roulette_model.High()
 
-pub fn focus_bet(kind: Int, target: Int, stake: Int) -> Result[model.Bet, String]:
+pub fn focus_bet(kind: Int, target: Int, stake: Int) -> Result[roulette_model.Bet, String]:
     if kind == 0:
-        return rules.straight(target, stake)
+        return roulette_rules.straight(target, stake)
     if kind == 1:
         if target < 3:
-            return rules.split(0, target + 1, stake)
+            return roulette_rules.split(0, target + 1, stake)
         if target < 36:
             let offset = target - 3
             let row = offset / 11
             let boundary = offset - row * 11
             let first = boundary * 3 +(3 - row)
-            return rules.split(first, first + 3, stake)
+            return roulette_rules.split(first, first + 3, stake)
         let offset = target - 36
         let column = offset / 2
         let boundary = offset - column * 2
         let first = column * 3 +(2 - boundary)
-        return rules.split(first, first + 1, stake)
+        return roulette_rules.split(first, first + 1, stake)
     if kind == 2:
-        return rules.street(target * 3 + 1, stake)
+        return roulette_rules.street(target * 3 + 1, stake)
     if kind == 3:
         let row = target / 2
         let column = target - row * 2
-        return rules.corner(row * 3 + column + 1, stake)
+        return roulette_rules.corner(row * 3 + column + 1, stake)
     if kind == 4:
-        return rules.six_line(target * 3 + 1, stake)
+        return roulette_rules.six_line(target * 3 + 1, stake)
     if kind == 5:
-        return rules.basket(stake)
+        return roulette_rules.basket(stake)
     if kind >= 6 and kind <= 11:
-        return rules.outside(kind_from_code(kind), stake)
+        return roulette_rules.outside(kind_from_code(kind), stake)
     if kind == 12:
-        return rules.dozen(target + 1, stake)
-    return rules.column(target + 1, stake)
+        return roulette_rules.dozen(target + 1, stake)
+    return roulette_rules.column(target + 1, stake)
 
 fn draw_numbers(window: rocket_raylib.Window, frame: rocket_raylib.Frame, width: Int) -> Result[Bool, String]:
     let cell = cell_width(width)
@@ -212,7 +212,7 @@ fn draw_numbers(window: rocket_raylib.Window, frame: rocket_raylib.Frame, width:
         while row < 3:
             let number = number_for_cell(column, row)
             var fill = theme.card_dark()
-            if rules.is_red(number):
+            if roulette_rules.is_red(number):
                 fill = theme.danger()
             let x = grid_x() + column * cell
             let y = grid_y() + row * row_height()
@@ -237,7 +237,7 @@ fn draw_numbers(window: rocket_raylib.Window, frame: rocket_raylib.Frame, width:
     components.button(window, frame, basket, "0-3", true, false, false)?
     return Ok(true)
 
-fn draw_wheel(frame: rocket_raylib.Frame, game: model.Game, width: Int) -> Result[Bool, String]:
+fn draw_wheel(frame: rocket_raylib.Frame, game: roulette_model.Game, width: Int) -> Result[Bool, String]:
     let center_x = width - 180
     let center_y = 260
     rocket_raylib.draw_circle(frame, center_x, center_y, 112.0, theme.border())?
@@ -245,11 +245,11 @@ fn draw_wheel(frame: rocket_raylib.Frame, game: model.Game, width: Int) -> Resul
     rocket_raylib.draw_circle(frame, center_x, center_y, 54.0, theme.gold())?
     let x_offsets = [0, 42, 72, 84, 72, 42, 0, -42, -72, -84, -72, -42]
     let y_offsets = [-82, -70, -42, 0, 42, 70, 82, 70, 42, 0, -42, -70]
-    if engine.phase_code(game.phase) == 1:
+    if roulette_engine.phase_code(game.phase) == 1:
         let sector = game.pending_winner - game.pending_winner / 12 * 12
         rocket_raylib.draw_circle(frame, center_x + x_offsets[sector], center_y + y_offsets[sector], 8.0, theme.text())?
         rocket_raylib.draw_text(frame, "ENGINE RESULT LOCKED", center_x - 88, center_y + 132, theme.small_size(), theme.muted())?
-    if engine.phase_code(game.phase) == 2:
+    if roulette_engine.phase_code(game.phase) == 2:
         rocket_raylib.draw_text(frame, string.from_int(game.result.winning_number), center_x - 16, center_y - 16, theme.heading_size(), theme.background())?
     return Ok(true)
 
@@ -267,7 +267,7 @@ fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result
         index = index + 1
     return Ok(true)
 
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: model.Game, focus_kind: Int, focus_target: Int, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: roulette_model.Game, focus_kind: Int, focus_target: Int, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     rocket_raylib.draw_text(frame, "EUROPEAN ROULETTE", 32, 28, theme.heading_size(), theme.gold())?
@@ -284,15 +284,15 @@ pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: mode
     draw_wheel(frame, game, width)?
     match focus_bet(focus_kind, focus_target, game.selected_chip):
         case Ok(focus):
-            rocket_raylib.draw_text(frame, string.concat("Keyboard target: ", rules.bet_name(focus)), 32, grid_bottom() + 128, theme.small_size(), theme.gold())?
+            rocket_raylib.draw_text(frame, string.concat("Keyboard target: ", roulette_rules.bet_name(focus)), 32, grid_bottom() + 128, theme.small_size(), theme.gold())?
         case Err(error):
             let expected = error
-    rocket_raylib.draw_text(frame, string.concat("Total wager ", string.from_int(engine.total_wager(game))), 32, grid_bottom() + 156, theme.body_size(), theme.text())?
+    rocket_raylib.draw_text(frame, string.concat("Total wager ", string.from_int(roulette_engine.total_wager(game))), 32, grid_bottom() + 156, theme.body_size(), theme.text())?
     var bet_index = 0
     while bet_index < collections.length(game.bets) and bet_index < 6:
-        rocket_raylib.draw_text(frame, rules.bet_name(game.bets[bet_index]), width - 330, 404 + bet_index * 25, theme.small_size(), theme.muted())?
+        rocket_raylib.draw_text(frame, roulette_rules.bet_name(game.bets[bet_index]), width - 330, 404 + bet_index * 25, theme.small_size(), theme.muted())?
         bet_index = bet_index + 1
-    let phase = engine.phase_code(game.phase)
+    let phase = roulette_engine.phase_code(game.phase)
     if phase == 0:
         let spin = spin_rect(height)
         let undo = undo_rect(height)

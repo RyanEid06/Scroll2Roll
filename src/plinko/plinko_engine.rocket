@@ -1,0 +1,103 @@
+import src.plinko.plinko_model
+import src.plinko.plinko_rules
+import std.collections
+import std.random
+
+pub fn phase_code(phase: plinko_model.Phase) -> Int:
+    match phase:
+        case plinko_model.Ready:
+            return 0
+        case plinko_model.Dropping:
+            return 1
+        case plinko_model.Settled:
+            return 2
+
+pub fn new_game(starting_balance: Int, seed: Int) -> Result[plinko_model.Game, String]:
+    if starting_balance < 5:
+        return Err("Starting balance is below the Plinko minimum")
+    let no_results: Array[plinko_model.DropResult] = []
+    return Ok(plinko_model.Game(starting_balance, 12, plinko_model.Medium(), 10, 1, plinko_model.Ready(), no_results, no_results, 0, 0, 1, seed, "Configure the board and drop"))
+
+fn configured(game: plinko_model.Game, rows: Int, risk: plinko_model.Risk, bet: Int, batch_count: Int, message: String) -> Result[plinko_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Plinko configuration is locked during a drop")
+    if not plinko_rules.valid_rows(rows):
+        return Err("Plinko rows must be between 8 and 16")
+    if not plinko_rules.valid_bet(bet):
+        return Err("Plinko bet must be 5-1000 credits in units of 5")
+    if batch_count < 1 or batch_count > 10:
+        return Err("Plinko batch count must be between 1 and 10")
+    return Ok(plinko_model.Game(game.balance, rows, risk, bet, batch_count, game.phase, game.pending, game.history, game.total_wager, game.total_return, game.round_number, game.seed, message))
+
+pub fn with_rows(game: plinko_model.Game, rows: Int) -> Result[plinko_model.Game, String]:
+    return configured(game, rows, game.risk, game.bet, game.batch_count, "Board rows changed")
+
+pub fn with_risk(game: plinko_model.Game, risk: plinko_model.Risk) -> Result[plinko_model.Game, String]:
+    return configured(game, game.rows, risk, game.bet, game.batch_count, "Risk profile changed")
+
+pub fn with_bet(game: plinko_model.Game, bet: Int) -> Result[plinko_model.Game, String]:
+    return configured(game, game.rows, game.risk, bet, game.batch_count, "Bet changed")
+
+pub fn with_batch(game: plinko_model.Game, count: Int) -> Result[plinko_model.Game, String]:
+    return configured(game, game.rows, game.risk, game.bet, count, "Ball count changed")
+
+fn result_for(game: plinko_model.Game, ball_index: Int, multipliers: Array[Int]) -> plinko_model.DropResult:
+    random.seed(game.seed + game.round_number * 104729 + ball_index * 7919)
+    var path: Array[Int] = []
+    var bucket = 0
+    var row = 0
+    while row < game.rows:
+        let direction = random.int(0, 2)
+        path = collections.append(path, direction)
+        bucket = bucket + direction
+        row = row + 1
+    let multiplier = multipliers[bucket]
+    return plinko_model.DropResult(path, bucket, multiplier, game.bet, plinko_rules.payout(game.bet, multiplier))
+
+pub fn drop(game: plinko_model.Game) -> Result[plinko_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Plinko is not ready for another drop")
+    let wager = game.bet * game.batch_count
+    if wager > game.balance:
+        return Err("Not enough play credits for that Plinko batch")
+    let multipliers = plinko_rules.multipliers(game.rows, game.risk)?
+    var pending: Array[plinko_model.DropResult] = []
+    var index = 0
+    while index < game.batch_count:
+        pending = collections.append(pending, result_for(game, index, multipliers))
+        index = index + 1
+    return Ok(plinko_model.Game(game.balance - wager, game.rows, game.risk, game.bet, game.batch_count, plinko_model.Dropping(), pending, game.history, wager, 0, game.round_number, game.seed, "Balls following locked engine paths"))
+
+fn add_history(history: Array[plinko_model.DropResult], pending: Array[plinko_model.DropResult]) -> Array[plinko_model.DropResult]:
+    var result = history
+    var index = 0
+    while index < collections.length(pending):
+        result = collections.insert(result, 0, pending[index])
+        index = index + 1
+    if collections.length(result) <= 20:
+        return result
+    var bounded: Array[plinko_model.DropResult] = []
+    index = 0
+    while index < 20:
+        bounded = collections.append(bounded, result[index])
+        index = index + 1
+    return bounded
+
+pub fn settle(game: plinko_model.Game) -> Result[plinko_model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("Plinko settlement requires completed ball animations")
+    var total_return = 0
+    var index = 0
+    while index < collections.length(game.pending):
+        total_return = total_return + game.pending[index].payout
+        index = index + 1
+    return Ok(plinko_model.Game(game.balance + total_return, game.rows, game.risk, game.bet, game.batch_count, plinko_model.Settled(), game.pending, add_history(game.history, game.pending), game.total_wager, total_return, game.round_number, game.seed, "Plinko batch settled"))
+
+pub fn next_round(game: plinko_model.Game) -> Result[plinko_model.Game, String]:
+    if phase_code(game.phase) != 2:
+        return Err("The Plinko batch has not settled")
+    let no_results: Array[plinko_model.DropResult] = []
+    return Ok(plinko_model.Game(game.balance, game.rows, game.risk, game.bet, game.batch_count, plinko_model.Ready(), no_results, game.history, 0, 0, game.round_number + 1, game.seed, "Ready for another drop"))
+
+pub fn complete_drop(game: plinko_model.Game) -> Result[plinko_model.Game, String]:
+    return settle(drop(game)?)

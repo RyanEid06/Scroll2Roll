@@ -1,8 +1,8 @@
 import src.app.components
 import src.app.theme
-import src.blackjack.cards
-import src.blackjack.engine
-import src.blackjack.model
+import src.blackjack.blackjack_cards
+import src.blackjack.blackjack_engine
+import src.blackjack.blackjack_model
 import src.blackjack.settlement
 import src.rocket_raylib
 import std.collections
@@ -26,16 +26,16 @@ pub fn next_rect(height: Int) -> components.Rect:
 pub fn lobby_rect(height: Int) -> components.Rect:
     return components.rect(214, height - 76, 170, 44)
 
-fn action_available(game: model.Game, code: Int) -> Bool:
-    let actions = engine.available_actions(game)
+fn action_available(game: blackjack_model.Game, code: Int) -> Bool:
+    let actions = blackjack_engine.available_actions(game)
     var index = 0
     while index < collections.length(actions):
-        if engine.action_code(actions[index]) == code:
+        if blackjack_engine.action_code(actions[index]) == code:
             return true
         index = index + 1
     return false
 
-fn draw_card(frame: rocket_raylib.Frame, card: model.Card, x: Int, y: Int, hidden: Bool, active: Bool) -> Result[Bool, String]:
+fn draw_card(frame: rocket_raylib.Frame, card: blackjack_model.Card, x: Int, y: Int, hidden: Bool, active: Bool) -> Result[Bool, String]:
     let width = 64
     let height = 88
     var border = theme.border()
@@ -48,17 +48,17 @@ fn draw_card(frame: rocket_raylib.Frame, card: model.Card, x: Int, y: Int, hidde
         return rocket_raylib.draw_text(frame, "S2R", x + 15, y + 34, 16, theme.gold())
     rocket_raylib.draw_rectangle(frame, x, y, width, height, theme.card_light())?
     var ink = theme.card_dark()
-    if cards.is_red(card):
+    if blackjack_cards.is_red(card):
         ink = theme.danger()
-    rocket_raylib.draw_text(frame, cards.rank_name(card.rank), x + 8, y + 8, 23, ink)?
-    return rocket_raylib.draw_text(frame, cards.suit_name(card.suit), x + 9, y + 52, 20, ink)
+    rocket_raylib.draw_text(frame, blackjack_cards.rank_name(card.rank), x + 8, y + 8, 23, ink)?
+    return rocket_raylib.draw_text(frame, blackjack_cards.suit_name(card.suit), x + 9, y + 52, 20, ink)
 
-fn draw_hand(frame: rocket_raylib.Frame, hand: model.Hand, x: Int, y: Int, active: Bool) -> Result[Bool, String]:
+fn draw_hand(frame: rocket_raylib.Frame, hand: blackjack_model.Hand, x: Int, y: Int, active: Bool) -> Result[Bool, String]:
     var index = 0
     while index < collections.length(hand.cards):
         draw_card(frame, hand.cards[index], x + index * 46, y, false, active)?
         index = index + 1
-    let value = cards.value(hand)
+    let value = blackjack_cards.value(hand)
     var summary = string.concat("Total ", string.from_int(value.total))
     if value.soft:
         summary = string.concat(summary, " soft")
@@ -68,24 +68,24 @@ fn draw_hand(frame: rocket_raylib.Frame, hand: model.Hand, x: Int, y: Int, activ
         summary = string.concat(summary, " | BLACKJACK")
     return rocket_raylib.draw_text(frame, summary, x, y + 98, theme.small_size(), theme.text())
 
-fn draw_dealer(frame: rocket_raylib.Frame, game: model.Game, width: Int) -> Result[Bool, String]:
+fn draw_dealer(frame: rocket_raylib.Frame, game: blackjack_model.Game, width: Int) -> Result[Bool, String]:
     rocket_raylib.draw_text(frame, "DEALER", 40, 92, theme.small_size(), theme.muted())?
     var index = 0
-    let hide_hole = engine.phase_code(game.phase) == 1
+    let hide_hole = blackjack_engine.phase_code(game.phase) == 1
     while index < collections.length(game.dealer_hand.cards):
         draw_card(frame, game.dealer_hand.cards[index], 40 + index * 74, 118, hide_hole and index == 1, false)?
         index = index + 1
     if not hide_hole:
-        let value = cards.value(game.dealer_hand)
+        let value = blackjack_cards.value(game.dealer_hand)
         rocket_raylib.draw_text(frame, string.concat("Total ", string.from_int(value.total)), 40, 216, theme.body_size(), theme.text())?
     return rocket_raylib.draw_text(frame, "Dealer stands on soft 17", width - 254, 96, theme.small_size(), theme.muted())
 
-fn draw_ai(frame: rocket_raylib.Frame, game: model.Game, width: Int) -> Result[Bool, String]:
+fn draw_ai(frame: rocket_raylib.Frame, game: blackjack_model.Game, width: Int) -> Result[Bool, String]:
     var index = 1
     var x = 260
     while index < collections.length(game.players):
         let player = game.players[index]
-        let active = engine.phase_code(game.phase) == 1 and game.active_player == index
+        let active = blackjack_engine.phase_code(game.phase) == 1 and game.active_player == index
         var ink = theme.muted()
         if active:
             ink = theme.gold()
@@ -97,7 +97,7 @@ fn draw_ai(frame: rocket_raylib.Frame, game: model.Game, width: Int) -> Result[B
         index = index + 1
     return Ok(true)
 
-fn draw_results(frame: rocket_raylib.Frame, game: model.Game, x: Int, y: Int) -> Result[Bool, String]:
+fn draw_results(frame: rocket_raylib.Frame, game: blackjack_model.Game, x: Int, y: Int) -> Result[Bool, String]:
     var index = 0
     while index < collections.length(game.results):
         let result = game.results[index]
@@ -107,7 +107,7 @@ fn draw_results(frame: rocket_raylib.Frame, game: model.Game, x: Int, y: Int) ->
         index = index + 1
     return Ok(true)
 
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: model.Game, selected_bet: Int, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: blackjack_model.Game, selected_bet: Int, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     components.panel(frame, components.rect(24, 72, width - 48, height - 166))?
@@ -120,10 +120,10 @@ pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: mode
     rocket_raylib.draw_text(frame, "YOUR HANDS", 40, player_y - 28, theme.small_size(), theme.muted())?
     var hand_index = 0
     while hand_index < collections.length(game.players[0].hands):
-        let active = engine.phase_code(game.phase) == 1 and game.active_player == 0 and game.players[0].active_hand == hand_index
+        let active = blackjack_engine.phase_code(game.phase) == 1 and game.active_player == 0 and game.players[0].active_hand == hand_index
         draw_hand(frame, game.players[0].hands[hand_index], 40 + hand_index * 248, player_y, active)?
         hand_index = hand_index + 1
-    let phase = engine.phase_code(game.phase)
+    let phase = blackjack_engine.phase_code(game.phase)
     if phase == 0:
         rocket_raylib.draw_text(frame, string.concat("Bet ", string.from_int(selected_bet)), 338, height - 66, theme.body_size(), theme.text())?
         let minus = bet_minus_rect(height)

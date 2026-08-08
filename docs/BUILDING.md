@@ -50,6 +50,19 @@ $env:ROCKET_COMPILER = "C:\path\to\frozen-rocket\out\build\windows-release\rocke
 $env:ROCKET_LANGUAGE_SERVER = "C:\path\to\frozen-rocket\out\build\windows-release\rocket-lsp.exe"
 ```
 
+To persist those paths for Visual Studio launches, set the same values in the
+Windows user environment, then fully restart Visual Studio:
+
+```powershell
+[Environment]::SetEnvironmentVariable('ROCKET_COMPILER', 'C:\path\to\frozen-rocket\out\build\windows-release\rocketc.exe', 'User')
+[Environment]::SetEnvironmentVariable('ROCKET_LANGUAGE_SERVER', 'C:\path\to\frozen-rocket\out\build\windows-release\rocket-lsp.exe', 'User')
+```
+
+The tracked project never stores those machine-specific paths. All compiled
+`src` files also use unique basenames because frozen Rocket CodeView records
+store only the basename; `scripts/validate.ps1` rejects future collisions before
+building.
+
 ## Packaging
 
 ```powershell

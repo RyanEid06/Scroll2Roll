@@ -1,0 +1,22 @@
+import src.blackjack.blackjack_model
+
+pub fn standard() -> blackjack_model.Rules:
+    return blackjack_model.Rules(6, false, 3, 2, 4, true, true, false, 10, 1000, 75, 2)
+
+pub fn create(deck_count: Int, dealer_hits_soft_17: Bool, max_split_hands: Int, allow_double_after_split: Bool, allow_surrender: Bool, allow_resplit_aces: Bool, minimum_bet: Int, maximum_bet: Int, cut_percent: Int, bet_unit: Int) -> Result[blackjack_model.Rules, String]:
+    if deck_count <= 0:
+        return Err("Deck count must be positive")
+    if max_split_hands <= 0:
+        return Err("Maximum split hands must be positive")
+    if minimum_bet <= 0 or maximum_bet < minimum_bet:
+        return Err("Table limits are invalid")
+    if cut_percent <= 0 or cut_percent >= 100:
+        return Err("Cut percentage must be between 1 and 99")
+    if bet_unit <= 0:
+        return Err("Bet unit must be positive")
+    return Ok(blackjack_model.Rules(deck_count, dealer_hits_soft_17, 3, 2, max_split_hands, allow_double_after_split, allow_surrender, allow_resplit_aces, minimum_bet, maximum_bet, cut_percent, bet_unit))
+
+pub fn is_valid_bet(value: Int, table: blackjack_model.Rules) -> Bool:
+    if value < table.minimum_bet or value > table.maximum_bet:
+        return false
+    return value / table.bet_unit * table.bet_unit == value

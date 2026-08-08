@@ -1,19 +1,19 @@
-import src.holdem.cards
-import src.holdem.model
+import src.holdem.holdem_cards
+import src.holdem.holdem_model
 import src.holdem.pots
-import src.holdem.rules
+import src.holdem.holdem_rules
 import std.collections
 import std.string
 
-fn player(id: Int, name: String, human: Bool, stack: Int) -> model.Player:
-    let no_cards: Array[model.Card] = []
-    return model.Player(id, name, human, stack, no_cards, false, false, 0, 0, false, true, "Waiting")
+fn player(id: Int, name: String, human: Bool, stack: Int) -> holdem_model.Player:
+    let no_cards: Array[holdem_model.Card] = []
+    return holdem_model.Player(id, name, human, stack, no_cards, false, false, 0, 0, false, true, "Waiting")
 
-fn player_state(source: model.Player, stack: Int, hole: Array[model.Card], folded: Bool, all_in: Bool, street_contribution: Int, total_contribution: Int, acted: Bool, can_raise: Bool, last_action: String) -> model.Player:
-    return model.Player(source.id, source.name, source.is_human, stack, hole, folded, all_in, street_contribution, total_contribution, acted, can_raise, last_action)
+fn player_state(source: holdem_model.Player, stack: Int, hole: Array[holdem_model.Card], folded: Bool, all_in: Bool, street_contribution: Int, total_contribution: Int, acted: Bool, can_raise: Bool, last_action: String) -> holdem_model.Player:
+    return holdem_model.Player(source.id, source.name, source.is_human, stack, hole, folded, all_in, street_contribution, total_contribution, acted, can_raise, last_action)
 
-fn game_state(source: model.Game, players: Array[model.Player], next_card: Int, community: Array[model.Card], active: Int, current_bet: Int, last_full_raise: Int, phase: model.Phase, street: model.Street, pots_value: Array[model.Pot], history: Array[String], message: String) -> model.Game:
-    return model.Game(players, source.deck, next_card, community, source.dealer, source.small_blind_seat, source.big_blind_seat, active, current_bet, last_full_raise, source.small_blind, source.big_blind, phase, street, pots_value, history, source.hand_number, source.seed, message)
+fn game_state(source: holdem_model.Game, players: Array[holdem_model.Player], next_card: Int, community: Array[holdem_model.Card], active: Int, current_bet: Int, last_full_raise: Int, phase: holdem_model.Phase, street: holdem_model.Street, pots_value: Array[holdem_model.Pot], history: Array[String], message: String) -> holdem_model.Game:
+    return holdem_model.Game(players, source.deck, next_card, community, source.dealer, source.small_blind_seat, source.big_blind_seat, active, current_bet, last_full_raise, source.small_blind, source.big_blind, phase, street, pots_value, history, source.hand_number, source.seed, message)
 
 fn wrap(value: Int, length: Int) -> Int:
     return value - value / length * length
@@ -31,26 +31,26 @@ fn history_with(history: Array[String], entry: String) -> Array[String]:
 fn action_text(name: String, action: String) -> String:
     return string.concat(string.concat(name, " "), action)
 
-pub fn new_game(starting_balance: Int, ai_count: Int, seed: Int) -> Result[model.Game, String]:
+pub fn new_game(starting_balance: Int, ai_count: Int, seed: Int) -> Result[holdem_model.Game, String]:
     if starting_balance < 0:
         return Err("Hold'em starting balance cannot be negative")
     if ai_count < 1 or ai_count > 5:
         return Err("Hold'em requires between one and five AI opponents")
-    var players: Array[model.Player] = []
+    var players: Array[holdem_model.Player] = []
     players = collections.append(players, player(0, "Player", true, starting_balance))
     var index = 0
     while index < ai_count:
-        players = collections.append(players, player(index + 1, string.concat("Rival ", string.from_int(index + 1)), false, rules.default_stack()))
+        players = collections.append(players, player(index + 1, string.concat("Rival ", string.from_int(index + 1)), false, holdem_rules.default_stack()))
         index = index + 1
-    let no_cards: Array[model.Card] = []
-    let no_pots: Array[model.Pot] = []
+    let no_cards: Array[holdem_model.Card] = []
+    let no_pots: Array[holdem_model.Pot] = []
     let no_history: Array[String] = []
-    return Ok(model.Game(players, no_cards, 0, no_cards, collections.length(players) - 1, -1, -1, -1, 0, rules.big_blind(), rules.small_blind(), rules.big_blind(), model.Ready(), model.Preflop(), no_pots, no_history, 0, seed, "Press Deal to begin a Hold'em hand"))
+    return Ok(holdem_model.Game(players, no_cards, 0, no_cards, collections.length(players) - 1, -1, -1, -1, 0, holdem_rules.big_blind(), holdem_rules.small_blind(), holdem_rules.big_blind(), holdem_model.Ready(), holdem_model.Preflop(), no_pots, no_history, 0, seed, "Press Deal to begin a Hold'em hand"))
 
-pub fn reset_table(game: model.Game) -> Result[model.Game, String]:
-    return new_game(rules.default_stack(), collections.length(game.players) - 1, game.seed + game.hand_number * 65537 + 1)
+pub fn reset_table(game: holdem_model.Game) -> Result[holdem_model.Game, String]:
+    return new_game(holdem_rules.default_stack(), collections.length(game.players) - 1, game.seed + game.hand_number * 65537 + 1)
 
-fn next_seat_with_stack(players: Array[model.Player], from: Int) -> Int:
+fn next_seat_with_stack(players: Array[holdem_model.Player], from: Int) -> Int:
     let count = collections.length(players)
     var offset = 1
     while offset <= count:
@@ -60,7 +60,7 @@ fn next_seat_with_stack(players: Array[model.Player], from: Int) -> Int:
         offset = offset + 1
     return -1
 
-fn active_stack_count(players: Array[model.Player]) -> Int:
+fn active_stack_count(players: Array[holdem_model.Player]) -> Int:
     var count = 0
     var index = 0
     while index < collections.length(players):
@@ -69,17 +69,17 @@ fn active_stack_count(players: Array[model.Player]) -> Int:
         index = index + 1
     return count
 
-fn reset_players(players: Array[model.Player]) -> Array[model.Player]:
+fn reset_players(players: Array[holdem_model.Player]) -> Array[holdem_model.Player]:
     var result = players
     var index = 0
     while index < collections.length(result):
-        let no_cards: Array[model.Card] = []
+        let no_cards: Array[holdem_model.Card] = []
         let sitting_out = result[index].stack <= 0
         result[index] = player_state(result[index], result[index].stack, no_cards, sitting_out, false, 0, 0, false, true, "Waiting")
         index = index + 1
     return result
 
-fn deal_hole(players: Array[model.Player], deck: Array[model.Card], dealer: Int) -> Array[model.Player]:
+fn deal_hole(players: Array[holdem_model.Player], deck: Array[holdem_model.Card], dealer: Int) -> Array[holdem_model.Player]:
     var result = players
     let count = collections.length(result)
     var next_card = 0
@@ -96,7 +96,7 @@ fn deal_hole(players: Array[model.Player], deck: Array[model.Card], dealer: Int)
         round = round + 1
     return result
 
-fn dealt_card_count(players: Array[model.Player]) -> Int:
+fn dealt_card_count(players: Array[holdem_model.Player]) -> Int:
     var count = 0
     var index = 0
     while index < collections.length(players):
@@ -104,7 +104,7 @@ fn dealt_card_count(players: Array[model.Player]) -> Int:
         index = index + 1
     return count
 
-fn post_blind(players: Array[model.Player], seat: Int, requested: Int, label: String) -> Array[model.Player]:
+fn post_blind(players: Array[holdem_model.Player], seat: Int, requested: Int, label: String) -> Array[holdem_model.Player]:
     var result = players
     var amount = requested
     if amount > result[seat].stack:
@@ -113,26 +113,26 @@ fn post_blind(players: Array[model.Player], seat: Int, requested: Int, label: St
     result[seat] = player_state(result[seat], stack, result[seat].hole, false, stack == 0, amount, amount, false, true, label)
     return result
 
-fn next_pending(players: Array[model.Player], current_bet: Int, from: Int) -> Int:
+fn next_pending(players: Array[holdem_model.Player], current_bet: Int, from: Int) -> Int:
     let count = collections.length(players)
     var offset = 1
     while offset <= count:
         let seat = wrap(from + offset, count)
         let pending = not players[seat].acted or players[seat].street_contribution < current_bet
-        if rules.actionable(players[seat]) and pending:
+        if holdem_rules.actionable(players[seat]) and pending:
             return seat
         offset = offset + 1
     return -1
 
-pub fn start_hand(source: model.Game) -> Result[model.Game, String]:
-    if rules.phase_code(source.phase) != 0:
+pub fn start_hand(source: holdem_model.Game) -> Result[holdem_model.Game, String]:
+    if holdem_rules.phase_code(source.phase) != 0:
         return Err("Hold'em Deal requires a ready table")
     if source.players[0].stack < source.big_blind:
         return Err("Player needs a table reset/rebuy to cover the big blind")
     if active_stack_count(source.players) < 2:
         return Err("At least two funded Hold'em seats are required")
     let hand_number = source.hand_number + 1
-    let deck = cards.shuffled(source.seed + hand_number * 104729)
+    let deck = holdem_cards.shuffled(source.seed + hand_number * 104729)
     var players = deal_hole(reset_players(source.players), deck, next_seat_with_stack(source.players, source.dealer))
     let dealer = next_seat_with_stack(source.players, source.dealer)
     var small = next_seat_with_stack(players, dealer)
@@ -145,30 +145,30 @@ pub fn start_hand(source: model.Game) -> Result[model.Game, String]:
     var first = next_pending(players, source.big_blind, big)
     if active_stack_count(players) == 2:
         first = next_pending(players, source.big_blind, big)
-    let no_community: Array[model.Card] = []
-    let no_pots: Array[model.Pot] = []
+    let no_community: Array[holdem_model.Card] = []
+    let no_pots: Array[holdem_model.Pot] = []
     let no_history: Array[String] = []
     let history = history_with(history_with(no_history, action_text(players[small].name, "posts small blind")), action_text(players[big].name, "posts big blind"))
-    return Ok(model.Game(players, deck, dealt_card_count(players), no_community, dealer, small, big, first, source.big_blind, source.big_blind, source.small_blind, source.big_blind, model.Betting(), model.Preflop(), no_pots, history, hand_number, source.seed, "Preflop action"))
+    return Ok(holdem_model.Game(players, deck, dealt_card_count(players), no_community, dealer, small, big, first, source.big_blind, source.big_blind, source.small_blind, source.big_blind, holdem_model.Betting(), holdem_model.Preflop(), no_pots, history, hand_number, source.seed, "Preflop action"))
 
-fn betting_complete(players: Array[model.Player], current_bet: Int) -> Bool:
+fn betting_complete(players: Array[holdem_model.Player], current_bet: Int) -> Bool:
     var index = 0
     while index < collections.length(players):
-        if rules.actionable(players[index]) and(not players[index].acted or players[index].street_contribution != current_bet):
+        if holdem_rules.actionable(players[index]) and(not players[index].acted or players[index].street_contribution != current_bet):
             return false
         index = index + 1
     return true
 
-fn actionable_count(players: Array[model.Player]) -> Int:
+fn actionable_count(players: Array[holdem_model.Player]) -> Int:
     var count = 0
     var index = 0
     while index < collections.length(players):
-        if rules.actionable(players[index]):
+        if holdem_rules.actionable(players[index]):
             count = count + 1
         index = index + 1
     return count
 
-fn reset_street_players(players: Array[model.Player]) -> Array[model.Player]:
+fn reset_street_players(players: Array[holdem_model.Player]) -> Array[holdem_model.Player]:
     var result = players
     var index = 0
     while index < collections.length(result):
@@ -176,12 +176,12 @@ fn reset_street_players(players: Array[model.Player]) -> Array[model.Player]:
         index = index + 1
     return result
 
-fn settled(game: model.Game, message: String) -> Result[model.Game, String]:
+fn settled(game: holdem_model.Game, message: String) -> Result[holdem_model.Game, String]:
     let result = pots.settle(game.players, game.community, game.dealer)?
     let history = history_with(game.action_history, message)
-    return Ok(game_state(game, result.players, game.next_card, game.community, -1, game.current_bet, game.last_full_raise, model.Settled(), model.Showdown(), result.pots, history, message))
+    return Ok(game_state(game, result.players, game.next_card, game.community, -1, game.current_bet, game.last_full_raise, holdem_model.Settled(), holdem_model.Showdown(), result.pots, history, message))
 
-fn add_board(game: model.Game, count: Int, street: model.Street, message: String) -> Result[model.Game, String]:
+fn add_board(game: holdem_model.Game, count: Int, street: holdem_model.Street, message: String) -> Result[holdem_model.Game, String]:
     var next_card = game.next_card + 1
     if next_card + count > collections.length(game.deck):
         return Err("Hold'em deck exhausted while dealing the board")
@@ -193,23 +193,23 @@ fn add_board(game: model.Game, count: Int, street: model.Street, message: String
         index = index + 1
     let players = reset_street_players(game.players)
     let active = next_pending(players, 0, game.dealer)
-    let advanced = game_state(game, players, next_card, community, active, 0, game.big_blind, model.Betting(), street, game.pots, history_with(game.action_history, message), message)
+    let advanced = game_state(game, players, next_card, community, active, 0, game.big_blind, holdem_model.Betting(), street, game.pots, history_with(game.action_history, message), message)
     if actionable_count(players) <= 1:
         return advance_street(advanced)
     return Ok(advanced)
 
-fn advance_street(game: model.Game) -> Result[model.Game, String]:
-    let code = rules.street_code(game.street)
+fn advance_street(game: holdem_model.Game) -> Result[holdem_model.Game, String]:
+    let code = holdem_rules.street_code(game.street)
     if code == 0:
-        return add_board(game, 3, model.Flop(), "Flop dealt")
+        return add_board(game, 3, holdem_model.Flop(), "Flop dealt")
     if code == 1:
-        return add_board(game, 1, model.Turn(), "Turn dealt")
+        return add_board(game, 1, holdem_model.Turn(), "Turn dealt")
     if code == 2:
-        return add_board(game, 1, model.River(), "River dealt")
+        return add_board(game, 1, holdem_model.River(), "River dealt")
     return settled(game, "Showdown settled")
 
-fn after_action(game: model.Game, acting_seat: Int) -> Result[model.Game, String]:
-    if rules.live_count(game) == 1:
+fn after_action(game: holdem_model.Game, acting_seat: Int) -> Result[holdem_model.Game, String]:
+    if holdem_rules.live_count(game) == 1:
         return settled(game, "Uncontested pot awarded")
     if betting_complete(game.players, game.current_bet):
         return advance_street(game)
@@ -218,11 +218,11 @@ fn after_action(game: model.Game, acting_seat: Int) -> Result[model.Game, String
         return Err("Hold'em action loop could not find a pending seat")
     return Ok(game_state(game, game.players, game.next_card, game.community, active, game.current_bet, game.last_full_raise, game.phase, game.street, game.pots, game.action_history, game.message))
 
-fn contributed(player: model.Player, amount: Int, acted: Bool, can_raise: Bool, label: String) -> model.Player:
+fn contributed(player: holdem_model.Player, amount: Int, acted: Bool, can_raise: Bool, label: String) -> holdem_model.Player:
     let stack = player.stack - amount
     return player_state(player, stack, player.hole, player.folded, stack == 0, player.street_contribution + amount, player.total_contribution + amount, acted, can_raise, label)
 
-fn simple_action(game: model.Game, seat: Int, fold: Bool, amount: Int, label: String) -> Result[model.Game, String]:
+fn simple_action(game: holdem_model.Game, seat: Int, fold: Bool, amount: Int, label: String) -> Result[holdem_model.Game, String]:
     var players = game.players
     let updated = contributed(players[seat], amount, true, false, label)
     players[seat] = player_state(updated, updated.stack, updated.hole, fold, updated.all_in, updated.street_contribution, updated.total_contribution, true, false, label)
@@ -230,8 +230,8 @@ fn simple_action(game: model.Game, seat: Int, fold: Bool, amount: Int, label: St
     let changed = game_state(game, players, game.next_card, game.community, game.active, game.current_bet, game.last_full_raise, game.phase, game.street, game.pots, history_with(game.action_history, entry), entry)
     return after_action(changed, seat)
 
-fn raise_action(game: model.Game, seat: Int, target: Int, label: String) -> Result[model.Game, String]:
-    if not rules.can_raise_to(game, seat, target):
+fn raise_action(game: holdem_model.Game, seat: Int, target: Int, label: String) -> Result[holdem_model.Game, String]:
+    if not holdem_rules.can_raise_to(game, seat, target):
         return Err("That Hold'em raise target is illegal")
     let increment = target - game.current_bet
     let full_raise = increment >= game.last_full_raise
@@ -240,7 +240,7 @@ fn raise_action(game: model.Game, seat: Int, target: Int, label: String) -> Resu
     players[seat] = contributed(players[seat], amount, true, false, label)
     var index = 0
     while index < collections.length(players):
-        if index != seat and rules.actionable(players[index]):
+        if index != seat and holdem_rules.actionable(players[index]):
             if full_raise:
                 players[index] = player_state(players[index], players[index].stack, players[index].hole, players[index].folded, players[index].all_in, players[index].street_contribution, players[index].total_contribution, false, true, players[index].last_action)
             else:
@@ -254,47 +254,47 @@ fn raise_action(game: model.Game, seat: Int, target: Int, label: String) -> Resu
     let changed = game_state(game, players, game.next_card, game.community, game.active, target, last_raise, game.phase, game.street, game.pots, history_with(game.action_history, entry), entry)
     return after_action(changed, seat)
 
-pub fn act(game: model.Game, action: Int, target: Int) -> Result[model.Game, String]:
-    if rules.phase_code(game.phase) != 1 or game.active < 0:
+pub fn act(game: holdem_model.Game, action: Int, target: Int) -> Result[holdem_model.Game, String]:
+    if holdem_rules.phase_code(game.phase) != 1 or game.active < 0:
         return Err("Hold'em has no active betting action")
     let seat = game.active
     if action == 0:
-        if not rules.can_fold(game, seat):
+        if not holdem_rules.can_fold(game, seat):
             return Err("Fold is unavailable when Check is legal")
         return simple_action(game, seat, true, 0, "folds")
     if action == 1:
-        if not rules.can_check(game, seat):
+        if not holdem_rules.can_check(game, seat):
             return Err("Check is not legal while facing a wager")
         return simple_action(game, seat, false, 0, "checks")
     if action == 2:
-        if not rules.can_call(game, seat):
+        if not holdem_rules.can_call(game, seat):
             return Err("Call requires an outstanding wager")
-        return simple_action(game, seat, false, rules.call_amount(game, seat), "calls")
+        return simple_action(game, seat, false, holdem_rules.call_amount(game, seat), "calls")
     if action == 3:
         return raise_action(game, seat, target, "raises")
     if action == 4:
-        if not rules.can_all_in(game, seat):
+        if not holdem_rules.can_all_in(game, seat):
             return Err("All-in is not legal for this action")
-        let all_in_target = rules.maximum_target(game, seat)
+        let all_in_target = holdem_rules.maximum_target(game, seat)
         if all_in_target > game.current_bet:
             return raise_action(game, seat, all_in_target, "moves all-in")
         return simple_action(game, seat, false, game.players[seat].stack, "calls all-in")
     return Err("Unknown Hold'em action")
 
-pub fn next_hand(game: model.Game) -> Result[model.Game, String]:
-    if rules.phase_code(game.phase) != 2:
+pub fn next_hand(game: holdem_model.Game) -> Result[holdem_model.Game, String]:
+    if holdem_rules.phase_code(game.phase) != 2:
         return Err("The current Hold'em hand has not settled")
-    let no_cards: Array[model.Card] = []
-    let no_pots: Array[model.Pot] = []
-    let ready = model.Game(game.players, no_cards, 0, no_cards, game.dealer, -1, -1, -1, 0, game.big_blind, game.small_blind, game.big_blind, model.Ready(), model.Preflop(), no_pots, game.action_history, game.hand_number, game.seed, "Ready for the next Hold'em hand")
+    let no_cards: Array[holdem_model.Card] = []
+    let no_pots: Array[holdem_model.Pot] = []
+    let ready = holdem_model.Game(game.players, no_cards, 0, no_cards, game.dealer, -1, -1, -1, 0, game.big_blind, game.small_blind, game.big_blind, holdem_model.Ready(), holdem_model.Preflop(), no_pots, game.action_history, game.hand_number, game.seed, "Ready for the next Hold'em hand")
     return start_hand(ready)
 
-pub fn chips_in_play(game: model.Game) -> Int:
+pub fn chips_in_play(game: holdem_model.Game) -> Int:
     var total = 0
     var index = 0
     while index < collections.length(game.players):
         total = total + game.players[index].stack
-        if rules.phase_code(game.phase) == 1:
+        if holdem_rules.phase_code(game.phase) == 1:
             total = total + game.players[index].total_contribution
         index = index + 1
     return total

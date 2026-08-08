@@ -1,0 +1,32 @@
+import src.blackjack.blackjack_engine
+import src.blackjack.blackjack_model
+
+pub fn new_game(human_name: String, starting_balance: Int, ai_count: Int, seed: Int) -> Result[blackjack_model.Game, String]:
+    return blackjack_engine.new_game(human_name, starting_balance, ai_count, seed)
+
+pub fn set_bet(game: blackjack_model.Game, player_index: Int, amount: Int) -> Result[blackjack_model.Game, String]:
+    return blackjack_engine.set_bet(game, player_index, amount)
+
+pub fn place_ai_bets(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
+    return blackjack_engine.place_ai_bets(game)
+
+pub fn start_round(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
+    return blackjack_engine.start_round(game)
+
+pub fn available_actions(game: blackjack_model.Game) -> Array[blackjack_model.Action]:
+    return blackjack_engine.available_actions(game)
+
+pub fn apply_action(game: blackjack_model.Game, action: blackjack_model.Action) -> Result[blackjack_model.Game, String]:
+    return blackjack_engine.apply_action(game, action)
+
+pub fn ai_step(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
+    return blackjack_engine.ai_step(game)
+
+pub fn dealer_step(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
+    return blackjack_engine.dealer_step(game)
+
+pub fn begin_next_round(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
+    return blackjack_engine.begin_next_round(game)
+
+pub fn phase_code(game: blackjack_model.Game) -> Int:
+    return blackjack_engine.phase_code(game.phase)

@@ -1,6 +1,6 @@
-import src.chicken.engine
-import src.chicken.model
-import src.chicken.rules
+import src.chicken.chicken_engine
+import src.chicken.chicken_model
+import src.chicken.chicken_rules
 import std.collections
 
 fn same_path(left: Array[Int], right: Array[Int]) -> Bool:
@@ -16,12 +16,12 @@ fn same_path(left: Array[Int], right: Array[Int]) -> Bool:
 fn full_safe_seed() -> Result[Int, String]:
     var seed = 1
     while seed <= 10000:
-        var game = engine.new_game(1000, seed)?
-        game = engine.with_risk(game, model.Low())?
-        game = engine.start(game)?
+        var game = chicken_engine.new_game(1000, seed)?
+        game = chicken_engine.with_risk(game, chicken_model.Low())?
+        game = chicken_engine.start(game)?
         var safe = true
         var depth = 0
-        while depth < rules.maximum_depth():
+        while depth < chicken_rules.maximum_depth():
             if game.path[depth] == 0:
                 safe = false
             depth = depth + 1
@@ -33,112 +33,112 @@ fn full_safe_seed() -> Result[Int, String]:
 fn first_failure_seed() -> Result[Int, String]:
     var seed = 1
     while seed <= 100:
-        let game = engine.start(engine.new_game(1000, seed)?)?
+        let game = chicken_engine.start(chicken_engine.new_game(1000, seed)?)?
         if game.path[0] == 0:
             return Ok(seed)
         seed = seed + 1
     return Err("No first-rung Coop Climb failure seed found")
 
 fn run() -> Result[Int, String]:
-    match engine.new_game(4, 1):
+    match chicken_engine.new_game(4, 1):
         case Ok(game):
             return Ok(1)
         case Err(error):
             let expected = true
-    var game = engine.new_game(5000, 4242)?
-    if engine.phase_code(game.phase) != 0 or game.bet != 10 or game.balance != 5000:
+    var game = chicken_engine.new_game(5000, 4242)?
+    if chicken_engine.phase_code(game.phase) != 0 or game.bet != 10 or game.balance != 5000:
         return Ok(2)
-    match engine.with_bet(game, 11):
+    match chicken_engine.with_bet(game, 11):
         case Ok(value):
             return Ok(3)
         case Err(error):
             let expected = true
-    match engine.advance(game):
+    match chicken_engine.advance(game):
         case Ok(value):
             return Ok(4)
         case Err(error):
             let expected = true
-    match engine.cash_out(game):
+    match chicken_engine.cash_out(game):
         case Ok(value):
             return Ok(5)
         case Err(error):
             let expected = true
-    game = engine.with_risk(game, model.High())?
-    game = engine.with_bet(game, 25)?
-    let active = engine.start(game)?
-    let duplicate = engine.start(engine.with_bet(engine.with_risk(engine.new_game(5000, 4242)?, model.High())?, 25)?)?
-    if engine.phase_code(active.phase) != 1 or active.balance != 4975 or collections.length(active.path) != 10:
+    game = chicken_engine.with_risk(game, chicken_model.High())?
+    game = chicken_engine.with_bet(game, 25)?
+    let active = chicken_engine.start(game)?
+    let duplicate = chicken_engine.start(chicken_engine.with_bet(chicken_engine.with_risk(chicken_engine.new_game(5000, 4242)?, chicken_model.High())?, 25)?)?
+    if chicken_engine.phase_code(active.phase) != 1 or active.balance != 4975 or collections.length(active.path) != 10:
         return Ok(6)
     if not same_path(active.path, duplicate.path):
         return Ok(7)
-    match engine.with_bet(active, 50):
+    match chicken_engine.with_bet(active, 50):
         case Ok(value):
             return Ok(8)
         case Err(error):
             let expected = true
-    match engine.cash_out(active):
+    match chicken_engine.cash_out(active):
         case Ok(value):
             return Ok(9)
         case Err(error):
             let expected = true
-    var first = engine.new_game(1000, full_safe_seed()?)?
-    first = engine.with_risk(first, model.Low())?
-    first = engine.with_bet(first, 25)?
-    first = engine.start(first)?
-    first = engine.advance(first)?
-    first = engine.cash_out(first)?
-    if engine.phase_code(first.phase) != 2 or first.survived_depth != 1 or first.payout != 30 or first.balance != 1005:
+    var first = chicken_engine.new_game(1000, full_safe_seed()?)?
+    first = chicken_engine.with_risk(first, chicken_model.Low())?
+    first = chicken_engine.with_bet(first, 25)?
+    first = chicken_engine.start(first)?
+    first = chicken_engine.advance(first)?
+    first = chicken_engine.cash_out(first)?
+    if chicken_engine.phase_code(first.phase) != 2 or first.survived_depth != 1 or first.payout != 30 or first.balance != 1005:
         return Ok(10)
-    var last = engine.new_game(1000, full_safe_seed()?)?
-    last = engine.with_risk(last, model.Low())?
-    last = engine.with_bet(last, 25)?
-    last = engine.start(last)?
+    var last = chicken_engine.new_game(1000, full_safe_seed()?)?
+    last = chicken_engine.with_risk(last, chicken_model.Low())?
+    last = chicken_engine.with_bet(last, 25)?
+    last = chicken_engine.start(last)?
     var depth = 0
-    while depth < rules.maximum_depth():
-        last = engine.advance(last)?
+    while depth < chicken_rules.maximum_depth():
+        last = chicken_engine.advance(last)?
         depth = depth + 1
-    match engine.advance(last):
+    match chicken_engine.advance(last):
         case Ok(value):
             return Ok(11)
         case Err(error):
             let expected = true
-    last = engine.cash_out(last)?
-    if last.survived_depth != 10 or last.payout != rules.payout(25, 89406) or last.failed:
+    last = chicken_engine.cash_out(last)?
+    if last.survived_depth != 10 or last.payout != chicken_rules.payout(25, 89406) or last.failed:
         return Ok(12)
-    var failed = engine.new_game(1000, first_failure_seed()?)?
-    failed = engine.start(failed)?
-    failed = engine.advance(failed)?
-    if engine.phase_code(failed.phase) != 2 or not failed.failed or failed.payout != 0 or failed.balance != 990:
+    var failed = chicken_engine.new_game(1000, first_failure_seed()?)?
+    failed = chicken_engine.start(failed)?
+    failed = chicken_engine.advance(failed)?
+    if chicken_engine.phase_code(failed.phase) != 2 or not failed.failed or failed.payout != 0 or failed.balance != 990:
         return Ok(13)
-    match engine.next_round(active):
+    match chicken_engine.next_round(active):
         case Ok(value):
             return Ok(14)
         case Err(error):
             let expected = true
-    var poor = engine.with_bet(engine.new_game(10, 7)?, 10)?
-    poor = engine.start(poor)?
-    poor = engine.advance(poor)?
-    if engine.phase_code(poor.phase) == 1:
-        poor = engine.cash_out(poor)?
-    poor = engine.next_round(poor)?
-    match engine.start(poor):
+    var poor = chicken_engine.with_bet(chicken_engine.new_game(10, 7)?, 10)?
+    poor = chicken_engine.start(poor)?
+    poor = chicken_engine.advance(poor)?
+    if chicken_engine.phase_code(poor.phase) == 1:
+        poor = chicken_engine.cash_out(poor)?
+    poor = chicken_engine.next_round(poor)?
+    match chicken_engine.start(poor):
         case Ok(value):
             if poor.balance < poor.bet:
                 return Ok(15)
         case Err(error):
             let expected = true
-    var current = engine.new_game(5000, 9900)?
-    current = engine.with_risk(current, model.Low())?
-    current = engine.with_bet(current, 5)?
+    var current = chicken_engine.new_game(5000, 9900)?
+    current = chicken_engine.with_risk(current, chicken_model.Low())?
+    current = chicken_engine.with_bet(current, 5)?
     var round = 0
     while round < 25:
-        current = engine.start(current)?
-        current = engine.advance(current)?
-        if engine.phase_code(current.phase) == 1:
-            current = engine.cash_out(current)?
+        current = chicken_engine.start(current)?
+        current = chicken_engine.advance(current)?
+        if chicken_engine.phase_code(current.phase) == 1:
+            current = chicken_engine.cash_out(current)?
         if current.balance < 0:
             return Ok(16)
-        current = engine.next_round(current)?
+        current = chicken_engine.next_round(current)?
         round = round + 1
     if current.round_number != 26 or collections.length(current.history) != 20:
         return Ok(17)

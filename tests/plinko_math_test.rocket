@@ -1,5 +1,5 @@
-import src.plinko.model
-import src.plinko.rules
+import src.plinko.plinko_model
+import src.plinko.plinko_rules
 import std.collections
 
 fn symmetric(values: Array[Int]) -> Bool:
@@ -11,29 +11,29 @@ fn symmetric(values: Array[Int]) -> Bool:
     return true
 
 fn run() -> Result[Int, String]:
-    if rules.combinations(8, 0) != 1 or rules.combinations(8, 4) != 70 or rules.combinations(16, 8) != 12870:
+    if plinko_rules.combinations(8, 0) != 1 or plinko_rules.combinations(8, 4) != 70 or plinko_rules.combinations(16, 8) != 12870:
         return Ok(1)
-    if rules.outcome_count(8) != 256 or rules.outcome_count(16) != 65536:
+    if plinko_rules.outcome_count(8) != 256 or plinko_rules.outcome_count(16) != 65536:
         return Ok(2)
     var rows = 8
     while rows <= 16:
         var probability_total = 0
         var bucket = 0
         while bucket <= rows:
-            probability_total = probability_total + rules.combinations(rows, bucket)
+            probability_total = probability_total + plinko_rules.combinations(rows, bucket)
             bucket = bucket + 1
-        if probability_total != rules.outcome_count(rows):
+        if probability_total != plinko_rules.outcome_count(rows):
             return Ok(3)
-        let low = rules.multipliers(rows, model.Low())?
-        let medium = rules.multipliers(rows, model.Medium())?
-        let high = rules.multipliers(rows, model.High())?
+        let low = plinko_rules.multipliers(rows, plinko_model.Low())?
+        let medium = plinko_rules.multipliers(rows, plinko_model.Medium())?
+        let high = plinko_rules.multipliers(rows, plinko_model.High())?
         if collections.length(low) != rows + 1 or collections.length(medium) != rows + 1 or collections.length(high) != rows + 1:
             return Ok(4)
         if not symmetric(low) or not symmetric(medium) or not symmetric(high):
             return Ok(5)
-        let low_return = rules.expected_return_basis_points(rows, model.Low())?
-        let medium_return = rules.expected_return_basis_points(rows, model.Medium())?
-        let high_return = rules.expected_return_basis_points(rows, model.High())?
+        let low_return = plinko_rules.expected_return_basis_points(rows, plinko_model.Low())?
+        let medium_return = plinko_rules.expected_return_basis_points(rows, plinko_model.Medium())?
+        let high_return = plinko_rules.expected_return_basis_points(rows, plinko_model.High())?
         if low_return > 9600 or medium_return > 9600 or high_return > 9600:
             return Ok(6)
         if low_return < 9598 or medium_return < 9598 or high_return < 9598:
@@ -44,17 +44,17 @@ fn run() -> Result[Int, String]:
         if high[center] >= medium[center] or medium[center] >= low[center]:
             return Ok(9)
         rows = rows + 1
-    match rules.multipliers(7, model.Low()):
+    match plinko_rules.multipliers(7, plinko_model.Low()):
         case Ok(values):
             return Ok(10)
         case Err(error):
             let expected = true
-    match rules.multipliers(17, model.High()):
+    match plinko_rules.multipliers(17, plinko_model.High()):
         case Ok(values):
             return Ok(11)
         case Err(error):
             let expected = true
-    if rules.payout(25, 15000) != 37 or rules.payout(5, 1000) != 0:
+    if plinko_rules.payout(25, 15000) != 37 or plinko_rules.payout(5, 1000) != 0:
         return Ok(12)
     return Ok(0)
 

@@ -1,29 +1,29 @@
-import src.blackjack.model
+import src.blackjack.blackjack_model
 import std.collections
 import std.string
 
-pub fn create(rank: Int, suit: Int) -> Result[model.Card, String]:
+pub fn create(rank: Int, suit: Int) -> Result[blackjack_model.Card, String]:
     if rank < 1 or rank > 13:
         return Err("Card rank must be between 1 and 13")
     if suit < 0 or suit > 3:
         return Err("Card suit must be between 0 and 3")
-    return Ok(model.Card(rank, suit))
+    return Ok(blackjack_model.Card(rank, suit))
 
-pub fn make_hand(values: Array[model.Card], bet: Int, from_split: Bool) -> model.Hand:
-    return model.Hand(values, bet, false, false, false, from_split, false, 0, false)
+pub fn make_hand(values: Array[blackjack_model.Card], bet: Int, from_split: Bool) -> blackjack_model.Hand:
+    return blackjack_model.Hand(values, bet, false, false, false, from_split, false, 0, false)
 
-pub fn empty_hand(bet: Int, from_split: Bool) -> model.Hand:
-    let values: Array[model.Card] = []
+pub fn empty_hand(bet: Int, from_split: Bool) -> blackjack_model.Hand:
+    let values: Array[blackjack_model.Card] = []
     return make_hand(values, bet, from_split)
 
-pub fn blackjack_value(card: model.Card) -> Int:
+pub fn blackjack_value(card: blackjack_model.Card) -> Int:
     if card.rank == 1:
         return 11
     if card.rank >= 10:
         return 10
     return card.rank
 
-pub fn value(hand: model.Hand) -> model.HandValue:
+pub fn value(hand: blackjack_model.Hand) -> blackjack_model.HandValue:
     var total = 0
     var aces = 0
     var index = 0
@@ -37,7 +37,7 @@ pub fn value(hand: model.Hand) -> model.HandValue:
         total = total - 10
         aces = aces - 1
     let natural = collections.length(hand.cards) == 2 and total == 21 and not hand.from_split
-    return model.HandValue(total, aces > 0, natural, total > 21)
+    return blackjack_model.HandValue(total, aces > 0, natural, total > 21)
 
 pub fn rank_name(rank: Int) -> String:
     if rank == 1:
@@ -59,8 +59,8 @@ pub fn suit_name(suit: Int) -> String:
         return "D"
     return "C"
 
-pub fn name(card: model.Card) -> String:
+pub fn name(card: blackjack_model.Card) -> String:
     return string.concat(rank_name(card.rank), suit_name(card.suit))
 
-pub fn is_red(card: model.Card) -> Bool:
+pub fn is_red(card: blackjack_model.Card) -> Bool:
     return card.suit == 1 or card.suit == 2

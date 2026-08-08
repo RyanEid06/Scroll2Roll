@@ -1,7 +1,7 @@
 import src.app.components
 import src.app.theme
-import src.holdem.cards
-import src.holdem.model
+import src.holdem.holdem_cards
+import src.holdem.holdem_model
 import src.rocket_raylib
 import std.collections
 import std.string
@@ -50,22 +50,22 @@ fn street_name(code: Int) -> String:
         return "River"
     return "Showdown"
 
-fn draw_card(window: rocket_raylib.Window, frame: rocket_raylib.Frame, card: model.Card, x: Int, y: Int, hidden: Bool) -> Result[Bool, String]:
+fn draw_card(window: rocket_raylib.Window, frame: rocket_raylib.Frame, card: holdem_model.Card, x: Int, y: Int, hidden: Bool) -> Result[Bool, String]:
     var fill = theme.card_light()
     var ink = theme.card_dark()
-    var label = cards.name(card)
+    var label = holdem_cards.name(card)
     if hidden:
         fill = theme.card_back()
         ink = theme.gold()
         label = "S2R"
     rocket_raylib.draw_rectangle(frame, x - 1, y - 1, 43, 59, theme.border())?
     rocket_raylib.draw_rectangle(frame, x, y, 41, 57, fill)?
-    if not hidden and cards.is_red(card):
+    if not hidden and holdem_cards.is_red(card):
         ink = theme.danger()
     let width = rocket_raylib.measure_text(window, label, theme.small_size())?
     return rocket_raylib.draw_text(frame, label, x +(41 - width) / 2, y + 19, theme.small_size(), ink)
 
-fn markers(player: model.PublicPlayer) -> String:
+fn markers(player: holdem_model.PublicPlayer) -> String:
     var result = ""
     if player.dealer:
         result = "D"
@@ -84,7 +84,7 @@ fn opponent_x(index: Int, opponent_count: Int) -> Int:
         return 250
     return 30 +(index - 1) * 430 /(opponent_count - 1)
 
-fn draw_opponents(window: rocket_raylib.Window, frame: rocket_raylib.Frame, table: model.PublicTable) -> Result[Bool, String]:
+fn draw_opponents(window: rocket_raylib.Window, frame: rocket_raylib.Frame, table: holdem_model.PublicTable) -> Result[Bool, String]:
     let count = collections.length(table.players)
     var index = 1
     while index < count:
@@ -104,12 +104,12 @@ fn draw_opponents(window: rocket_raylib.Window, frame: rocket_raylib.Frame, tabl
                 draw_card(window, frame, player.cards[0], x + 4, 163, false)?
                 draw_card(window, frame, player.cards[1], x + 48, 163, false)?
             else:
-                draw_card(window, frame, model.Card(1, 0), x + 4, 163, true)?
-                draw_card(window, frame, model.Card(1, 0), x + 48, 163, true)?
+                draw_card(window, frame, holdem_model.Card(1, 0), x + 4, 163, true)?
+                draw_card(window, frame, holdem_model.Card(1, 0), x + 48, 163, true)?
         index = index + 1
     return Ok(true)
 
-fn draw_board(window: rocket_raylib.Window, frame: rocket_raylib.Frame, table: model.PublicTable) -> Result[Bool, String]:
+fn draw_board(window: rocket_raylib.Window, frame: rocket_raylib.Frame, table: holdem_model.PublicTable) -> Result[Bool, String]:
     rocket_raylib.draw_rectangle(frame, 82, 238, 430, 142, theme.felt())?
     rocket_raylib.draw_rectangle(frame, 92, 248, 410, 122, theme.felt_inner())?
     rocket_raylib.draw_text(frame, string.concat("Pot ", string.from_int(table.pot_total)), 102, 258, theme.body_size(), theme.gold())?
@@ -120,7 +120,7 @@ fn draw_board(window: rocket_raylib.Window, frame: rocket_raylib.Frame, table: m
         index = index + 1
     return Ok(true)
 
-fn draw_human(window: rocket_raylib.Window, frame: rocket_raylib.Frame, player: model.PublicPlayer) -> Result[Bool, String]:
+fn draw_human(window: rocket_raylib.Window, frame: rocket_raylib.Frame, player: holdem_model.PublicPlayer) -> Result[Bool, String]:
     var fill = theme.panel()
     if player.active:
         fill = theme.panel_hover()
@@ -134,7 +134,7 @@ fn draw_human(window: rocket_raylib.Window, frame: rocket_raylib.Frame, player: 
     rocket_raylib.draw_text(frame, player.last_action, 194, 477, theme.small_size(), theme.muted())?
     return Ok(true)
 
-fn draw_history(frame: rocket_raylib.Frame, table: model.PublicTable, width: Int) -> Result[Bool, String]:
+fn draw_history(frame: rocket_raylib.Frame, table: holdem_model.PublicTable, width: Int) -> Result[Bool, String]:
     let length = collections.length(table.action_history)
     var first = length - 3
     if first < 0:
@@ -159,7 +159,7 @@ fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result
         index = index + 1
     return Ok(true)
 
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, table: model.PublicTable, target: Int, can_fold: Bool, can_call_check: Bool, can_raise: Bool, can_all_in: Bool, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, table: holdem_model.PublicTable, target: Int, can_fold: Bool, can_call_check: Bool, can_raise: Bool, can_all_in: Bool, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     rocket_raylib.draw_text(frame, "NO-LIMIT HOLD'EM", 32, 24, theme.heading_size(), theme.gold())?

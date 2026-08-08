@@ -1,49 +1,49 @@
-import src.blackjack.cards
-import src.blackjack.engine
-import src.blackjack.model
+import src.blackjack.blackjack_cards
+import src.blackjack.blackjack_engine
+import src.blackjack.blackjack_model
 import src.blackjack.strategy
 import std.collections
 
-fn settle_round(game: model.Game) -> Result[model.Game, String]:
+fn settle_round(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
     var current = game
     var guard = 0
-    while engine.phase_code(current.phase) != 3:
+    while blackjack_engine.phase_code(current.phase) != 3:
         if guard >= 500:
             return Err("Round safety loop exceeded 500 steps")
-        if engine.phase_code(current.phase) == 1:
-            if engine.active_player_is_human(current):
-                current = engine.apply_action(current, engine.choose_basic_action(current)?)?
+        if blackjack_engine.phase_code(current.phase) == 1:
+            if blackjack_engine.active_player_is_human(current):
+                current = blackjack_engine.apply_action(current, blackjack_engine.choose_basic_action(current)?)?
             else:
-                current = engine.ai_step(current)?
+                current = blackjack_engine.ai_step(current)?
         else:
-            if engine.phase_code(current.phase) == 2:
-                current = engine.dealer_step(current)?
+            if blackjack_engine.phase_code(current.phase) == 2:
+                current = blackjack_engine.dealer_step(current)?
         guard = guard + 1
     return Ok(current)
 
-fn start(seed: Int) -> Result[model.Game, String]:
-    var game = engine.new_game("Tester", 1000, 5, seed)?
-    game = engine.set_bet(game, 0, 20)?
-    game = engine.place_ai_bets(game)?
-    return engine.start_round(game)
+fn start(seed: Int) -> Result[blackjack_model.Game, String]:
+    var game = blackjack_engine.new_game("Tester", 1000, 5, seed)?
+    game = blackjack_engine.set_bet(game, 0, 20)?
+    game = blackjack_engine.place_ai_bets(game)?
+    return blackjack_engine.start_round(game)
 
 fn run() -> Result[Int, String]:
-    let hit_stand = [model.Hit(), model.Stand()]
-    let double_actions = [model.Hit(), model.Stand(), model.Double()]
-    let split_actions = [model.Hit(), model.Stand(), model.Double(), model.Split(), model.Surrender()]
-    let dealer_ten = cards.create(10, 0)?
-    let hard_sixteen = cards.make_hand([cards.create(10, 0)?, cards.create(6, 1)?], 20, false)
+    let hit_stand = [blackjack_model.Hit(), blackjack_model.Stand()]
+    let double_actions = [blackjack_model.Hit(), blackjack_model.Stand(), blackjack_model.Double()]
+    let split_actions = [blackjack_model.Hit(), blackjack_model.Stand(), blackjack_model.Double(), blackjack_model.Split(), blackjack_model.Surrender()]
+    let dealer_ten = blackjack_cards.create(10, 0)?
+    let hard_sixteen = blackjack_cards.make_hand([blackjack_cards.create(10, 0)?, blackjack_cards.create(6, 1)?], 20, false)
     let surrender = strategy.choose(hard_sixteen, dealer_ten, split_actions)?
-    if engine.action_code(surrender) != 4:
+    if blackjack_engine.action_code(surrender) != 4:
         return Ok(1)
-    let hard_eleven = cards.make_hand([cards.create(5, 0)?, cards.create(6, 1)?], 20, false)
-    if engine.action_code(strategy.choose(hard_eleven, cards.create(6, 0)?, double_actions)?) != 2:
+    let hard_eleven = blackjack_cards.make_hand([blackjack_cards.create(5, 0)?, blackjack_cards.create(6, 1)?], 20, false)
+    if blackjack_engine.action_code(strategy.choose(hard_eleven, blackjack_cards.create(6, 0)?, double_actions)?) != 2:
         return Ok(2)
-    let pair_eights = cards.make_hand([cards.create(8, 0)?, cards.create(8, 1)?], 20, false)
-    if engine.action_code(strategy.choose(pair_eights, dealer_ten, split_actions)?) != 3:
+    let pair_eights = blackjack_cards.make_hand([blackjack_cards.create(8, 0)?, blackjack_cards.create(8, 1)?], 20, false)
+    if blackjack_engine.action_code(strategy.choose(pair_eights, dealer_ten, split_actions)?) != 3:
         return Ok(3)
-    let hard_twenty = cards.make_hand([cards.create(10, 0)?, cards.create(10, 1)?], 20, false)
-    if engine.action_code(strategy.choose(hard_twenty, dealer_ten, hit_stand)?) != 1:
+    let hard_twenty = blackjack_cards.make_hand([blackjack_cards.create(10, 0)?, blackjack_cards.create(10, 1)?], 20, false)
+    if blackjack_engine.action_code(strategy.choose(hard_twenty, dealer_ten, hit_stand)?) != 1:
         return Ok(4)
     let first = settle_round(start(8888)?)?
     let second = settle_round(start(8888)?)?
@@ -59,24 +59,24 @@ fn run() -> Result[Int, String]:
     var current = first
     var round = 1
     while round < 10:
-        current = engine.begin_next_round(current)?
+        current = blackjack_engine.begin_next_round(current)?
         if current.players[0].balance < current.rules.minimum_bet:
             return Ok(8)
-        current = engine.set_bet(current, 0, current.rules.minimum_bet)?
-        current = engine.place_ai_bets(current)?
-        current = settle_round(engine.start_round(current)?)?
+        current = blackjack_engine.set_bet(current, 0, current.rules.minimum_bet)?
+        current = blackjack_engine.place_ai_bets(current)?
+        current = settle_round(blackjack_engine.start_round(current)?)?
         player_index = 0
         while player_index < collections.length(current.players):
             if current.players[player_index].balance < 0:
                 return Ok(9)
             player_index = player_index + 1
         round = round + 1
-    if current.round_number != 10 or engine.phase_code(current.phase) != 3:
+    if current.round_number != 10 or blackjack_engine.phase_code(current.phase) != 3:
         return Ok(10)
-    let next = engine.begin_next_round(current)?
-    if engine.phase_code(next.phase) != 0 or collections.length(next.results) != 0 or collections.length(next.players[0].hands) != 0:
+    let next = blackjack_engine.begin_next_round(current)?
+    if blackjack_engine.phase_code(next.phase) != 0 or collections.length(next.results) != 0 or collections.length(next.players[0].hands) != 0:
         return Ok(11)
-    match engine.begin_next_round(next):
+    match blackjack_engine.begin_next_round(next):
         case Ok(value):
             return Ok(12)
         case Err(error):

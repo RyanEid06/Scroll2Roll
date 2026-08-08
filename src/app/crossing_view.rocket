@@ -1,8 +1,8 @@
 import src.app.components
 import src.app.theme
-import src.crossing.engine
-import src.crossing.model
-import src.crossing.rules
+import src.crossing.crossing_engine
+import src.crossing.crossing_model
+import src.crossing.crossing_rules
 import src.rocket_raylib
 import std.collections
 import std.string
@@ -52,7 +52,7 @@ fn multiplier_label(basis_points: Int) -> String:
     return string.concat(string.from_int(whole), string.concat(".", string.concat(fraction, "x")))
 
 fn lane_fill(lane: Int) -> rocket_raylib.Color:
-    let kind = rules.lane_kind(lane)
+    let kind = crossing_rules.lane_kind(lane)
     if kind == 1:
         return theme.road()
     if kind == 2:
@@ -64,7 +64,7 @@ fn lane_fill(lane: Int) -> rocket_raylib.Color:
     return theme.safe_lane()
 
 fn lane_name(lane: Int) -> String:
-    let kind = rules.lane_kind(lane)
+    let kind = crossing_rules.lane_kind(lane)
     if kind == 1:
         return "ROAD"
     if kind == 2:
@@ -75,33 +75,33 @@ fn lane_name(lane: Int) -> String:
         return "CHECKPOINT"
     return "SAFE"
 
-fn draw_world(frame: rocket_raylib.Frame, game: model.Game, width: Int, height: Int) -> Result[Bool, String]:
+fn draw_world(frame: rocket_raylib.Frame, game: crossing_model.Game, width: Int, height: Int) -> Result[Bool, String]:
     let board_x = 32
     let board_y = 92
     let board_width = width - 414
     let board_height = height - 160
-    let lane_height = board_height / rules.lane_count()
+    let lane_height = board_height / crossing_rules.lane_count()
     var lane = 0
-    while lane < rules.lane_count():
-        let y = board_y +(rules.lane_count() - 1 - lane) * lane_height
+    while lane < crossing_rules.lane_count():
+        let y = board_y +(crossing_rules.lane_count() - 1 - lane) * lane_height
         rocket_raylib.draw_rectangle(frame, board_x, y, board_width, lane_height - 2, lane_fill(lane))?
         rocket_raylib.draw_text(frame, lane_name(lane), board_x + 6, y + 5, 10, theme.muted())?
         lane = lane + 1
     var index = 0
     while index < collections.length(game.hazards):
         let hazard = game.hazards[index]
-        let x = board_x + hazard.position * board_width / rules.world_width()
-        let y = board_y +(rules.lane_count() - 1 - hazard.lane) * lane_height + 15
-        let hazard_width = hazard.length * board_width / rules.world_width()
+        let x = board_x + hazard.position * board_width / crossing_rules.world_width()
+        let y = board_y +(crossing_rules.lane_count() - 1 - hazard.lane) * lane_height + 15
+        let hazard_width = hazard.length * board_width / crossing_rules.world_width()
         var fill = theme.danger()
-        if rules.hazard_code(hazard.kind) == 1:
+        if crossing_rules.hazard_code(hazard.kind) == 1:
             fill = theme.gold()
-        if rules.hazard_code(hazard.kind) == 2:
+        if crossing_rules.hazard_code(hazard.kind) == 2:
             fill = theme.timber()
         rocket_raylib.draw_rectangle(frame, x, y, hazard_width, lane_height - 28, fill)?
         index = index + 1
-    let player_x = board_x + game.player_x * board_width / rules.world_width()
-    let player_y = board_y +(rules.lane_count() - 1 - game.player_lane) * lane_height + lane_height / 2
+    let player_x = board_x + game.player_x * board_width / crossing_rules.world_width()
+    let player_y = board_y +(crossing_rules.lane_count() - 1 - game.player_lane) * lane_height + lane_height / 2
     rocket_raylib.draw_circle(frame, player_x, player_y, 10.0, theme.text())?
     rocket_raylib.draw_rectangle(frame, player_x - 4, player_y - 14, 8, 28, theme.emerald())?
     return Ok(true)
@@ -120,7 +120,7 @@ fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result
         index = index + 1
     return Ok(true)
 
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: model.Game, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: crossing_model.Game, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     rocket_raylib.draw_text(frame, "MIDNIGHT CROSSING", 32, 26, theme.heading_size(), theme.gold())?
@@ -131,7 +131,7 @@ pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: mode
     components.panel(frame, components.rect(width - 350, 104, 272, 374))?
     rocket_raylib.draw_text(frame, string.concat("Checkpoints ", string.from_int(game.checkpoints)), width - 330, 118, theme.body_size(), theme.text())?
     rocket_raylib.draw_text(frame, string.concat("Cash value ", multiplier_label(game.multiplier_basis_points)), width - 330, 148, theme.body_size(), theme.gold())?
-    let phase = engine.phase_code(game.phase)
+    let phase = crossing_engine.phase_code(game.phase)
     if phase == 0:
         rocket_raylib.draw_text(frame, string.concat("Pass: ", string.from_int(game.bet)), width - 266, 200, theme.body_size(), theme.text())?
         components.button(window, frame, bet_minus_rect(width), "-", true, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?

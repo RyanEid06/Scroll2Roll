@@ -1,0 +1,138 @@
+import src.roulette.roulette_model
+import src.roulette.roulette_rules
+import std.collections
+import std.random
+
+pub fn phase_code(phase: roulette_model.Phase) -> Int:
+    match phase:
+        case roulette_model.Betting:
+            return 0
+        case roulette_model.Spinning:
+            return 1
+        case roulette_model.Settled:
+            return 2
+
+fn empty_result() -> roulette_model.SpinResult:
+    return roulette_model.SpinResult(-1, 0, 0, 0)
+
+pub fn new_game(starting_balance: Int, seed: Int) -> Result[roulette_model.Game, String]:
+    if starting_balance < roulette_rules.minimum_chip():
+        return Err("Starting balance is below the Roulette minimum")
+    let no_bets: Array[roulette_model.Bet] = []
+    let no_history: Array[Int] = []
+    return Ok(roulette_model.Game(starting_balance, 10, no_bets, no_bets, roulette_model.Betting(), -1, 1, seed, no_history, empty_result(), "Place one or more bets"))
+
+pub fn total_wager(game: roulette_model.Game) -> Int:
+    var total = 0
+    var index = 0
+    while index < collections.length(game.bets):
+        total = total + game.bets[index].stake
+        index = index + 1
+    return total
+
+pub fn position_wager(game: roulette_model.Game, target: roulette_model.Bet) -> Int:
+    var total = 0
+    var index = 0
+    while index < collections.length(game.bets):
+        if roulette_rules.same_position(game.bets[index], target):
+            total = total + game.bets[index].stake
+        index = index + 1
+    return total
+
+pub fn select_chip(game: roulette_model.Game, amount: Int) -> Result[roulette_model.Game, String]:
+    if not roulette_rules.is_valid_chip(amount):
+        return Err("Unsupported Roulette chip denomination")
+    return Ok(roulette_model.Game(game.balance, amount, game.bets, game.previous_bets, game.phase, game.pending_winner, game.round_number, game.seed, game.history, game.result, "Chip selected"))
+
+pub fn place(game: roulette_model.Game, bet: roulette_model.Bet) -> Result[roulette_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Roulette bets can only be placed before a spin")
+    if bet.stake < roulette_rules.minimum_chip() or bet.stake / roulette_rules.minimum_chip() * roulette_rules.minimum_chip() != bet.stake:
+        return Err("Roulette stake does not match the table unit")
+    if bet.stake > game.balance:
+        return Err("Not enough play credits for that Roulette bet")
+    if position_wager(game, bet) + bet.stake > roulette_rules.maximum_position_wager():
+        return Err("Roulette position limit exceeded")
+    if total_wager(game) + bet.stake > roulette_rules.maximum_total_wager():
+        return Err("Roulette total wager limit exceeded")
+    let bets = collections.append(game.bets, bet)
+    return Ok(roulette_model.Game(game.balance - bet.stake, game.selected_chip, bets, game.previous_bets, game.phase, game.pending_winner, game.round_number, game.seed, game.history, game.result, "Bet placed"))
+
+fn without_last(values: Array[roulette_model.Bet]) -> Array[roulette_model.Bet]:
+    var result: Array[roulette_model.Bet] = []
+    var index = 0
+    while index + 1 < collections.length(values):
+        result = collections.append(result, values[index])
+        index = index + 1
+    return result
+
+pub fn undo(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Roulette bets cannot be undone after spinning starts")
+    if collections.length(game.bets) == 0:
+        return Err("There is no Roulette bet to undo")
+    let last = game.bets[collections.length(game.bets) - 1]
+    return Ok(roulette_model.Game(game.balance + last.stake, game.selected_chip, without_last(game.bets), game.previous_bets, game.phase, game.pending_winner, game.round_number, game.seed, game.history, game.result, "Last chip removed"))
+
+pub fn clear(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Roulette bets cannot be cleared after spinning starts")
+    let no_bets: Array[roulette_model.Bet] = []
+    return Ok(roulette_model.Game(game.balance + total_wager(game), game.selected_chip, no_bets, game.previous_bets, game.phase, game.pending_winner, game.round_number, game.seed, game.history, game.result, "Bets cleared"))
+
+pub fn repeat(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    if phase_code(game.phase) != 0 or collections.length(game.bets) != 0:
+        return Err("Repeat requires an empty Roulette betting layout")
+    if collections.length(game.previous_bets) == 0:
+        return Err("There is no previous Roulette wager to repeat")
+    var current = game
+    var index = 0
+    while index < collections.length(game.previous_bets):
+        current = place(current, game.previous_bets[index])?
+        index = index + 1
+    return Ok(roulette_model.Game(current.balance, current.selected_chip, current.bets, current.previous_bets, current.phase, current.pending_winner, current.round_number, current.seed, current.history, current.result, "Previous wager repeated"))
+
+pub fn rebet(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    return repeat(game)
+
+pub fn spin(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Roulette is not ready to spin")
+    if collections.length(game.bets) == 0:
+        return Err("Place at least one Roulette bet before spinning")
+    random.seed(game.seed + game.round_number * 104729)
+    let wheel = roulette_rules.wheel_order()
+    let winner = wheel[random.int(0, collections.length(wheel))]
+    return Ok(roulette_model.Game(game.balance, game.selected_chip, game.bets, game.previous_bets, roulette_model.Spinning(), winner, game.round_number, game.seed, game.history, game.result, "Wheel spinning"))
+
+fn bounded_history(values: Array[Int], winner: Int) -> Array[Int]:
+    let with_winner = collections.insert(values, 0, winner)
+    if collections.length(with_winner) <= 12:
+        return with_winner
+    var result: Array[Int] = []
+    var index = 0
+    while index < 12:
+        result = collections.append(result, with_winner[index])
+        index = index + 1
+    return result
+
+pub fn settle(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("Roulette settlement requires a completed wheel animation")
+    var total_return = 0
+    var index = 0
+    while index < collections.length(game.bets):
+        total_return = total_return + roulette_rules.return_for(game.bets[index], game.pending_winner)
+        index = index + 1
+    let wager = total_wager(game)
+    let result = roulette_model.SpinResult(game.pending_winner, wager, total_return, total_return - wager)
+    return Ok(roulette_model.Game(game.balance + total_return, game.selected_chip, game.bets, game.bets, roulette_model.Settled(), game.pending_winner, game.round_number, game.seed, bounded_history(game.history, game.pending_winner), result, "Spin settled"))
+
+pub fn next_round(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    if phase_code(game.phase) != 2:
+        return Err("The Roulette spin has not settled")
+    let no_bets: Array[roulette_model.Bet] = []
+    return Ok(roulette_model.Game(game.balance, game.selected_chip, no_bets, game.previous_bets, roulette_model.Betting(), -1, game.round_number + 1, game.seed, game.history, empty_result(), "Place bets or rebet the previous layout"))
+
+pub fn complete_spin(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    return settle(spin(game)?)

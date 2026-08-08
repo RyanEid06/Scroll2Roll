@@ -1,5 +1,5 @@
 import src.app.application
-import src.chicken.engine
+import src.chicken.chicken_engine
 import src.rocket_raylib
 import src.rocket_raylib_testing
 import std.collections
@@ -24,7 +24,7 @@ fn run() -> Result[Int, String]:
             var state = application.initial_for_test(save_path)?
             state = press(window, rocket_raylib.key_enter(), state)
             state = click(window, 144, 420, state)
-            if state.screen != 6 or engine.phase_code(state.chicken.game.phase) != 0:
+            if state.screen != 6 or chicken_engine.phase_code(state.chicken.game.phase) != 0:
                 return Ok(2)
             state = press(window, rocket_raylib.key_p(), state)
             if not state.chicken_help:
@@ -36,28 +36,28 @@ fn run() -> Result[Int, String]:
             if state.chicken.game.bet != 15:
                 return Ok(4)
             state = press(window, rocket_raylib.key_enter(), state)
-            if engine.phase_code(state.chicken.game.phase) != 1 or state.chicken.game.balance != 985 or collections.length(state.chicken.game.path) != 10:
+            if chicken_engine.phase_code(state.chicken.game.phase) != 1 or state.chicken.game.balance != 985 or collections.length(state.chicken.game.path) != 10:
                 return Ok(5)
             state = press(window, rocket_raylib.key_enter(), state)
-            if engine.phase_code(state.chicken.game.phase) == 1:
+            if chicken_engine.phase_code(state.chicken.game.phase) == 1:
                 state = press(window, rocket_raylib.key_s(), state)
-            if engine.phase_code(state.chicken.game.phase) != 2 or not file.exists(save_path):
+            if chicken_engine.phase_code(state.chicken.game.phase) != 2 or not file.exists(save_path):
                 return Ok(6)
             let first_balance = state.chicken.game.balance
             state = click(window, 100, 550, state)
-            if engine.phase_code(state.chicken.game.phase) != 0:
+            if chicken_engine.phase_code(state.chicken.game.phase) != 0:
                 return Ok(7)
             state = click(window, 586, 175, state)
             state = click(window, 679, 236, state)
             if state.chicken.game.bet != 20:
                 return Ok(8)
             state = click(window, 586, 306, state)
-            if engine.phase_code(state.chicken.game.phase) != 1:
+            if chicken_engine.phase_code(state.chicken.game.phase) != 1:
                 return Ok(9)
             state = click(window, 586, 306, state)
-            if engine.phase_code(state.chicken.game.phase) == 1:
+            if chicken_engine.phase_code(state.chicken.game.phase) == 1:
                 state = click(window, 586, 368, state)
-            if engine.phase_code(state.chicken.game.phase) != 2:
+            if chicken_engine.phase_code(state.chicken.game.phase) != 2:
                 return Ok(10)
             application.draw_for_test(window, state)?
             state = click(window, 230, 550, state)

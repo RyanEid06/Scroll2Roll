@@ -1,5 +1,5 @@
 import src.app.application
-import src.blackjack.engine
+import src.blackjack.blackjack_engine
 import src.rocket_raylib
 import src.rocket_raylib_testing
 import std.file
@@ -41,17 +41,17 @@ fn run() -> Result[Int, String]:
                 return Ok(6)
             let mouse = rocket_raylib_testing.set_mouse(100, 300, true)
             state = application.step_for_test(state, window)
-            if state.screen != 2 or engine.phase_code(state.game.phase) != 0:
+            if state.screen != 2 or blackjack_engine.phase_code(state.game.phase) != 0:
                 return Ok(7)
             state = press(window, rocket_raylib.key_right(), state)
             if state.selected_bet <= state.game.rules.minimum_bet:
                 return Ok(8)
             state = press(window, rocket_raylib.key_enter(), state)
             var guard = 0
-            while engine.phase_code(state.game.phase) != 3 and guard < 1000:
-                if engine.phase_code(state.game.phase) == 1 and engine.active_player_is_human(state.game):
-                    let action = engine.choose_basic_action(state.game)?
-                    let code = engine.action_code(action)
+            while blackjack_engine.phase_code(state.game.phase) != 3 and guard < 1000:
+                if blackjack_engine.phase_code(state.game.phase) == 1 and blackjack_engine.active_player_is_human(state.game):
+                    let action = blackjack_engine.choose_basic_action(state.game)?
+                    let code = blackjack_engine.action_code(action)
                     var key = rocket_raylib.key_h()
                     if code == 1:
                         key = rocket_raylib.key_s()
@@ -65,11 +65,11 @@ fn run() -> Result[Int, String]:
                 else:
                     state = draw_step(window, state)?
                 guard = guard + 1
-            if guard >= 1000 or engine.phase_code(state.game.phase) != 3:
+            if guard >= 1000 or blackjack_engine.phase_code(state.game.phase) != 3:
                 return Ok(9)
             application.draw_for_test(window, state)?
             state = press(window, rocket_raylib.key_n(), state)
-            if engine.phase_code(state.game.phase) != 0 or state.game.round_number != 2:
+            if blackjack_engine.phase_code(state.game.phase) != 0 or state.game.round_number != 2:
                 return Ok(10)
             state = press(window, rocket_raylib.key_b(), state)
             if state.screen != 1:

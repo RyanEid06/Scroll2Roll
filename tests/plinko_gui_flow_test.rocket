@@ -1,5 +1,5 @@
 import src.app.application
-import src.plinko.engine
+import src.plinko.plinko_engine
 import src.rocket_raylib
 import src.rocket_raylib_testing
 import std.collections
@@ -21,7 +21,7 @@ fn frame(window: rocket_raylib.Window, state: application.State) -> Result[appli
 fn settle_animation(window: rocket_raylib.Window, value: application.State) -> Result[application.State, String]:
     var state = value
     var guard = 0
-    while engine.phase_code(state.plinko.game.phase) != 2 and guard < 400:
+    while plinko_engine.phase_code(state.plinko.game.phase) != 2 and guard < 400:
         state = frame(window, state)?
         guard = guard + 1
     if guard >= 400:
@@ -38,7 +38,7 @@ fn run() -> Result[Int, String]:
             var state = application.initial_for_test(save_path)?
             state = press(window, rocket_raylib.key_enter(), state)
             state = click(window, 920, 280, state)
-            if state.screen != 5 or engine.phase_code(state.plinko.game.phase) != 0:
+            if state.screen != 5 or plinko_engine.phase_code(state.plinko.game.phase) != 0:
                 return Ok(2)
             state = press(window, rocket_raylib.key_p(), state)
             if not state.plinko_help:
@@ -52,16 +52,16 @@ fn run() -> Result[Int, String]:
             if state.plinko.game.rows != 13 or state.plinko.game.bet != 15 or state.plinko.game.batch_count != 2:
                 return Ok(4)
             state = press(window, rocket_raylib.key_enter(), state)
-            if engine.phase_code(state.plinko.game.phase) != 1 or collections.length(state.plinko.game.pending) != 2:
+            if plinko_engine.phase_code(state.plinko.game.phase) != 1 or collections.length(state.plinko.game.pending) != 2:
                 return Ok(5)
             let first_balance = state.plinko.game.balance
             state = settle_animation(window, state)?
-            if engine.phase_code(state.plinko.game.phase) != 2 or state.plinko_stage <= 0:
+            if plinko_engine.phase_code(state.plinko.game.phase) != 2 or state.plinko_stage <= 0:
                 return Ok(6)
             if not file.exists(save_path) or state.plinko.game.balance < first_balance:
                 return Ok(12)
             state = click(window, 100, 670, state)
-            if engine.phase_code(state.plinko.game.phase) != 0:
+            if plinko_engine.phase_code(state.plinko.game.phase) != 0:
                 return Ok(7)
             state = click(window, 973, 149, state)
             state = click(window, 1040, 204, state)
@@ -70,7 +70,7 @@ fn run() -> Result[Int, String]:
             if state.plinko.game.rows != 12 or state.plinko.game.bet != 20 or state.plinko.game.batch_count != 3:
                 return Ok(8)
             state = click(window, 1040, 377, state)
-            if engine.phase_code(state.plinko.game.phase) != 1 or collections.length(state.plinko.game.pending) != 3:
+            if plinko_engine.phase_code(state.plinko.game.phase) != 1 or collections.length(state.plinko.game.pending) != 3:
                 return Ok(9)
             state = settle_animation(window, state)?
             application.draw_for_test(window, state)?

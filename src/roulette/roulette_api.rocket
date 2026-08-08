@@ -1,0 +1,100 @@
+import src.roulette.roulette_engine
+import src.roulette.roulette_model
+import src.roulette.roulette_rules
+
+pub struct Session:
+    game: roulette_model.Game
+
+pub fn new_session(starting_balance: Int, seed: Int) -> Result[Session, String]:
+    return Ok(Session(roulette_engine.new_game(starting_balance, seed)?))
+
+pub fn with_selected_chip(session: Session, amount: Int) -> Result[Session, String]:
+    return Ok(Session(roulette_engine.select_chip(session.game, amount)?))
+
+pub fn with_bet(session: Session, bet: roulette_model.Bet) -> Result[Session, String]:
+    return Ok(Session(roulette_engine.place(session.game, bet)?))
+
+pub fn with_undo(session: Session) -> Result[Session, String]:
+    return Ok(Session(roulette_engine.undo(session.game)?))
+
+pub fn with_clear(session: Session) -> Result[Session, String]:
+    return Ok(Session(roulette_engine.clear(session.game)?))
+
+pub fn with_repeat(session: Session) -> Result[Session, String]:
+    return Ok(Session(roulette_engine.repeat(session.game)?))
+
+pub fn with_spin(session: Session) -> Result[Session, String]:
+    return Ok(Session(roulette_engine.spin(session.game)?))
+
+pub fn with_settlement(session: Session) -> Result[Session, String]:
+    return Ok(Session(roulette_engine.settle(session.game)?))
+
+pub fn with_next_round(session: Session) -> Result[Session, String]:
+    return Ok(Session(roulette_engine.next_round(session.game)?))
+
+pub fn with_rebet(session: Session) -> Result[Session, String]:
+    let next = roulette_engine.next_round(session.game)?
+    return Ok(Session(roulette_engine.rebet(next)?))
+
+pub fn new_game(starting_balance: Int, seed: Int) -> Result[roulette_model.Game, String]:
+    return roulette_engine.new_game(starting_balance, seed)
+
+pub fn select_chip(game: roulette_model.Game, amount: Int) -> Result[roulette_model.Game, String]:
+    return roulette_engine.select_chip(game, amount)
+
+pub fn place(game: roulette_model.Game, bet: roulette_model.Bet) -> Result[roulette_model.Game, String]:
+    return roulette_engine.place(game, bet)
+
+pub fn straight(number: Int, stake: Int) -> Result[roulette_model.Bet, String]:
+    return roulette_rules.straight(number, stake)
+
+pub fn split(first: Int, second: Int, stake: Int) -> Result[roulette_model.Bet, String]:
+    return roulette_rules.split(first, second, stake)
+
+pub fn street(first: Int, stake: Int) -> Result[roulette_model.Bet, String]:
+    return roulette_rules.street(first, stake)
+
+pub fn corner(first: Int, stake: Int) -> Result[roulette_model.Bet, String]:
+    return roulette_rules.corner(first, stake)
+
+pub fn six_line(first: Int, stake: Int) -> Result[roulette_model.Bet, String]:
+    return roulette_rules.six_line(first, stake)
+
+pub fn basket(stake: Int) -> Result[roulette_model.Bet, String]:
+    return roulette_rules.basket(stake)
+
+pub fn dozen(index: Int, stake: Int) -> Result[roulette_model.Bet, String]:
+    return roulette_rules.dozen(index, stake)
+
+pub fn column(index: Int, stake: Int) -> Result[roulette_model.Bet, String]:
+    return roulette_rules.column(index, stake)
+
+pub fn outside(kind: roulette_model.BetKind, stake: Int) -> Result[roulette_model.Bet, String]:
+    return roulette_rules.outside(kind, stake)
+
+pub fn undo(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    return roulette_engine.undo(game)
+
+pub fn clear(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    return roulette_engine.clear(game)
+
+pub fn repeat(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    return roulette_engine.repeat(game)
+
+pub fn rebet(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    return roulette_engine.rebet(game)
+
+pub fn spin(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    return roulette_engine.spin(game)
+
+pub fn settle(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    return roulette_engine.settle(game)
+
+pub fn next_round(game: roulette_model.Game) -> Result[roulette_model.Game, String]:
+    return roulette_engine.next_round(game)
+
+pub fn total_wager(game: roulette_model.Game) -> Int:
+    return roulette_engine.total_wager(game)
+
+pub fn phase_code(game: roulette_model.Game) -> Int:
+    return roulette_engine.phase_code(game.phase)

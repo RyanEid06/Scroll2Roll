@@ -146,7 +146,7 @@ from this repository with `src/main.rocket` active during the 0.1.0 acceptance:
 - the Visual Studio-hosted `rocket-lsp.exe` remained attached to the repository;
 - a framed LSP session analyzed 33 project files and verified qualified completion, hover, definition, two references, prepare-rename/rename edits, workspace symbols, 1,360 semantic-token integers, and a live diagnostic without protocol errors;
 - an unsaved invalid edit navigated through Error List to `src/main.rocket` line 18; Undo restored clean state and the on-disk SHA-256 was unchanged;
-- Go To Definition navigated a Blackjack call at `cards.rocket` line 32 to `blackjack_value` at line 19;
+- Go To Definition navigated a Blackjack call at `blackjack_cards.rocket` line 32 to `blackjack_value` at line 19;
 - Debug stopped at a Rocket source breakpoint, F11 entered `src.app.application.run`, the call stack exposed six frames, the Locals collection represented `status = 0`, and Stop returned to design mode with no game process left;
 - formatting is enforced by `rocketc fmt` in both validation configurations; the frozen LSP exposes its whole-document formatter through the `source.format.rocket` code-action contract rather than Visual Studio's generic `Edit.FormatDocument` command.
 
@@ -178,9 +178,30 @@ node .\scripts\test-lsp.mjs
 - Fresh PDB/source-map generation and the Rocket Debug command surface were
   rechecked. The complete source-breakpoint, F11, call-stack, Locals, Stop, Error
   List, and Go To Definition interaction remains the preceding full acceptance
-  baseline; the final automation runtime could not acquire a top-level Visual
-  Studio window to replay those clicks, so this is an explicit UI-automation
-  limitation rather than a new product claim.
+  baseline.
+
+### Visual Studio tool-discovery and debug-source repair
+
+Two owner-reported dialogs were reproduced and repaired on 2026-08-09:
+
+- `rocketc.exe was not found` was fixed by persisting the verified pinned
+  compiler and language-server executables in the Windows user
+  `ROCKET_COMPILER` and `ROCKET_LANGUAGE_SERVER` values. No machine path was
+  added to Git.
+- The frozen CodeView basename collision was fixed application-side by renaming
+  all 22 colliding `api`, `cards`, `engine`, `model`, and `rules` modules to
+  game-prefixed filenames and updating every import and qualifier. The source
+  tree now has 48 unique Rocket basenames.
+- `rocketc build . --debug` produced an unoptimized PDB/map covering 40 unique
+  source files with zero duplicate basenames.
+- A fresh Visual Studio instance loaded `RocketPackage` and the pinned LSP,
+  accepted the map, attached the native debugger, and launched
+  `Scroll2Roll.exe`; neither reported dialog appeared in the activity log.
+  `Rocket.StopRocket`, invoked in that same IDE Command Window, ended the game
+  and returned the IDE title from Running to design mode.
+- Post-repair Debug and Release `scripts/validate.ps1` each passed the native
+  build, `rocketc check`, all 26 tests, and both formatting checks. The portable
+  LSP check also remained clean.
 
 ## Version 0.2.0 Windows package
 
@@ -191,9 +212,9 @@ The final packaging commands were:
 .\scripts\test-package.ps1
 ```
 
-`out/package/Scroll2Roll-0.2.0-windows-x64.zip` is 1,688,614 bytes
+`out/package/Scroll2Roll-0.2.0-windows-x64.zip` is 1,689,013 bytes
 with SHA-256
-`1F90A9EB0814A7C138A48B85F96B1D29AA19069738452EC73BC8567B682E565C`.
+`0106CDE2DD01A784BBE087D3061A4A3E42CECD6F303466F6B1628FFB66AE9071`.
 It contains `Scroll2Roll.exe`, README, controls, troubleshooting, version,
 notices, and `SHA256SUMS.txt`. Every internal checksum was recomputed and
 matched. The archive excludes sources, dependencies, compiler/build trees,
@@ -210,7 +231,7 @@ No trusted code signature is claimed.
 - `.\scripts\test-website.ps1` passes the three source `website/` files.
 - `.\scripts\prepare-cloudflare-site.ps1` and
   `.\scripts\test-website.ps1 -Site .\out\cloudflare-site` pass the four staged
-  files with the 1,688,614-byte release archive included.
+  files with the 1,689,013-byte release archive included.
 - The validator enforces the current Cloudflare Pages Free ceilings of 20,000
   files and 25 MiB per asset, rechecked against official Cloudflare
   documentation on 2026-08-09, and rejects browser-playable or real-money

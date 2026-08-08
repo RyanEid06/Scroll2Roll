@@ -1,6 +1,6 @@
-import src.blackjack.cards
-import src.blackjack.model
-import src.blackjack.rules
+import src.blackjack.blackjack_cards
+import src.blackjack.blackjack_model
+import src.blackjack.blackjack_rules
 import src.blackjack.settlement
 import src.blackjack.shoe
 import src.blackjack.strategy
@@ -8,83 +8,83 @@ import std.collections
 import std.string
 
 struct PlayersDraw:
-    players: Array[model.Player]
-    shoe: model.Shoe
+    players: Array[blackjack_model.Player]
+    shoe: blackjack_model.Shoe
 
 struct TurnPosition:
     found: Bool
     player_index: Int
     hand_index: Int
 
-pub fn phase_code(value: model.Phase) -> Int:
+pub fn phase_code(value: blackjack_model.Phase) -> Int:
     match value:
-        case model.Betting:
+        case blackjack_model.Betting:
             return 0
-        case model.PlayerTurns:
+        case blackjack_model.PlayerTurns:
             return 1
-        case model.DealerTurn:
+        case blackjack_model.DealerTurn:
             return 2
-        case model.Settled:
+        case blackjack_model.Settled:
             return 3
 
-pub fn action_code(value: model.Action) -> Int:
+pub fn action_code(value: blackjack_model.Action) -> Int:
     match value:
-        case model.Hit:
+        case blackjack_model.Hit:
             return 0
-        case model.Stand:
+        case blackjack_model.Stand:
             return 1
-        case model.Double:
+        case blackjack_model.Double:
             return 2
-        case model.Split:
+        case blackjack_model.Split:
             return 3
-        case model.Surrender:
+        case blackjack_model.Surrender:
             return 4
 
-pub fn action_name(value: model.Action) -> String:
+pub fn action_name(value: blackjack_model.Action) -> String:
     match value:
-        case model.Hit:
+        case blackjack_model.Hit:
             return "Hit"
-        case model.Stand:
+        case blackjack_model.Stand:
             return "Stand"
-        case model.Double:
+        case blackjack_model.Double:
             return "Double"
-        case model.Split:
+        case blackjack_model.Split:
             return "Split"
-        case model.Surrender:
+        case blackjack_model.Surrender:
             return "Surrender"
 
-fn replace_player(players: Array[model.Player], index: Int, value: model.Player) -> Array[model.Player]:
+fn replace_player(players: Array[blackjack_model.Player], index: Int, value: blackjack_model.Player) -> Array[blackjack_model.Player]:
     var updated = players
     updated[index] = value
     return updated
 
-fn replace_hand(hands: Array[model.Hand], index: Int, value: model.Hand) -> Array[model.Hand]:
+fn replace_hand(hands: Array[blackjack_model.Hand], index: Int, value: blackjack_model.Hand) -> Array[blackjack_model.Hand]:
     var updated = hands
     updated[index] = value
     return updated
 
-fn update(game: model.Game, next_shoe: model.Shoe, dealer: model.Hand, players: Array[model.Player], phase: model.Phase, active_player: Int, message: String, results: Array[model.HandResult]) -> model.Game:
-    return model.Game(game.rules, next_shoe, dealer, players, phase, active_player, game.round_number, game.seed, message, results)
+fn update(game: blackjack_model.Game, next_shoe: blackjack_model.Shoe, dealer: blackjack_model.Hand, players: Array[blackjack_model.Player], phase: blackjack_model.Phase, active_player: Int, message: String, results: Array[blackjack_model.HandResult]) -> blackjack_model.Game:
+    return blackjack_model.Game(game.rules, next_shoe, dealer, players, phase, active_player, game.round_number, game.seed, message, results)
 
-pub fn new_game(human_name: String, starting_balance: Int, ai_count: Int, seed: Int) -> Result[model.Game, String]:
-    let table = rules.standard()
+pub fn new_game(human_name: String, starting_balance: Int, ai_count: Int, seed: Int) -> Result[blackjack_model.Game, String]:
+    let table = blackjack_rules.standard()
     if ai_count < 0 or ai_count > 5:
         return Err("AI count must be between 0 and 5")
     if starting_balance < table.minimum_bet:
         return Err("Starting balance is below the table minimum")
-    var players: Array[model.Player] = []
-    let no_hands: Array[model.Hand] = []
-    players = collections.append(players, model.Player(0, human_name, true, starting_balance, 0, no_hands, 0))
+    var players: Array[blackjack_model.Player] = []
+    let no_hands: Array[blackjack_model.Hand] = []
+    players = collections.append(players, blackjack_model.Player(0, human_name, true, starting_balance, 0, no_hands, 0))
     var index = 0
     while index < ai_count:
         let number = index + 1
-        let ai_hands: Array[model.Hand] = []
-        players = collections.append(players, model.Player(number, string.concat("AI ", string.from_int(number)), false, starting_balance, 0, ai_hands, 0))
+        let ai_hands: Array[blackjack_model.Hand] = []
+        players = collections.append(players, blackjack_model.Player(number, string.concat("AI ", string.from_int(number)), false, starting_balance, 0, ai_hands, 0))
         index = index + 1
-    let no_results: Array[model.HandResult] = []
-    return Ok(model.Game(table, shoe.create(table, seed), cards.empty_hand(0, false), players, model.Betting(), 0, 1, seed, "Place your bet", no_results))
+    let no_results: Array[blackjack_model.HandResult] = []
+    return Ok(blackjack_model.Game(table, shoe.create(table, seed), blackjack_cards.empty_hand(0, false), players, blackjack_model.Betting(), 0, 1, seed, "Place your bet", no_results))
 
-pub fn set_bet(game: model.Game, player_index: Int, amount: Int) -> Result[model.Game, String]:
+pub fn set_bet(game: blackjack_model.Game, player_index: Int, amount: Int) -> Result[blackjack_model.Game, String]:
     if phase_code(game.phase) != 0:
         return Err("Bets can only be changed during the betting phase")
     if player_index < 0 or player_index >= collections.length(game.players):
@@ -100,10 +100,10 @@ pub fn set_bet(game: model.Game, player_index: Int, amount: Int) -> Result[model
     let available = player.balance + player.pending_bet
     if amount > available:
         return Err("Player does not have enough chips")
-    let changed = model.Player(player.id, player.name, player.is_human, available - amount, amount, player.hands, player.active_hand)
+    let changed = blackjack_model.Player(player.id, player.name, player.is_human, available - amount, amount, player.hands, player.active_hand)
     return Ok(update(game, game.shoe, game.dealer_hand, replace_player(game.players, player_index, changed), game.phase, game.active_player, "Bet updated", game.results))
 
-fn ai_bet(player: model.Player, table: model.Rules, round_number: Int) -> Int:
+fn ai_bet(player: blackjack_model.Player, table: blackjack_model.Rules, round_number: Int) -> Int:
     if player.balance < table.minimum_bet:
         return 0
     let source = player.id + round_number
@@ -117,7 +117,7 @@ fn ai_bet(player: model.Player, table: model.Rules, round_number: Int) -> Int:
         return 0
     return amount
 
-pub fn place_ai_bets(game: model.Game) -> Result[model.Game, String]:
+pub fn place_ai_bets(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
     if phase_code(game.phase) != 0:
         return Err("AI bets can only be placed during the betting phase")
     var current = game
@@ -129,39 +129,39 @@ pub fn place_ai_bets(game: model.Game) -> Result[model.Game, String]:
         index = index + 1
     return Ok(current)
 
-fn player_for_round(player: model.Player) -> model.Player:
+fn player_for_round(player: blackjack_model.Player) -> blackjack_model.Player:
     if player.pending_bet <= 0:
-        let no_hands: Array[model.Hand] = []
-        return model.Player(player.id, player.name, player.is_human, player.balance, 0, no_hands, 0)
-    var hands: Array[model.Hand] = []
-    hands = collections.append(hands, cards.empty_hand(player.pending_bet, false))
-    return model.Player(player.id, player.name, player.is_human, player.balance, 0, hands, 0)
+        let no_hands: Array[blackjack_model.Hand] = []
+        return blackjack_model.Player(player.id, player.name, player.is_human, player.balance, 0, no_hands, 0)
+    var hands: Array[blackjack_model.Hand] = []
+    hands = collections.append(hands, blackjack_cards.empty_hand(player.pending_bet, false))
+    return blackjack_model.Player(player.id, player.name, player.is_human, player.balance, 0, hands, 0)
 
-fn deal_one(players: Array[model.Player], player_index: Int, source: model.Shoe) -> Result[PlayersDraw, String]:
+fn deal_one(players: Array[blackjack_model.Player], player_index: Int, source: blackjack_model.Shoe) -> Result[PlayersDraw, String]:
     let player = players[player_index]
     if collections.length(player.hands) == 0:
         return Ok(PlayersDraw(players, source))
     let drawn = shoe.draw(source)?
     let hand = player.hands[0]
     let values = collections.append(hand.cards, drawn.card)
-    let changed_hand = model.Hand(values, hand.bet, hand.stood, hand.surrendered, hand.doubled, hand.from_split, hand.split_aces, hand.action_count, hand.finished)
-    let changed_player = model.Player(player.id, player.name, player.is_human, player.balance, player.pending_bet, replace_hand(player.hands, 0, changed_hand), player.active_hand)
+    let changed_hand = blackjack_model.Hand(values, hand.bet, hand.stood, hand.surrendered, hand.doubled, hand.from_split, hand.split_aces, hand.action_count, hand.finished)
+    let changed_player = blackjack_model.Player(player.id, player.name, player.is_human, player.balance, player.pending_bet, replace_hand(player.hands, 0, changed_hand), player.active_hand)
     return Ok(PlayersDraw(replace_player(players, player_index, changed_player), drawn.shoe))
 
-fn mark_naturals(players: Array[model.Player]) -> Array[model.Player]:
+fn mark_naturals(players: Array[blackjack_model.Player]) -> Array[blackjack_model.Player]:
     var result = players
     var player_index = 0
     while player_index < collections.length(result):
         let player = result[player_index]
         if collections.length(player.hands) > 0:
             let hand = player.hands[0]
-            if cards.value(hand).blackjack:
-                let finished = model.Hand(hand.cards, hand.bet, hand.stood, hand.surrendered, hand.doubled, hand.from_split, hand.split_aces, hand.action_count, true)
-                result = replace_player(result, player_index, model.Player(player.id, player.name, player.is_human, player.balance, player.pending_bet, replace_hand(player.hands, 0, finished), 0))
+            if blackjack_cards.value(hand).blackjack:
+                let finished = blackjack_model.Hand(hand.cards, hand.bet, hand.stood, hand.surrendered, hand.doubled, hand.from_split, hand.split_aces, hand.action_count, true)
+                result = replace_player(result, player_index, blackjack_model.Player(player.id, player.name, player.is_human, player.balance, player.pending_bet, replace_hand(player.hands, 0, finished), 0))
         player_index = player_index + 1
     return result
 
-fn first_turn(players: Array[model.Player]) -> TurnPosition:
+fn first_turn(players: Array[blackjack_model.Player]) -> TurnPosition:
     var player_index = 0
     while player_index < collections.length(players):
         var hand_index = 0
@@ -172,7 +172,7 @@ fn first_turn(players: Array[model.Player]) -> TurnPosition:
         player_index = player_index + 1
     return TurnPosition(false, 0, 0)
 
-fn next_turn(players: Array[model.Player], current_player: Int, current_hand: Int) -> TurnPosition:
+fn next_turn(players: Array[blackjack_model.Player], current_player: Int, current_hand: Int) -> TurnPosition:
     var player_index = current_player
     var hand_index = current_hand + 1
     while player_index < collections.length(players):
@@ -184,13 +184,13 @@ fn next_turn(players: Array[model.Player], current_player: Int, current_hand: In
         hand_index = 0
     return TurnPosition(false, 0, 0)
 
-fn set_active_hand(players: Array[model.Player], player_index: Int, hand_index: Int) -> Array[model.Player]:
+fn set_active_hand(players: Array[blackjack_model.Player], player_index: Int, hand_index: Int) -> Array[blackjack_model.Player]:
     let player = players[player_index]
-    return replace_player(players, player_index, model.Player(player.id, player.name, player.is_human, player.balance, player.pending_bet, player.hands, hand_index))
+    return replace_player(players, player_index, blackjack_model.Player(player.id, player.name, player.is_human, player.balance, player.pending_bet, player.hands, hand_index))
 
-fn settle_game(game: model.Game) -> model.Game:
+fn settle_game(game: blackjack_model.Game) -> blackjack_model.Game:
     var players = game.players
-    var results: Array[model.HandResult] = []
+    var results: Array[blackjack_model.HandResult] = []
     var player_index = 0
     while player_index < collections.length(players):
         let player = players[player_index]
@@ -199,13 +199,13 @@ fn settle_game(game: model.Game) -> model.Game:
         while hand_index < collections.length(player.hands):
             let result = settlement.hand(player.hands[hand_index], game.dealer_hand, game.rules)
             balance = balance + result.payout
-            results = collections.append(results, model.HandResult(player_index, hand_index, result.outcome, result.payout, result.player_total, result.dealer_total))
+            results = collections.append(results, blackjack_model.HandResult(player_index, hand_index, result.outcome, result.payout, result.player_total, result.dealer_total))
             hand_index = hand_index + 1
-        players = replace_player(players, player_index, model.Player(player.id, player.name, player.is_human, balance, 0, player.hands, player.active_hand))
+        players = replace_player(players, player_index, blackjack_model.Player(player.id, player.name, player.is_human, balance, 0, player.hands, player.active_hand))
         player_index = player_index + 1
-    return update(game, game.shoe, game.dealer_hand, players, model.Settled(), 0, "Round settled", results)
+    return update(game, game.shoe, game.dealer_hand, players, blackjack_model.Settled(), 0, "Round settled", results)
 
-pub fn start_round(game: model.Game) -> Result[model.Game, String]:
+pub fn start_round(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
     if phase_code(game.phase) != 0:
         return Err("Round can only start from the betting phase")
     if game.players[0].pending_bet <= 0:
@@ -224,7 +224,7 @@ pub fn start_round(game: model.Game) -> Result[model.Game, String]:
         player_index = player_index + 1
     let dealer_up = shoe.draw(next_shoe)?
     next_shoe = dealer_up.shoe
-    var dealer_cards: Array[model.Card] = []
+    var dealer_cards: Array[blackjack_model.Card] = []
     dealer_cards = collections.append(dealer_cards, dealer_up.card)
     player_index = 0
     while player_index < collections.length(players):
@@ -235,19 +235,19 @@ pub fn start_round(game: model.Game) -> Result[model.Game, String]:
     let dealer_hole = shoe.draw(next_shoe)?
     next_shoe = dealer_hole.shoe
     dealer_cards = collections.append(dealer_cards, dealer_hole.card)
-    let dealer = model.Hand(dealer_cards, 0, false, false, false, false, false, 0, false)
+    let dealer = blackjack_model.Hand(dealer_cards, 0, false, false, false, false, false, 0, false)
     players = mark_naturals(players)
     let position = first_turn(players)
-    let no_results: Array[model.HandResult] = []
-    let base = model.Game(game.rules, next_shoe, dealer, players, model.PlayerTurns(), 0, game.round_number, game.seed, "Player turns", no_results)
-    if cards.value(dealer).blackjack:
-        return Ok(settle_game(update(base, next_shoe, dealer, players, model.DealerTurn(), 0, "Dealer has blackjack", no_results)))
+    let no_results: Array[blackjack_model.HandResult] = []
+    let base = blackjack_model.Game(game.rules, next_shoe, dealer, players, blackjack_model.PlayerTurns(), 0, game.round_number, game.seed, "Player turns", no_results)
+    if blackjack_cards.value(dealer).blackjack:
+        return Ok(settle_game(update(base, next_shoe, dealer, players, blackjack_model.DealerTurn(), 0, "Dealer has blackjack", no_results)))
     if not position.found:
-        return Ok(settle_game(update(base, next_shoe, dealer, players, model.DealerTurn(), 0, "Resolving naturals", no_results)))
+        return Ok(settle_game(update(base, next_shoe, dealer, players, blackjack_model.DealerTurn(), 0, "Resolving naturals", no_results)))
     let active_players = set_active_hand(players, position.player_index, position.hand_index)
-    return Ok(update(base, next_shoe, dealer, active_players, model.PlayerTurns(), position.player_index, string.concat(active_players[position.player_index].name, "'s turn"), no_results))
+    return Ok(update(base, next_shoe, dealer, active_players, blackjack_model.PlayerTurns(), position.player_index, string.concat(active_players[position.player_index].name, "'s turn"), no_results))
 
-fn has_action(actions: Array[model.Action], code: Int) -> Bool:
+fn has_action(actions: Array[blackjack_model.Action], code: Int) -> Bool:
     var index = 0
     while index < collections.length(actions):
         if action_code(actions[index]) == code:
@@ -255,14 +255,14 @@ fn has_action(actions: Array[model.Action], code: Int) -> Bool:
         index = index + 1
     return false
 
-fn can_double(game: model.Game, player: model.Player, hand: model.Hand) -> Bool:
+fn can_double(game: blackjack_model.Game, player: blackjack_model.Player, hand: blackjack_model.Hand) -> Bool:
     if collections.length(hand.cards) != 2 or hand.action_count != 0 or player.balance < hand.bet or hand.split_aces:
         return false
     if hand.from_split and not game.rules.allow_double_after_split:
         return false
     return true
 
-fn can_split(game: model.Game, player: model.Player, hand: model.Hand) -> Bool:
+fn can_split(game: blackjack_model.Game, player: blackjack_model.Player, hand: blackjack_model.Hand) -> Bool:
     if collections.length(hand.cards) != 2 or hand.action_count != 0 or player.balance < hand.bet:
         return false
     if collections.length(player.hands) >= game.rules.max_split_hands:
@@ -273,11 +273,11 @@ fn can_split(game: model.Game, player: model.Player, hand: model.Hand) -> Bool:
         return false
     return true
 
-fn can_surrender(game: model.Game, hand: model.Hand) -> Bool:
+fn can_surrender(game: blackjack_model.Game, hand: blackjack_model.Hand) -> Bool:
     return game.rules.allow_surrender and not hand.from_split and collections.length(hand.cards) == 2 and hand.action_count == 0
 
-pub fn available_actions(game: model.Game) -> Array[model.Action]:
-    var actions: Array[model.Action] = []
+pub fn available_actions(game: blackjack_model.Game) -> Array[blackjack_model.Action]:
+    var actions: Array[blackjack_model.Action] = []
     if phase_code(game.phase) != 1 or game.active_player < 0 or game.active_player >= collections.length(game.players):
         return actions
     let player = game.players[game.active_player]
@@ -286,92 +286,92 @@ pub fn available_actions(game: model.Game) -> Array[model.Action]:
     let hand = player.hands[player.active_hand]
     if hand.finished:
         return actions
-    actions = collections.append(actions, model.Hit())
-    actions = collections.append(actions, model.Stand())
+    actions = collections.append(actions, blackjack_model.Hit())
+    actions = collections.append(actions, blackjack_model.Stand())
     if can_double(game, player, hand):
-        actions = collections.append(actions, model.Double())
+        actions = collections.append(actions, blackjack_model.Double())
     if can_split(game, player, hand):
-        actions = collections.append(actions, model.Split())
+        actions = collections.append(actions, blackjack_model.Split())
     if can_surrender(game, hand):
-        actions = collections.append(actions, model.Surrender())
+        actions = collections.append(actions, blackjack_model.Surrender())
     return actions
 
-fn advance(game: model.Game, players: Array[model.Player]) -> model.Game:
+fn advance(game: blackjack_model.Game, players: Array[blackjack_model.Player]) -> blackjack_model.Game:
     let current_hand = players[game.active_player].active_hand
     let position = next_turn(players, game.active_player, current_hand)
     if position.found:
         let active_players = set_active_hand(players, position.player_index, position.hand_index)
-        return update(game, game.shoe, game.dealer_hand, active_players, model.PlayerTurns(), position.player_index, string.concat(active_players[position.player_index].name, "'s turn"), game.results)
-    return update(game, game.shoe, game.dealer_hand, players, model.DealerTurn(), 0, "Dealer turn", game.results)
+        return update(game, game.shoe, game.dealer_hand, active_players, blackjack_model.PlayerTurns(), position.player_index, string.concat(active_players[position.player_index].name, "'s turn"), game.results)
+    return update(game, game.shoe, game.dealer_hand, players, blackjack_model.DealerTurn(), 0, "Dealer turn", game.results)
 
-fn hit_action(game: model.Game) -> Result[model.Game, String]:
+fn hit_action(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
     let player = game.players[game.active_player]
     let hand = player.hands[player.active_hand]
     let drawn = shoe.draw(game.shoe)?
     let values = collections.append(hand.cards, drawn.card)
-    let temporary = model.Hand(values, hand.bet, false, false, hand.doubled, hand.from_split, hand.split_aces, hand.action_count + 1, false)
-    let hand_value = cards.value(temporary)
+    let temporary = blackjack_model.Hand(values, hand.bet, false, false, hand.doubled, hand.from_split, hand.split_aces, hand.action_count + 1, false)
+    let hand_value = blackjack_cards.value(temporary)
     let finished = hand_value.busted or hand_value.total == 21
-    let changed_hand = model.Hand(values, hand.bet, false, false, hand.doubled, hand.from_split, hand.split_aces, hand.action_count + 1, finished)
-    let changed_player = model.Player(player.id, player.name, player.is_human, player.balance, player.pending_bet, replace_hand(player.hands, player.active_hand, changed_hand), player.active_hand)
+    let changed_hand = blackjack_model.Hand(values, hand.bet, false, false, hand.doubled, hand.from_split, hand.split_aces, hand.action_count + 1, finished)
+    let changed_player = blackjack_model.Player(player.id, player.name, player.is_human, player.balance, player.pending_bet, replace_hand(player.hands, player.active_hand, changed_hand), player.active_hand)
     let changed_players = replace_player(game.players, game.active_player, changed_player)
     let changed_game = update(game, drawn.shoe, game.dealer_hand, changed_players, game.phase, game.active_player, "Card dealt", game.results)
     if finished:
         return Ok(advance(changed_game, changed_players))
     return Ok(changed_game)
 
-fn stand_action(game: model.Game) -> model.Game:
+fn stand_action(game: blackjack_model.Game) -> blackjack_model.Game:
     let player = game.players[game.active_player]
     let hand = player.hands[player.active_hand]
-    let changed_hand = model.Hand(hand.cards, hand.bet, true, hand.surrendered, hand.doubled, hand.from_split, hand.split_aces, hand.action_count + 1, true)
-    let changed_player = model.Player(player.id, player.name, player.is_human, player.balance, player.pending_bet, replace_hand(player.hands, player.active_hand, changed_hand), player.active_hand)
+    let changed_hand = blackjack_model.Hand(hand.cards, hand.bet, true, hand.surrendered, hand.doubled, hand.from_split, hand.split_aces, hand.action_count + 1, true)
+    let changed_player = blackjack_model.Player(player.id, player.name, player.is_human, player.balance, player.pending_bet, replace_hand(player.hands, player.active_hand, changed_hand), player.active_hand)
     let changed_players = replace_player(game.players, game.active_player, changed_player)
     return advance(update(game, game.shoe, game.dealer_hand, changed_players, game.phase, game.active_player, "Hand stands", game.results), changed_players)
 
-fn surrender_action(game: model.Game) -> model.Game:
+fn surrender_action(game: blackjack_model.Game) -> blackjack_model.Game:
     let player = game.players[game.active_player]
     let hand = player.hands[player.active_hand]
-    let changed_hand = model.Hand(hand.cards, hand.bet, false, true, hand.doubled, hand.from_split, hand.split_aces, hand.action_count + 1, true)
-    let changed_player = model.Player(player.id, player.name, player.is_human, player.balance, player.pending_bet, replace_hand(player.hands, player.active_hand, changed_hand), player.active_hand)
+    let changed_hand = blackjack_model.Hand(hand.cards, hand.bet, false, true, hand.doubled, hand.from_split, hand.split_aces, hand.action_count + 1, true)
+    let changed_player = blackjack_model.Player(player.id, player.name, player.is_human, player.balance, player.pending_bet, replace_hand(player.hands, player.active_hand, changed_hand), player.active_hand)
     let changed_players = replace_player(game.players, game.active_player, changed_player)
     return advance(update(game, game.shoe, game.dealer_hand, changed_players, game.phase, game.active_player, "Hand surrendered", game.results), changed_players)
 
-fn double_action(game: model.Game) -> Result[model.Game, String]:
+fn double_action(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
     let player = game.players[game.active_player]
     let hand = player.hands[player.active_hand]
     let drawn = shoe.draw(game.shoe)?
     let values = collections.append(hand.cards, drawn.card)
-    let changed_hand = model.Hand(values, hand.bet * 2, false, false, true, hand.from_split, hand.split_aces, hand.action_count + 1, true)
-    let changed_player = model.Player(player.id, player.name, player.is_human, player.balance - hand.bet, player.pending_bet, replace_hand(player.hands, player.active_hand, changed_hand), player.active_hand)
+    let changed_hand = blackjack_model.Hand(values, hand.bet * 2, false, false, true, hand.from_split, hand.split_aces, hand.action_count + 1, true)
+    let changed_player = blackjack_model.Player(player.id, player.name, player.is_human, player.balance - hand.bet, player.pending_bet, replace_hand(player.hands, player.active_hand, changed_hand), player.active_hand)
     let changed_players = replace_player(game.players, game.active_player, changed_player)
     return Ok(advance(update(game, drawn.shoe, game.dealer_hand, changed_players, game.phase, game.active_player, "Bet doubled; one card dealt", game.results), changed_players))
 
-fn split_action(game: model.Game) -> Result[model.Game, String]:
+fn split_action(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
     let player = game.players[game.active_player]
     let hand_index = player.active_hand
     let hand = player.hands[hand_index]
     let splitting_aces = hand.cards[0].rank == 1
     let first_draw = shoe.draw(game.shoe)?
     let second_draw = shoe.draw(first_draw.shoe)?
-    var first_cards: Array[model.Card] = []
+    var first_cards: Array[blackjack_model.Card] = []
     first_cards = collections.append(first_cards, hand.cards[0])
     first_cards = collections.append(first_cards, first_draw.card)
-    var second_cards: Array[model.Card] = []
+    var second_cards: Array[blackjack_model.Card] = []
     second_cards = collections.append(second_cards, hand.cards[1])
     second_cards = collections.append(second_cards, second_draw.card)
     let auto_finish = splitting_aces and not game.rules.allow_resplit_aces
-    let first_hand = model.Hand(first_cards, hand.bet, false, false, false, true, splitting_aces, 0, auto_finish)
-    let second_hand = model.Hand(second_cards, hand.bet, false, false, false, true, splitting_aces, 0, auto_finish)
+    let first_hand = blackjack_model.Hand(first_cards, hand.bet, false, false, false, true, splitting_aces, 0, auto_finish)
+    let second_hand = blackjack_model.Hand(second_cards, hand.bet, false, false, false, true, splitting_aces, 0, auto_finish)
     var hands = replace_hand(player.hands, hand_index, first_hand)
     hands = collections.insert(hands, hand_index + 1, second_hand)
-    let changed_player = model.Player(player.id, player.name, player.is_human, player.balance - hand.bet, player.pending_bet, hands, hand_index)
+    let changed_player = blackjack_model.Player(player.id, player.name, player.is_human, player.balance - hand.bet, player.pending_bet, hands, hand_index)
     let changed_players = replace_player(game.players, game.active_player, changed_player)
     let changed_game = update(game, second_draw.shoe, game.dealer_hand, changed_players, game.phase, game.active_player, "Pair split into two hands", game.results)
     if auto_finish:
         return Ok(advance(changed_game, changed_players))
     return Ok(changed_game)
 
-pub fn apply_action(game: model.Game, action: model.Action) -> Result[model.Game, String]:
+pub fn apply_action(game: blackjack_model.Game, action: blackjack_model.Action) -> Result[blackjack_model.Game, String]:
     if phase_code(game.phase) != 1:
         return Err("Actions are only legal during player turns")
     let actions = available_actions(game)
@@ -388,46 +388,46 @@ pub fn apply_action(game: model.Game, action: model.Action) -> Result[model.Game
         return split_action(game)
     return Ok(surrender_action(game))
 
-pub fn dealer_up_card(game: model.Game) -> Result[model.Card, String]:
+pub fn dealer_up_card(game: blackjack_model.Game) -> Result[blackjack_model.Card, String]:
     if collections.length(game.dealer_hand.cards) == 0:
         return Err("Dealer has no up card")
     return Ok(game.dealer_hand.cards[0])
 
-pub fn dealer_should_hit(hand: model.Hand, table: model.Rules) -> Bool:
-    let value = cards.value(hand)
+pub fn dealer_should_hit(hand: blackjack_model.Hand, table: blackjack_model.Rules) -> Bool:
+    let value = blackjack_cards.value(hand)
     if value.busted or value.total > 17:
         return false
     if value.total < 17:
         return true
     return value.soft and table.dealer_hits_soft_17
 
-fn live_hand(players: Array[model.Player]) -> Bool:
+fn live_hand(players: Array[blackjack_model.Player]) -> Bool:
     var player_index = 0
     while player_index < collections.length(players):
         var hand_index = 0
         while hand_index < collections.length(players[player_index].hands):
             let hand = players[player_index].hands[hand_index]
-            let value = cards.value(hand)
+            let value = blackjack_cards.value(hand)
             if not hand.surrendered and not value.busted and not value.blackjack:
                 return true
             hand_index = hand_index + 1
         player_index = player_index + 1
     return false
 
-pub fn dealer_step(game: model.Game) -> Result[model.Game, String]:
+pub fn dealer_step(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
     if phase_code(game.phase) != 2:
         return Err("Dealer can only act during the dealer phase")
     if not live_hand(game.players) or not dealer_should_hit(game.dealer_hand, game.rules):
         return Ok(settle_game(game))
     let drawn = shoe.draw(game.shoe)?
     let values = collections.append(game.dealer_hand.cards, drawn.card)
-    let dealer = model.Hand(values, 0, false, false, false, false, false, game.dealer_hand.action_count + 1, false)
-    let changed = update(game, drawn.shoe, dealer, game.players, model.DealerTurn(), 0, "Dealer draws", game.results)
+    let dealer = blackjack_model.Hand(values, 0, false, false, false, false, false, game.dealer_hand.action_count + 1, false)
+    let changed = update(game, drawn.shoe, dealer, game.players, blackjack_model.DealerTurn(), 0, "Dealer draws", game.results)
     if dealer_should_hit(dealer, game.rules):
         return Ok(changed)
     return Ok(settle_game(changed))
 
-pub fn play_dealer_to_end(game: model.Game) -> Result[model.Game, String]:
+pub fn play_dealer_to_end(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
     var current = game
     var guard = 0
     while phase_code(current.phase) == 2 and guard < 20:
@@ -437,24 +437,24 @@ pub fn play_dealer_to_end(game: model.Game) -> Result[model.Game, String]:
         return Err("Dealer turn exceeded the safety limit")
     return Ok(current)
 
-pub fn choose_basic_action(game: model.Game) -> Result[model.Action, String]:
+pub fn choose_basic_action(game: blackjack_model.Game) -> Result[blackjack_model.Action, String]:
     if phase_code(game.phase) != 1:
         return Err("Basic strategy requires an active player hand")
     let player = game.players[game.active_player]
     let up_card = dealer_up_card(game)?
     return strategy.choose(player.hands[player.active_hand], up_card, available_actions(game))
 
-pub fn active_player_is_human(game: model.Game) -> Bool:
+pub fn active_player_is_human(game: blackjack_model.Game) -> Bool:
     return phase_code(game.phase) == 1 and game.players[game.active_player].is_human
 
-pub fn ai_step(game: model.Game) -> Result[model.Game, String]:
+pub fn ai_step(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
     if phase_code(game.phase) != 1:
         return Err("AI can only act during player turns")
     if game.players[game.active_player].is_human:
         return Err("The active player is human")
     return apply_action(game, choose_basic_action(game)?)
 
-pub fn run_ai_until_human_or_dealer(game: model.Game) -> Result[model.Game, String]:
+pub fn run_ai_until_human_or_dealer(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
     var current = game
     var guard = 0
     while phase_code(current.phase) == 1:
@@ -466,20 +466,20 @@ pub fn run_ai_until_human_or_dealer(game: model.Game) -> Result[model.Game, Stri
         guard = guard + 1
     return Ok(current)
 
-pub fn begin_next_round(game: model.Game) -> Result[model.Game, String]:
+pub fn begin_next_round(game: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
     if phase_code(game.phase) != 3:
         return Err("The current round has not been settled")
     var players = game.players
     var index = 0
     while index < collections.length(players):
         let player = players[index]
-        let no_hands: Array[model.Hand] = []
-        players[index] = model.Player(player.id, player.name, player.is_human, player.balance, 0, no_hands, 0)
+        let no_hands: Array[blackjack_model.Hand] = []
+        players[index] = blackjack_model.Player(player.id, player.name, player.is_human, player.balance, 0, no_hands, 0)
         index = index + 1
-    let no_results: Array[model.HandResult] = []
-    return Ok(model.Game(game.rules, game.shoe, cards.empty_hand(0, false), players, model.Betting(), 0, game.round_number + 1, game.seed, "Place your bet", no_results))
+    let no_results: Array[blackjack_model.HandResult] = []
+    return Ok(blackjack_model.Game(game.rules, game.shoe, blackjack_cards.empty_hand(0, false), players, blackjack_model.Betting(), 0, game.round_number + 1, game.seed, "Place your bet", no_results))
 
-pub fn available_action_names(game: model.Game) -> Array[String]:
+pub fn available_action_names(game: blackjack_model.Game) -> Array[String]:
     let actions = available_actions(game)
     var names: Array[String] = []
     var index = 0
@@ -488,7 +488,7 @@ pub fn available_action_names(game: model.Game) -> Array[String]:
         index = index + 1
     return names
 
-pub fn instruction(game: model.Game) -> String:
+pub fn instruction(game: blackjack_model.Game) -> String:
     let phase = phase_code(game.phase)
     if phase == 0:
         return "Choose a legal bet, then start the round"
@@ -500,7 +500,7 @@ pub fn instruction(game: model.Game) -> String:
         return "Dealer is drawing to the table rule"
     return "Round complete; review results or begin the next round"
 
-pub fn chips_for(amount: Int) -> model.ChipStack:
+pub fn chips_for(amount: Int) -> blackjack_model.ChipStack:
     var remaining = amount
     let purple = remaining / 500
     remaining = remaining - purple * 500
@@ -512,4 +512,4 @@ pub fn chips_for(amount: Int) -> model.ChipStack:
     remaining = remaining - blue * 10
     let red = remaining / 5
     remaining = remaining - red * 5
-    return model.ChipStack(amount, purple, black, green, blue, red, remaining)
+    return blackjack_model.ChipStack(amount, purple, black, green, blue, red, remaining)

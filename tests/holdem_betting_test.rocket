@@ -1,81 +1,81 @@
-import src.holdem.engine
-import src.holdem.model
-import src.holdem.rules
+import src.holdem.holdem_engine
+import src.holdem.holdem_model
+import src.holdem.holdem_rules
 import std.collections
 
-fn blank_player(id: Int, human: Bool, stack: Int, street: Int, total: Int, acted: Bool, can_raise: Bool) -> model.Player:
-    let no_cards: Array[model.Card] = []
-    return model.Player(id, "Seat", human, stack, no_cards, false, false, street, total, acted, can_raise, "Testing")
+fn blank_player(id: Int, human: Bool, stack: Int, street: Int, total: Int, acted: Bool, can_raise: Bool) -> holdem_model.Player:
+    let no_cards: Array[holdem_model.Card] = []
+    return holdem_model.Player(id, "Seat", human, stack, no_cards, false, false, street, total, acted, can_raise, "Testing")
 
-fn short_all_in_game() -> model.Game:
-    var players: Array[model.Player] = []
+fn short_all_in_game() -> holdem_model.Game:
+    var players: Array[holdem_model.Player] = []
     players = collections.append(players, blank_player(0, true, 90, 10, 10, true, false))
     players = collections.append(players, blank_player(1, false, 5, 10, 10, false, true))
     players = collections.append(players, blank_player(2, false, 90, 10, 10, false, true))
-    let no_cards: Array[model.Card] = []
-    let no_pots: Array[model.Pot] = []
+    let no_cards: Array[holdem_model.Card] = []
+    let no_pots: Array[holdem_model.Pot] = []
     let no_history: Array[String] = []
-    return model.Game(players, no_cards, 0, no_cards, 0, 1, 2, 1, 10, 10, 5, 10, model.Betting(), model.Preflop(), no_pots, no_history, 1, 99, "Short all-in test")
+    return holdem_model.Game(players, no_cards, 0, no_cards, 0, 1, 2, 1, 10, 10, 5, 10, holdem_model.Betting(), holdem_model.Preflop(), no_pots, no_history, 1, 99, "Short all-in test")
 
 fn run() -> Result[Int, String]:
-    match engine.new_game(1000, 0, 1):
+    match holdem_engine.new_game(1000, 0, 1):
         case Ok(game):
             return Ok(1)
         case Err(error):
             let expected = true
-    match engine.new_game(1000, 6, 1):
+    match holdem_engine.new_game(1000, 6, 1):
         case Ok(game):
             return Ok(2)
         case Err(error):
             let expected = true
-    var heads_up = engine.start_hand(engine.new_game(1000, 1, 4242)?)?
+    var heads_up = holdem_engine.start_hand(holdem_engine.new_game(1000, 1, 4242)?)?
     if heads_up.dealer != 0 or heads_up.small_blind_seat != 0 or heads_up.big_blind_seat != 1 or heads_up.active != 0:
         return Ok(3)
-    if heads_up.players[0].street_contribution != 5 or heads_up.players[1].street_contribution != 10 or engine.chips_in_play(heads_up) != 2000:
+    if heads_up.players[0].street_contribution != 5 or heads_up.players[1].street_contribution != 10 or holdem_engine.chips_in_play(heads_up) != 2000:
         return Ok(4)
-    if rules.minimum_raise_target(heads_up) != 20 or rules.can_raise_to(heads_up, 0, 15) or not rules.can_raise_to(heads_up, 0, 20):
+    if holdem_rules.minimum_raise_target(heads_up) != 20 or holdem_rules.can_raise_to(heads_up, 0, 15) or not holdem_rules.can_raise_to(heads_up, 0, 20):
         return Ok(5)
-    let full_raise = engine.act(heads_up, 3, 20)?
-    if full_raise.active != 1 or not full_raise.players[1].can_raise or rules.minimum_raise_target(full_raise) != 30:
+    let full_raise = holdem_engine.act(heads_up, 3, 20)?
+    if full_raise.active != 1 or not full_raise.players[1].can_raise or holdem_rules.minimum_raise_target(full_raise) != 30:
         return Ok(15)
-    match engine.act(heads_up, 1, 0):
+    match holdem_engine.act(heads_up, 1, 0):
         case Ok(game):
             return Ok(6)
         case Err(error):
             let expected = true
-    heads_up = engine.act(heads_up, 2, 0)?
-    if heads_up.active != 1 or not rules.can_check(heads_up, 1):
+    heads_up = holdem_engine.act(heads_up, 2, 0)?
+    if heads_up.active != 1 or not holdem_rules.can_check(heads_up, 1):
         return Ok(7)
-    heads_up = engine.act(heads_up, 1, 0)?
-    if rules.street_code(heads_up.street) != 1 or collections.length(heads_up.community) != 3 or heads_up.active != 1:
+    heads_up = holdem_engine.act(heads_up, 1, 0)?
+    if holdem_rules.street_code(heads_up.street) != 1 or collections.length(heads_up.community) != 3 or heads_up.active != 1:
         return Ok(8)
-    let opened = engine.act(heads_up, 3, 10)?
-    if opened.current_bet != 10 or opened.active != 0 or not rules.can_raise_to(opened, 0, 20):
+    let opened = holdem_engine.act(heads_up, 3, 10)?
+    if opened.current_bet != 10 or opened.active != 0 or not holdem_rules.can_raise_to(opened, 0, 20):
         return Ok(17)
-    let multi = engine.start_hand(engine.new_game(1000, 2, 4242)?)?
+    let multi = holdem_engine.start_hand(holdem_engine.new_game(1000, 2, 4242)?)?
     if multi.dealer != 0 or multi.small_blind_seat != 1 or multi.big_blind_seat != 2 or multi.active != 0:
         return Ok(9)
-    if collections.length(engine.new_game(1000, 5, 4242)?.players) != 6:
+    if collections.length(holdem_engine.new_game(1000, 5, 4242)?.players) != 6:
         return Ok(16)
-    var short = engine.act(short_all_in_game(), 4, 0)?
+    var short = holdem_engine.act(short_all_in_game(), 4, 0)?
     if short.current_bet != 15 or short.last_full_raise != 10 or short.active != 2:
         return Ok(10)
-    let reopened = engine.act(short, 3, 25)?
-    if reopened.active != 0 or not reopened.players[0].can_raise or not rules.can_raise_to(reopened, 0, 35):
+    let reopened = holdem_engine.act(short, 3, 25)?
+    if reopened.active != 0 or not reopened.players[0].can_raise or not holdem_rules.can_raise_to(reopened, 0, 35):
         return Ok(18)
-    short = engine.act(short, 2, 0)?
-    if short.active != 0 or short.players[0].can_raise or not rules.can_call(short, 0) or rules.can_raise_to(short, 0, 25):
+    short = holdem_engine.act(short, 2, 0)?
+    if short.active != 0 or short.players[0].can_raise or not holdem_rules.can_call(short, 0) or holdem_rules.can_raise_to(short, 0, 25):
         return Ok(11)
-    match engine.act(short, 3, 25):
+    match holdem_engine.act(short, 3, 25):
         case Ok(game):
             return Ok(12)
         case Err(error):
             let expected = true
-    var fold_game = engine.start_hand(engine.new_game(1000, 1, 77)?)?
-    fold_game = engine.act(fold_game, 0, 0)?
-    if rules.phase_code(fold_game.phase) != 2 or collections.length(fold_game.pots) != 2 or fold_game.players[1].stack != 1005:
+    var fold_game = holdem_engine.start_hand(holdem_engine.new_game(1000, 1, 77)?)?
+    fold_game = holdem_engine.act(fold_game, 0, 0)?
+    if holdem_rules.phase_code(fold_game.phase) != 2 or collections.length(fold_game.pots) != 2 or fold_game.players[1].stack != 1005:
         return Ok(13)
-    if engine.chips_in_play(fold_game) != 2000:
+    if holdem_engine.chips_in_play(fold_game) != 2000:
         return Ok(14)
     return Ok(0)
 

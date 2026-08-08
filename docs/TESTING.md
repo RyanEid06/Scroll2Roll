@@ -43,4 +43,8 @@ Test setup helpers must return explicit failure or a nonzero test status when co
   lobby return, and resource cleanup.
 - Four reviewed raylib tests cover API behavior, audio stress, resource lifetime, and missing assets.
 
-The current suite passes 26/26 tests. Package relocation and source/staged website checks are separate scripts. Exact evidence is recorded in `VALIDATION.md`; generated evidence stays under ignored `out/`.
+The current suite passes 26/26 tests. Before those gates run,
+`scripts/validate.ps1` also rejects duplicate `.rocket` basenames under `src` so
+the frozen CodeView debugger can map every source unambiguously. Package
+relocation and source/staged website checks are separate scripts. Exact evidence
+is recorded in `VALIDATION.md`; generated evidence stays under ignored `out/`.

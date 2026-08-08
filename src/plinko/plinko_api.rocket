@@ -1,50 +1,50 @@
-import src.plinko.engine
-import src.plinko.model
+import src.plinko.plinko_engine
+import src.plinko.plinko_model
 
 pub struct Session:
-    game: model.Game
+    game: plinko_model.Game
 
 pub fn new_session(starting_balance: Int, seed: Int) -> Result[Session, String]:
-    return Ok(Session(engine.new_game(starting_balance, seed)?))
+    return Ok(Session(plinko_engine.new_game(starting_balance, seed)?))
 
 pub fn with_rows(session: Session, rows: Int) -> Result[Session, String]:
-    return Ok(Session(engine.with_rows(session.game, rows)?))
+    return Ok(Session(plinko_engine.with_rows(session.game, rows)?))
 
-pub fn with_risk(session: Session, risk: model.Risk) -> Result[Session, String]:
-    return Ok(Session(engine.with_risk(session.game, risk)?))
+pub fn with_risk(session: Session, risk: plinko_model.Risk) -> Result[Session, String]:
+    return Ok(Session(plinko_engine.with_risk(session.game, risk)?))
 
 pub fn risk_code(session: Session) -> Int:
     match session.game.risk:
-        case model.Low:
+        case plinko_model.Low:
             return 0
-        case model.Medium:
+        case plinko_model.Medium:
             return 1
-        case model.High:
+        case plinko_model.High:
             return 2
 
 pub fn with_risk_code(session: Session, code: Int) -> Result[Session, String]:
     if code == 0:
-        return with_risk(session, model.Low())
+        return with_risk(session, plinko_model.Low())
     if code == 1:
-        return with_risk(session, model.Medium())
+        return with_risk(session, plinko_model.Medium())
     if code == 2:
-        return with_risk(session, model.High())
+        return with_risk(session, plinko_model.High())
     return Err("Plinko risk code must be between 0 and 2")
 
 pub fn with_bet(session: Session, bet: Int) -> Result[Session, String]:
-    return Ok(Session(engine.with_bet(session.game, bet)?))
+    return Ok(Session(plinko_engine.with_bet(session.game, bet)?))
 
 pub fn with_batch(session: Session, count: Int) -> Result[Session, String]:
-    return Ok(Session(engine.with_batch(session.game, count)?))
+    return Ok(Session(plinko_engine.with_batch(session.game, count)?))
 
 pub fn with_drop(session: Session) -> Result[Session, String]:
-    return Ok(Session(engine.drop(session.game)?))
+    return Ok(Session(plinko_engine.drop(session.game)?))
 
 pub fn with_settlement(session: Session) -> Result[Session, String]:
-    return Ok(Session(engine.settle(session.game)?))
+    return Ok(Session(plinko_engine.settle(session.game)?))
 
 pub fn with_next_round(session: Session) -> Result[Session, String]:
-    return Ok(Session(engine.next_round(session.game)?))
+    return Ok(Session(plinko_engine.next_round(session.game)?))
 
 pub fn phase_code(session: Session) -> Int:
-    return engine.phase_code(session.game.phase)
+    return plinko_engine.phase_code(session.game.phase)

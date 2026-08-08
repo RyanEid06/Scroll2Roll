@@ -1,8 +1,8 @@
 import src.app.components
 import src.app.theme
-import src.chicken.engine
-import src.chicken.model
-import src.chicken.rules
+import src.chicken.chicken_engine
+import src.chicken.chicken_model
+import src.chicken.chicken_rules
 import src.rocket_raylib
 import std.collections
 import std.string
@@ -49,12 +49,12 @@ fn draw_coop(frame: rocket_raylib.Frame, x: Int, y: Int, width: Int, fill: rocke
     rocket_raylib.draw_text(frame, label, x + 42, y + 14, theme.small_size(), ink)?
     return Ok(true)
 
-fn draw_ladder(frame: rocket_raylib.Frame, game: model.Game, height: Int) -> Result[Bool, String]:
-    let values = rules.multipliers(game.risk)
+fn draw_ladder(frame: rocket_raylib.Frame, game: chicken_model.Game, height: Int) -> Result[Bool, String]:
+    let values = chicken_rules.multipliers(game.risk)
     let start_y = height - 120
     rocket_raylib.draw_rectangle(frame, 210, 80, 22, start_y - 52, theme.border())?
     var depth = 0
-    while depth < rules.maximum_depth():
+    while depth < chicken_rules.maximum_depth():
         let y = start_y - depth * 39
         var fill = theme.panel()
         var ink = theme.text()
@@ -63,11 +63,11 @@ fn draw_ladder(frame: rocket_raylib.Frame, game: model.Game, height: Int) -> Res
             fill = theme.emerald()
             ink = theme.background()
             status = "Secured"
-        if engine.phase_code(game.phase) == 1 and depth == game.survived_depth:
+        if chicken_engine.phase_code(game.phase) == 1 and depth == game.survived_depth:
             fill = theme.gold()
             ink = theme.background()
             status = "Next choice"
-        if engine.phase_code(game.phase) == 2 and game.failed and depth == game.survived_depth:
+        if chicken_engine.phase_code(game.phase) == 2 and game.failed and depth == game.survived_depth:
             fill = theme.danger()
             status = "Failed rung"
         let label = string.concat(string.concat("Coop ", string.from_int(depth + 1)), string.concat("  ", string.concat(multiplier_label(values[depth]), string.concat("  ", status))))
@@ -91,7 +91,7 @@ fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result
         index = index + 1
     return Ok(true)
 
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: model.Game, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: chicken_model.Game, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     rocket_raylib.draw_text(frame, "COOP CLIMB", 32, 26, theme.heading_size(), theme.gold())?
@@ -102,19 +102,19 @@ pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: mode
     draw_ladder(frame, game, height)?
     components.panel(frame, components.rect(width - 350, 110, 272, 330))?
     rocket_raylib.draw_text(frame, game.message, width - 330, 120, theme.small_size(), theme.muted())?
-    components.button(window, frame, risk_rect(width), string.concat("Risk: ", rules.risk_name(game.risk)), engine.phase_code(game.phase) == 0, components.contains(risk_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, risk_rect(width), string.concat("Risk: ", chicken_rules.risk_name(game.risk)), chicken_engine.phase_code(game.phase) == 0, components.contains(risk_rect(width), mouse_x, mouse_y), false)?
     rocket_raylib.draw_text(frame, string.concat("Wager: ", string.from_int(game.bet)), width - 270, 226, theme.body_size(), theme.text())?
-    components.button(window, frame, bet_minus_rect(width), "-", engine.phase_code(game.phase) == 0, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, bet_plus_rect(width), "+", engine.phase_code(game.phase) == 0, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
-    let phase = engine.phase_code(game.phase)
+    components.button(window, frame, bet_minus_rect(width), "-", chicken_engine.phase_code(game.phase) == 0, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, bet_plus_rect(width), "+", chicken_engine.phase_code(game.phase) == 0, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
+    let phase = chicken_engine.phase_code(game.phase)
     if phase == 0:
         components.button(window, frame, start_rect(width), "Secure pass [Enter]", game.bet <= game.balance, components.contains(start_rect(width), mouse_x, mouse_y), true)?
         rocket_raylib.draw_text(frame, "Tab risk | Up/Down wager", width - 330, 354, theme.small_size(), theme.muted())?
     if phase == 1:
-        components.button(window, frame, advance_rect(width), "Advance [Enter]", game.survived_depth < rules.maximum_depth(), components.contains(advance_rect(width), mouse_x, mouse_y), true)?
+        components.button(window, frame, advance_rect(width), "Advance [Enter]", game.survived_depth < chicken_rules.maximum_depth(), components.contains(advance_rect(width), mouse_x, mouse_y), true)?
         var cash_label = "Cash Out [S]"
         if game.survived_depth > 0:
-            cash_label = string.concat("Cash ", string.concat(multiplier_label(rules.multiplier_at(game.risk, game.survived_depth)?), " [S]"))
+            cash_label = string.concat("Cash ", string.concat(multiplier_label(chicken_rules.multiplier_at(game.risk, game.survived_depth)?), " [S]"))
         components.button(window, frame, cash_out_rect(width), cash_label, game.survived_depth > 0, components.contains(cash_out_rect(width), mouse_x, mouse_y), false)?
     if phase == 2:
         rocket_raylib.draw_text(frame, string.concat("Wager ", string.from_int(game.wager)), width - 330, 286, theme.body_size(), theme.text())?

@@ -1,116 +1,116 @@
-import src.roulette.engine
-import src.roulette.model
-import src.roulette.rules
+import src.roulette.roulette_engine
+import src.roulette.roulette_model
+import src.roulette.roulette_rules
 import std.collections
 
 fn run() -> Result[Int, String]:
-    match engine.new_game(4, 1):
+    match roulette_engine.new_game(4, 1):
         case Ok(game):
             return Ok(1)
         case Err(error):
             let expected = true
-    var game = engine.new_game(10000, 4242)?
-    if engine.phase_code(game.phase) != 0 or game.balance != 10000:
+    var game = roulette_engine.new_game(10000, 4242)?
+    if roulette_engine.phase_code(game.phase) != 0 or game.balance != 10000:
         return Ok(2)
-    match engine.select_chip(game, 7):
+    match roulette_engine.select_chip(game, 7):
         case Ok(value):
             return Ok(3)
         case Err(error):
             let expected = true
-    game = engine.select_chip(game, 25)?
+    game = roulette_engine.select_chip(game, 25)?
     if game.selected_chip != 25:
         return Ok(4)
-    game = engine.place(game, rules.straight(17, 25)?)?
-    game = engine.place(game, rules.outside(model.Red(), 50)?)?
-    game = engine.place(game, rules.dozen(2, 25)?)?
-    if engine.total_wager(game) != 100 or game.balance != 9900:
+    game = roulette_engine.place(game, roulette_rules.straight(17, 25)?)?
+    game = roulette_engine.place(game, roulette_rules.outside(roulette_model.Red(), 50)?)?
+    game = roulette_engine.place(game, roulette_rules.dozen(2, 25)?)?
+    if roulette_engine.total_wager(game) != 100 or game.balance != 9900:
         return Ok(5)
-    let undone = engine.undo(game)?
-    if engine.total_wager(undone) != 75 or undone.balance != 9925:
+    let undone = roulette_engine.undo(game)?
+    if roulette_engine.total_wager(undone) != 75 or undone.balance != 9925:
         return Ok(6)
-    let cleared = engine.clear(undone)?
-    if engine.total_wager(cleared) != 0 or cleared.balance != 10000:
+    let cleared = roulette_engine.clear(undone)?
+    if roulette_engine.total_wager(cleared) != 0 or cleared.balance != 10000:
         return Ok(7)
-    match engine.undo(cleared):
+    match roulette_engine.undo(cleared):
         case Ok(value):
             return Ok(8)
         case Err(error):
             let expected = true
-    game = engine.place(cleared, rules.straight(17, 25)?)?
-    game = engine.place(game, rules.outside(model.Red(), 50)?)?
-    game = engine.place(game, rules.dozen(2, 25)?)?
-    let same = engine.place(engine.place(engine.place(engine.new_game(10000, 4242)?, rules.straight(17, 25)?)?, rules.outside(model.Red(), 50)?)?, rules.dozen(2, 25)?)?
-    let spinning = engine.spin(game)?
-    let same_spinning = engine.spin(same)?
-    if engine.phase_code(spinning.phase) != 1 or spinning.pending_winner != same_spinning.pending_winner:
+    game = roulette_engine.place(cleared, roulette_rules.straight(17, 25)?)?
+    game = roulette_engine.place(game, roulette_rules.outside(roulette_model.Red(), 50)?)?
+    game = roulette_engine.place(game, roulette_rules.dozen(2, 25)?)?
+    let same = roulette_engine.place(roulette_engine.place(roulette_engine.place(roulette_engine.new_game(10000, 4242)?, roulette_rules.straight(17, 25)?)?, roulette_rules.outside(roulette_model.Red(), 50)?)?, roulette_rules.dozen(2, 25)?)?
+    let spinning = roulette_engine.spin(game)?
+    let same_spinning = roulette_engine.spin(same)?
+    if roulette_engine.phase_code(spinning.phase) != 1 or spinning.pending_winner != same_spinning.pending_winner:
         return Ok(9)
-    match engine.place(spinning, rules.straight(1, 5)?):
+    match roulette_engine.place(spinning, roulette_rules.straight(1, 5)?):
         case Ok(value):
             return Ok(10)
         case Err(error):
             let expected = true
-    let settled = engine.settle(spinning)?
+    let settled = roulette_engine.settle(spinning)?
     var expected_return = 0
     var index = 0
     while index < collections.length(spinning.bets):
-        expected_return = expected_return + rules.return_for(spinning.bets[index], spinning.pending_winner)
+        expected_return = expected_return + roulette_rules.return_for(spinning.bets[index], spinning.pending_winner)
         index = index + 1
     if settled.result.total_wager != 100 or settled.result.total_return != expected_return:
         return Ok(11)
     if settled.balance != 9900 + expected_return or collections.length(settled.history) != 1:
         return Ok(12)
-    let next = engine.next_round(settled)?
-    if engine.phase_code(next.phase) != 0 or collections.length(next.bets) != 0 or next.round_number != 2:
+    let next = roulette_engine.next_round(settled)?
+    if roulette_engine.phase_code(next.phase) != 0 or collections.length(next.bets) != 0 or next.round_number != 2:
         return Ok(13)
-    let repeated = engine.repeat(next)?
-    if engine.total_wager(repeated) != 100 or collections.length(repeated.bets) != 3:
+    let repeated = roulette_engine.repeat(next)?
+    if roulette_engine.total_wager(repeated) != 100 or collections.length(repeated.bets) != 3:
         return Ok(14)
-    match engine.repeat(repeated):
+    match roulette_engine.repeat(repeated):
         case Ok(value):
             return Ok(15)
         case Err(error):
             let expected = true
-    var limited = engine.new_game(10000, 8)?
+    var limited = roulette_engine.new_game(10000, 8)?
     index = 0
     while index < 100:
-        limited = engine.place(limited, rules.straight(1, 10)?)?
+        limited = roulette_engine.place(limited, roulette_rules.straight(1, 10)?)?
         index = index + 1
-    match engine.place(limited, rules.straight(1, 5)?):
+    match roulette_engine.place(limited, roulette_rules.straight(1, 5)?):
         case Ok(value):
             return Ok(16)
         case Err(error):
             let expected = true
-    var total_limited = engine.new_game(10000, 9)?
-    total_limited = engine.place(total_limited, rules.straight(1, 1000)?)?
-    total_limited = engine.place(total_limited, rules.straight(2, 1000)?)?
-    total_limited = engine.place(total_limited, rules.straight(3, 1000)?)?
-    total_limited = engine.place(total_limited, rules.straight(4, 1000)?)?
-    total_limited = engine.place(total_limited, rules.straight(5, 1000)?)?
-    match engine.place(total_limited, rules.straight(6, 5)?):
+    var total_limited = roulette_engine.new_game(10000, 9)?
+    total_limited = roulette_engine.place(total_limited, roulette_rules.straight(1, 1000)?)?
+    total_limited = roulette_engine.place(total_limited, roulette_rules.straight(2, 1000)?)?
+    total_limited = roulette_engine.place(total_limited, roulette_rules.straight(3, 1000)?)?
+    total_limited = roulette_engine.place(total_limited, roulette_rules.straight(4, 1000)?)?
+    total_limited = roulette_engine.place(total_limited, roulette_rules.straight(5, 1000)?)?
+    match roulette_engine.place(total_limited, roulette_rules.straight(6, 5)?):
         case Ok(value):
             return Ok(17)
         case Err(error):
             let expected = true
-    var poor = engine.new_game(10, 3)?
-    poor = engine.place(poor, rules.straight(0, 10)?)?
-    match engine.place(poor, rules.straight(1, 5)?):
+    var poor = roulette_engine.new_game(10, 3)?
+    poor = roulette_engine.place(poor, roulette_rules.straight(0, 10)?)?
+    match roulette_engine.place(poor, roulette_rules.straight(1, 5)?):
         case Ok(value):
             return Ok(18)
         case Err(error):
             let expected = true
-    var history_game = engine.new_game(5000, 77)?
+    var history_game = roulette_engine.new_game(5000, 77)?
     var round = 0
     while round < 15:
-        history_game = engine.place(history_game, rules.straight(0, 5)?)?
-        history_game = engine.complete_spin(history_game)?
+        history_game = roulette_engine.place(history_game, roulette_rules.straight(0, 5)?)?
+        history_game = roulette_engine.complete_spin(history_game)?
         if history_game.balance < 0:
             return Ok(19)
         if round < 14:
-            history_game = engine.next_round(history_game)?
+            history_game = roulette_engine.next_round(history_game)?
         round = round + 1
     if collections.length(history_game.history) != 12 or history_game.round_number != 15:
         return Ok(20)
-    match engine.next_round(game):
+    match roulette_engine.next_round(game):
         case Ok(value):
             return Ok(21)
         case Err(error):

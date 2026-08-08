@@ -1,7 +1,7 @@
 import src.app.application
 import src.app.roulette_view
-import src.roulette.engine
-import src.roulette.rules
+import src.roulette.roulette_engine
+import src.roulette.roulette_rules
 import src.rocket_raylib
 import src.rocket_raylib_testing
 import std.collections
@@ -31,17 +31,17 @@ fn run() -> Result[Int, String]:
     let street = roulette_view.mouse_bet(102, 270, 1280, 10)?
     let six_line = roulette_view.mouse_bet(140, 270, 1280, 10)?
     let basket = roulette_view.mouse_bet(40, 300, 1280, 10)?
-    if rules.kind_code(horizontal_split.kind) != 1 or horizontal_split.numbers[0] != 3 or horizontal_split.numbers[1] != 6:
+    if roulette_rules.kind_code(horizontal_split.kind) != 1 or horizontal_split.numbers[0] != 3 or horizontal_split.numbers[1] != 6:
         return Ok(19)
-    if rules.kind_code(vertical_split.kind) != 1 or vertical_split.numbers[0] != 2 or vertical_split.numbers[1] != 3:
+    if roulette_rules.kind_code(vertical_split.kind) != 1 or vertical_split.numbers[0] != 2 or vertical_split.numbers[1] != 3:
         return Ok(20)
-    if rules.kind_code(corner.kind) != 3 or corner.numbers[0] != 2 or corner.numbers[3] != 6:
+    if roulette_rules.kind_code(corner.kind) != 3 or corner.numbers[0] != 2 or corner.numbers[3] != 6:
         return Ok(21)
-    if rules.kind_code(street.kind) != 2 or street.numbers[0] != 1 or street.numbers[2] != 3:
+    if roulette_rules.kind_code(street.kind) != 2 or street.numbers[0] != 1 or street.numbers[2] != 3:
         return Ok(22)
-    if rules.kind_code(six_line.kind) != 4 or six_line.numbers[0] != 1 or six_line.numbers[5] != 6:
+    if roulette_rules.kind_code(six_line.kind) != 4 or six_line.numbers[0] != 1 or six_line.numbers[5] != 6:
         return Ok(23)
-    if rules.kind_code(basket.kind) != 5 or basket.numbers[0] != 0 or basket.numbers[3] != 3:
+    if roulette_rules.kind_code(basket.kind) != 5 or basket.numbers[0] != 0 or basket.numbers[3] != 3:
         return Ok(24)
     match rocket_raylib.open_window(1280, 720, "Roulette scripted GUI"):
         case Ok(window):
@@ -50,7 +50,7 @@ fn run() -> Result[Int, String]:
             if state.screen != 1:
                 return Ok(2)
             state = click(window, 520, 300, state)
-            if state.screen != 4 or engine.phase_code(state.roulette.game.phase) != 0:
+            if state.screen != 4 or roulette_engine.phase_code(state.roulette.game.phase) != 0:
                 return Ok(3)
             state = press(window, rocket_raylib.key_p(), state)
             if not state.roulette_help:
@@ -77,24 +77,24 @@ fn run() -> Result[Int, String]:
             state = click(window, 380, 310, state)
             if collections.length(state.roulette.game.bets) != 3:
                 return Ok(10)
-            let wager = engine.total_wager(state.roulette.game)
+            let wager = roulette_engine.total_wager(state.roulette.game)
             state = press(window, rocket_raylib.key_s(), state)
-            if engine.phase_code(state.roulette.game.phase) != 1 or state.roulette.game.pending_winner < 0:
+            if roulette_engine.phase_code(state.roulette.game.phase) != 1 or state.roulette.game.pending_winner < 0:
                 return Ok(11)
             var guard = 0
-            while engine.phase_code(state.roulette.game.phase) != 2 and guard < 180:
+            while roulette_engine.phase_code(state.roulette.game.phase) != 2 and guard < 180:
                 state = frame(window, state)?
                 guard = guard + 1
-            if guard >= 180 or engine.phase_code(state.roulette.game.phase) != 2:
+            if guard >= 180 or roulette_engine.phase_code(state.roulette.game.phase) != 2:
                 return Ok(12)
             if state.roulette.game.result.total_wager != wager or not file.exists(save_path):
                 return Ok(13)
             application.draw_for_test(window, state)?
             state = press(window, rocket_raylib.key_r(), state)
-            if engine.phase_code(state.roulette.game.phase) != 0 or engine.total_wager(state.roulette.game) != wager:
+            if roulette_engine.phase_code(state.roulette.game.phase) != 0 or roulette_engine.total_wager(state.roulette.game) != wager:
                 return Ok(14)
             state = press(window, rocket_raylib.key_d(), state)
-            if engine.total_wager(state.roulette.game) != 0:
+            if roulette_engine.total_wager(state.roulette.game) != 0:
                 return Ok(15)
             state = press(window, rocket_raylib.key_b(), state)
             if state.screen != 1:

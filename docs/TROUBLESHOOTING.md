@@ -14,6 +14,21 @@ The game continues silently if Windows cannot open an audio device. Audio can be
 
 Version 2 stores only local, non-sensitive settings and play-money progress in `%LOCALAPPDATA%\Scroll2Roll\settings.s2r`. Valid version-1 data is migrated automatically. Delete that file while Scroll2Roll is closed to restore defaults. Missing, unsupported, or invalid data is recovered safely.
 
+## Visual Studio cannot find rocketc.exe or rocket-lsp.exe
+
+Set **Tools > Options > Rocket > General** to the pinned `rocketc.exe` and
+`rocket-lsp.exe`, or persist `ROCKET_COMPILER` and `ROCKET_LANGUAGE_SERVER` as
+described in `BUILDING.md`. Fully close and restart Visual Studio after changing
+the Windows user environment. Do not commit either machine-specific path.
+
+## Visual Studio reports duplicate Rocket source filenames
+
+Frozen Rocket CodeView records identify sources by basename. Scroll2Roll uses
+game-prefixed module filenames such as `blackjack_rules.rocket`,
+`roulette_rules.rocket`, and `holdem_rules.rocket` so every compiled source is
+unambiguous. Run `scripts/validate.ps1`; it fails before building if a future
+change introduces duplicate `.rocket` basenames under `src`.
+
 ## Controls appear disabled
 
 The engine enables only legal actions for the active hand. Double Down requires enough remaining credits; Split requires an equal-rank pair and respects the four-hand limit; Surrender is available only as the first action on an unsplit two-card hand.

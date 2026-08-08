@@ -1,48 +1,48 @@
-import src.blackjack.cards
-import src.blackjack.model
+import src.blackjack.blackjack_cards
+import src.blackjack.blackjack_model
 
-pub fn hand(player: model.Hand, dealer: model.Hand, table: model.Rules) -> model.HandSettlement:
-    let player_value = cards.value(player)
-    let dealer_value = cards.value(dealer)
+pub fn hand(player: blackjack_model.Hand, dealer: blackjack_model.Hand, table: blackjack_model.Rules) -> blackjack_model.HandSettlement:
+    let player_value = blackjack_cards.value(player)
+    let dealer_value = blackjack_cards.value(dealer)
     if player.surrendered:
-        return model.HandSettlement(model.Surrendered(), player.bet / 2, player_value.total, dealer_value.total)
+        return blackjack_model.HandSettlement(blackjack_model.Surrendered(), player.bet / 2, player_value.total, dealer_value.total)
     if dealer_value.blackjack:
         if player_value.blackjack:
-            return model.HandSettlement(model.Push(), player.bet, player_value.total, dealer_value.total)
-        return model.HandSettlement(model.Lose(), 0, player_value.total, dealer_value.total)
+            return blackjack_model.HandSettlement(blackjack_model.Push(), player.bet, player_value.total, dealer_value.total)
+        return blackjack_model.HandSettlement(blackjack_model.Lose(), 0, player_value.total, dealer_value.total)
     if player_value.blackjack:
         let profit = player.bet * table.blackjack_numerator / table.blackjack_denominator
-        return model.HandSettlement(model.BlackjackWin(), player.bet + profit, player_value.total, dealer_value.total)
+        return blackjack_model.HandSettlement(blackjack_model.BlackjackWin(), player.bet + profit, player_value.total, dealer_value.total)
     if player_value.busted:
-        return model.HandSettlement(model.Lose(), 0, player_value.total, dealer_value.total)
+        return blackjack_model.HandSettlement(blackjack_model.Lose(), 0, player_value.total, dealer_value.total)
     if dealer_value.busted or player_value.total > dealer_value.total:
-        return model.HandSettlement(model.Win(), player.bet * 2, player_value.total, dealer_value.total)
+        return blackjack_model.HandSettlement(blackjack_model.Win(), player.bet * 2, player_value.total, dealer_value.total)
     if player_value.total == dealer_value.total:
-        return model.HandSettlement(model.Push(), player.bet, player_value.total, dealer_value.total)
-    return model.HandSettlement(model.Lose(), 0, player_value.total, dealer_value.total)
+        return blackjack_model.HandSettlement(blackjack_model.Push(), player.bet, player_value.total, dealer_value.total)
+    return blackjack_model.HandSettlement(blackjack_model.Lose(), 0, player_value.total, dealer_value.total)
 
-pub fn outcome_code(value: model.Outcome) -> Int:
+pub fn outcome_code(value: blackjack_model.Outcome) -> Int:
     match value:
-        case model.BlackjackWin:
+        case blackjack_model.BlackjackWin:
             return 0
-        case model.Win:
+        case blackjack_model.Win:
             return 1
-        case model.Push:
+        case blackjack_model.Push:
             return 2
-        case model.Lose:
+        case blackjack_model.Lose:
             return 3
-        case model.Surrendered:
+        case blackjack_model.Surrendered:
             return 4
 
-pub fn outcome_name(value: model.Outcome) -> String:
+pub fn outcome_name(value: blackjack_model.Outcome) -> String:
     match value:
-        case model.BlackjackWin:
+        case blackjack_model.BlackjackWin:
             return "Blackjack"
-        case model.Win:
+        case blackjack_model.Win:
             return "Win"
-        case model.Push:
+        case blackjack_model.Push:
             return "Push"
-        case model.Lose:
+        case blackjack_model.Lose:
             return "Lose"
-        case model.Surrendered:
+        case blackjack_model.Surrendered:
             return "Surrender"

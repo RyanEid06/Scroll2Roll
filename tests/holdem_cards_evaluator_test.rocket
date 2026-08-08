@@ -1,31 +1,31 @@
-import src.holdem.cards
+import src.holdem.holdem_cards
 import src.holdem.evaluator
-import src.holdem.model
+import src.holdem.holdem_model
 import std.collections
 
-fn card(rank: Int, suit: Int) -> model.Card:
-    return model.Card(rank, suit)
+fn card(rank: Int, suit: Int) -> holdem_model.Card:
+    return holdem_model.Card(rank, suit)
 
-fn same_card(left: model.Card, right: model.Card) -> Bool:
+fn same_card(left: holdem_model.Card, right: holdem_model.Card) -> Bool:
     return left.rank == right.rank and left.suit == right.suit
 
-fn category(values: Array[model.Card]) -> Result[Int, String]:
+fn category(values: Array[holdem_model.Card]) -> Result[Int, String]:
     return Ok(evaluator.evaluate_five(values)?.category)
 
 fn focused_categories() -> Result[Bool, String]:
-    let high: Array[model.Card] = [card(1, 0), card(13, 1), card(9, 2), card(6, 3), card(3, 0)]
-    let pair: Array[model.Card] = [card(12, 0), card(12, 1), card(9, 2), card(6, 3), card(3, 0)]
-    let two_pair: Array[model.Card] = [card(12, 0), card(12, 1), card(9, 2), card(9, 3), card(3, 0)]
-    let trips: Array[model.Card] = [card(8, 0), card(8, 1), card(8, 2), card(6, 3), card(3, 0)]
-    let wheel: Array[model.Card] = [card(1, 0), card(2, 1), card(3, 2), card(4, 3), card(5, 0)]
-    let flush: Array[model.Card] = [card(1, 1), card(12, 1), card(9, 1), card(6, 1), card(3, 1)]
-    let house: Array[model.Card] = [card(8, 0), card(8, 1), card(8, 2), card(3, 3), card(3, 0)]
-    let quads: Array[model.Card] = [card(8, 0), card(8, 1), card(8, 2), card(8, 3), card(3, 0)]
-    let straight_flush: Array[model.Card] = [card(9, 2), card(10, 2), card(11, 2), card(12, 2), card(13, 2)]
+    let high: Array[holdem_model.Card] = [card(1, 0), card(13, 1), card(9, 2), card(6, 3), card(3, 0)]
+    let pair: Array[holdem_model.Card] = [card(12, 0), card(12, 1), card(9, 2), card(6, 3), card(3, 0)]
+    let two_pair: Array[holdem_model.Card] = [card(12, 0), card(12, 1), card(9, 2), card(9, 3), card(3, 0)]
+    let trips: Array[holdem_model.Card] = [card(8, 0), card(8, 1), card(8, 2), card(6, 3), card(3, 0)]
+    let wheel: Array[holdem_model.Card] = [card(1, 0), card(2, 1), card(3, 2), card(4, 3), card(5, 0)]
+    let flush: Array[holdem_model.Card] = [card(1, 1), card(12, 1), card(9, 1), card(6, 1), card(3, 1)]
+    let house: Array[holdem_model.Card] = [card(8, 0), card(8, 1), card(8, 2), card(3, 3), card(3, 0)]
+    let quads: Array[holdem_model.Card] = [card(8, 0), card(8, 1), card(8, 2), card(8, 3), card(3, 0)]
+    let straight_flush: Array[holdem_model.Card] = [card(9, 2), card(10, 2), card(11, 2), card(12, 2), card(13, 2)]
     return Ok(category(high)? == 0 and category(pair)? == 1 and category(two_pair)? == 2 and category(trips)? == 3 and category(wheel)? == 4 and evaluator.evaluate_five(wheel)?.values[0] == 5 and category(flush)? == 5 and category(house)? == 6 and category(quads)? == 7 and category(straight_flush)? == 8)
 
 fn exhaustive_counts() -> Result[Array[Int], String]:
-    let deck = cards.ordered()
+    let deck = holdem_cards.ordered()
     var counts: Array[Int] = [0, 0, 0, 0, 0, 0, 0, 0, 0]
     var a = 0
     while a < 48:
@@ -37,7 +37,7 @@ fn exhaustive_counts() -> Result[Array[Int], String]:
                 while d < 51:
                     var e = d + 1
                     while e < 52:
-                        let hand: Array[model.Card] = [deck[a], deck[b], deck[c], deck[d], deck[e]]
+                        let hand: Array[holdem_model.Card] = [deck[a], deck[b], deck[c], deck[d], deck[e]]
                         let value = evaluator.evaluate_five(hand)?
                         counts[value.category] = counts[value.category] + 1
                         e = e + 1
@@ -48,7 +48,7 @@ fn exhaustive_counts() -> Result[Array[Int], String]:
     return Ok(counts)
 
 fn run() -> Result[Int, String]:
-    let ordered = cards.ordered()
+    let ordered = holdem_cards.ordered()
     if collections.length(ordered) != 52:
         return Ok(1)
     var left = 0
@@ -59,9 +59,9 @@ fn run() -> Result[Int, String]:
                 return Ok(2)
             right = right + 1
         left = left + 1
-    let first = cards.shuffled(4242)
-    let second = cards.shuffled(4242)
-    let third = cards.shuffled(4243)
+    let first = holdem_cards.shuffled(4242)
+    let second = holdem_cards.shuffled(4242)
+    let third = holdem_cards.shuffled(4243)
     var difference = false
     var index = 0
     while index < 52:
@@ -72,11 +72,11 @@ fn run() -> Result[Int, String]:
         index = index + 1
     if not difference or not focused_categories()?:
         return Ok(4)
-    let seven: Array[model.Card] = [card(1, 0), card(1, 1), card(13, 0), card(13, 1), card(13, 2), card(2, 3), card(3, 0)]
+    let seven: Array[holdem_model.Card] = [card(1, 0), card(1, 1), card(13, 0), card(13, 1), card(13, 2), card(2, 3), card(3, 0)]
     if evaluator.evaluate(seven)?.category != 6:
         return Ok(5)
-    let tie_left: Array[model.Card] = [card(1, 0), card(13, 1), card(12, 2), card(11, 3), card(10, 0)]
-    let tie_right: Array[model.Card] = [card(1, 1), card(13, 2), card(12, 3), card(11, 0), card(10, 1)]
+    let tie_left: Array[holdem_model.Card] = [card(1, 0), card(13, 1), card(12, 2), card(11, 3), card(10, 0)]
+    let tie_right: Array[holdem_model.Card] = [card(1, 1), card(13, 2), card(12, 3), card(11, 0), card(10, 1)]
     if evaluator.compare(evaluator.evaluate_five(tie_left)?, evaluator.evaluate_five(tie_right)?) != 0:
         return Ok(6)
     let counts = exhaustive_counts()?

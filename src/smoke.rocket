@@ -1,22 +1,22 @@
-import src.blackjack.engine
+import src.blackjack.blackjack_engine
 
 pub fn run() -> Result[Int, String]:
-    var game = engine.new_game("Package test", 1000, 5, 20260808)?
-    game = engine.set_bet(game, 0, 20)?
-    game = engine.place_ai_bets(game)?
-    game = engine.start_round(game)?
+    var game = blackjack_engine.new_game("Package test", 1000, 5, 20260808)?
+    game = blackjack_engine.set_bet(game, 0, 20)?
+    game = blackjack_engine.place_ai_bets(game)?
+    game = blackjack_engine.start_round(game)?
     var guard = 0
-    while engine.phase_code(game.phase) != 3:
+    while blackjack_engine.phase_code(game.phase) != 3:
         if guard >= 500:
             return Err("Packaged smoke round exceeded the safety limit")
-        if engine.phase_code(game.phase) == 1:
-            if engine.active_player_is_human(game):
-                game = engine.apply_action(game, engine.choose_basic_action(game)?)?
+        if blackjack_engine.phase_code(game.phase) == 1:
+            if blackjack_engine.active_player_is_human(game):
+                game = blackjack_engine.apply_action(game, blackjack_engine.choose_basic_action(game)?)?
             else:
-                game = engine.ai_step(game)?
+                game = blackjack_engine.ai_step(game)?
         else:
-            if engine.phase_code(game.phase) == 2:
-                game = engine.dealer_step(game)?
+            if blackjack_engine.phase_code(game.phase) == 2:
+                game = blackjack_engine.dealer_step(game)?
         guard = guard + 1
     if game.players[0].balance < 0:
         return Err("Packaged smoke round produced a negative balance")

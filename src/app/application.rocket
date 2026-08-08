@@ -7,22 +7,22 @@ import src.app.plinko_view
 import src.app.registry
 import src.app.roulette_view
 import src.app.theme
-import src.blackjack.engine
-import src.blackjack.model
+import src.blackjack.blackjack_engine
+import src.blackjack.blackjack_model
 import src.chicken.chicken_api
 import src.crossing.crossing_api
 import src.holdem.holdem_api
 import src.persistence
 import src.plinko.plinko_api
-import src.roulette.api
+import src.roulette.roulette_api
 import src.rocket_raylib
 import std.collections
 import std.string
 
 pub struct State:
     screen: Int
-    game: model.Game
-    roulette: api.Session
+    game: blackjack_model.Game
+    roulette: roulette_api.Session
     selected_bet: Int
     settings: persistence.Settings
     save_path: String
@@ -49,12 +49,12 @@ pub struct State:
     holdem_help: Bool
     holdem_target: Int
 
-fn rebuild(state: State, screen: Int, game: model.Game, selected_bet: Int, settings: persistence.Settings, notice: String, error: String, exit_prompt: Bool, running: Bool, next_step: Float, saved_round: Int) -> State:
+fn rebuild(state: State, screen: Int, game: blackjack_model.Game, selected_bet: Int, settings: persistence.Settings, notice: String, error: String, exit_prompt: Bool, running: Bool, next_step: Float, saved_round: Int) -> State:
     return State(screen, game, state.roulette, selected_bet, settings, state.save_path, notice, error, exit_prompt, running, next_step, saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target)
 
-fn new_table(settings: persistence.Settings, seed: Int) -> Result[model.Game, String]:
-    let game = engine.new_game("Player", settings.play_balance, settings.ai_count, seed)?
-    return engine.set_bet(game, 0, game.rules.minimum_bet)
+fn new_table(settings: persistence.Settings, seed: Int) -> Result[blackjack_model.Game, String]:
+    let game = blackjack_engine.new_game("Player", settings.play_balance, settings.ai_count, seed)?
+    return blackjack_engine.set_bet(game, 0, game.rules.minimum_bet)
 
 fn holdem_ai_count(settings: persistence.Settings) -> Int:
     if settings.ai_count < 1:
@@ -63,7 +63,7 @@ fn holdem_ai_count(settings: persistence.Settings) -> Int:
 
 fn initial(settings: persistence.Settings, save_path: String, notice: String) -> Result[State, String]:
     let game = new_table(settings, 20260808)?
-    let roulette = api.new_session(settings.play_balance, 20260809)?
+    let roulette = roulette_api.new_session(settings.play_balance, 20260809)?
     let plinko = plinko_api.new_session(settings.play_balance, 20260810)?
     let chicken = chicken_api.new_session(settings.play_balance, 20260811)?
     let crossing = crossing_api.new_session(settings.play_balance, 20260812)?
@@ -77,10 +77,10 @@ fn save_settings(state: State, settings: persistence.Settings) -> State:
         case Err(error):
             return rebuild(state, state.screen, state.game, state.selected_bet, settings, state.notice, error, state.exit_prompt, state.running, state.next_step, state.saved_round)
 
-fn with_game(state: State, game: model.Game, next_step: Float) -> State:
+fn with_game(state: State, game: blackjack_model.Game, next_step: Float) -> State:
     return rebuild(state, state.screen, game, state.selected_bet, state.settings, state.notice, "", state.exit_prompt, state.running, next_step, state.saved_round)
 
-fn with_roulette(state: State, session: api.Session, spin_end: Float) -> State:
+fn with_roulette(state: State, session: roulette_api.Session, spin_end: Float) -> State:
     return State(state.screen, state.game, session, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target)
 
 fn roulette_focus(state: State, kind: Int, target: Int) -> State:
@@ -124,7 +124,7 @@ fn enter_game(state: State, seed: Int) -> State:
             return with_error(state, error)
 
 fn enter_roulette(state: State, seed: Int) -> State:
-    match api.new_session(state.settings.play_balance, seed):
+    match roulette_api.new_session(state.settings.play_balance, seed):
         case Ok(session):
             let entered = rebuild(state, 4, state.game, state.selected_bet, state.settings, "European Roulette table ready", "", false, true, state.next_step, state.saved_round)
             return with_roulette(roulette_focus(entered, 0, 0), session, 0.0)
@@ -188,16 +188,16 @@ fn change_bet(state: State, delta: Int) -> State:
         amount = state.game.rules.maximum_bet
     if amount > available:
         amount = available / state.game.rules.bet_unit * state.game.rules.bet_unit
-    match engine.set_bet(state.game, 0, amount):
+    match blackjack_engine.set_bet(state.game, 0, amount):
         case Ok(game):
             return rebuild(state, state.screen, game, amount, state.settings, "Bet changed", "", state.exit_prompt, state.running, state.next_step, state.saved_round)
         case Err(error):
             return with_error(state, error)
 
 fn deal(state: State, now: Float) -> State:
-    match engine.place_ai_bets(state.game):
+    match blackjack_engine.place_ai_bets(state.game):
         case Ok(with_ai_bets):
-            match engine.start_round(with_ai_bets):
+            match blackjack_engine.start_round(with_ai_bets):
                 case Ok(game):
                     return with_game(state, game, now + theme.turn_delay_seconds())
                 case Err(error):
@@ -206,11 +206,11 @@ fn deal(state: State, now: Float) -> State:
             return with_error(state, error)
 
 fn apply_action_code(state: State, code: Int, now: Float) -> State:
-    let actions = engine.available_actions(state.game)
+    let actions = blackjack_engine.available_actions(state.game)
     var index = 0
     while index < actions.length():
-        if engine.action_code(actions[index]) == code:
-            match engine.apply_action(state.game, actions[index]):
+        if blackjack_engine.action_code(actions[index]) == code:
+            match blackjack_engine.apply_action(state.game, actions[index]):
                 case Ok(game):
                     return with_game(state, game, now + theme.turn_delay_seconds())
                 case Err(error):
@@ -219,9 +219,9 @@ fn apply_action_code(state: State, code: Int, now: Float) -> State:
     return with_error(state, "That action is not legal for the active hand")
 
 fn next_round(state: State) -> State:
-    match engine.begin_next_round(state.game):
+    match blackjack_engine.begin_next_round(state.game):
         case Ok(game):
-            match engine.set_bet(game, 0, game.rules.minimum_bet):
+            match blackjack_engine.set_bet(game, 0, game.rules.minimum_bet):
                 case Ok(with_bet):
                     return rebuild(state, 2, with_bet, with_bet.rules.minimum_bet, state.settings, "New round ready", "", false, true, 0.0, state.saved_round)
                 case Err(error):
@@ -313,7 +313,7 @@ fn update_settings(state: State, window: rocket_raylib.Window, clicked: Bool, mo
     return state
 
 fn update_game(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int, now: Float) -> State:
-    let phase = engine.phase_code(state.game.phase)
+    let phase = blackjack_engine.phase_code(state.game.phase)
     let height = rocket_raylib.window_height(window)
     if phase == 0:
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(blackjack_view.bet_minus_rect(height), mouse_x, mouse_y):
@@ -324,7 +324,7 @@ fn update_game(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_
             return deal(state, now)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()):
             return return_to_lobby(state)
-    if phase == 1 and engine.active_player_is_human(state.game):
+    if phase == 1 and blackjack_engine.active_player_is_human(state.game):
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()):
             return apply_action_code(state, 0, now)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()):
@@ -341,14 +341,14 @@ fn update_game(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_
                 if components.contains(blackjack_view.action_rect(code, height), mouse_x, mouse_y):
                     return apply_action_code(state, code, now)
                 code = code + 1
-    if phase == 1 and not engine.active_player_is_human(state.game) and now >= state.next_step:
-        match engine.ai_step(state.game):
+    if phase == 1 and not blackjack_engine.active_player_is_human(state.game) and now >= state.next_step:
+        match blackjack_engine.ai_step(state.game):
             case Ok(game):
                 return with_game(state, game, now + theme.turn_delay_seconds())
             case Err(error):
                 return with_error(state, error)
     if phase == 2 and now >= state.next_step:
-        match engine.dealer_step(state.game):
+        match blackjack_engine.dealer_step(state.game):
             case Ok(game):
                 return with_game(state, game, now + theme.turn_delay_seconds())
             case Err(error):
@@ -382,7 +382,7 @@ fn roulette_chip(current: Int, direction: Int) -> Int:
     return 10
 
 fn roulette_select_chip(state: State, amount: Int) -> State:
-    match api.with_selected_chip(state.roulette, amount):
+    match roulette_api.with_selected_chip(state.roulette, amount):
         case Ok(session):
             return with_roulette(state, session, state.roulette_spin_end)
         case Err(error):
@@ -409,7 +409,7 @@ fn roulette_change_focus(state: State, kind_delta: Int, target_delta: Int) -> St
 fn roulette_place_focus(state: State) -> State:
     match roulette_view.focus_bet(state.roulette_kind, state.roulette_target, state.roulette.game.selected_chip):
         case Ok(bet):
-            match api.with_bet(state.roulette, bet):
+            match roulette_api.with_bet(state.roulette, bet):
                 case Ok(session):
                     return with_roulette(state, session, state.roulette_spin_end)
                 case Err(error):
@@ -420,7 +420,7 @@ fn roulette_place_focus(state: State) -> State:
 fn roulette_place_mouse(state: State, mouse_x: Int, mouse_y: Int, width: Int) -> State:
     match roulette_view.mouse_bet(mouse_x, mouse_y, width, state.roulette.game.selected_chip):
         case Ok(bet):
-            match api.with_bet(state.roulette, bet):
+            match roulette_api.with_bet(state.roulette, bet):
                 case Ok(session):
                     return with_roulette(state, session, state.roulette_spin_end)
                 case Err(error):
@@ -429,7 +429,7 @@ fn roulette_place_mouse(state: State, mouse_x: Int, mouse_y: Int, width: Int) ->
             return state
 
 fn roulette_return_to_lobby(state: State) -> State:
-    if api.phase_code(state.roulette.game) == 1 or api.phase_code(state.roulette.game) == 0 and collections.length(state.roulette.game.bets) > 0:
+    if roulette_api.phase_code(state.roulette.game) == 1 or roulette_api.phase_code(state.roulette.game) == 0 and collections.length(state.roulette.game.bets) > 0:
         return with_error(state, "Settle the spin or clear live Roulette bets before leaving")
     let settings = persistence.with_balance(state.settings, state.roulette.game.balance)
     return save_settings(rebuild(state, 1, state.game, state.selected_bet, settings, "Roulette progress saved; welcome back", "", false, true, state.next_step, state.saved_round), settings)
@@ -441,7 +441,7 @@ fn update_roulette(state: State, window: rocket_raylib.Window, clicked: Bool, mo
         return roulette_help(state, not state.roulette_help)
     if state.roulette_help:
         return state
-    let phase = api.phase_code(state.roulette.game)
+    let phase = roulette_api.phase_code(state.roulette.game)
     if phase == 0:
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_tab()):
             return roulette_change_focus(state, 1, 0)
@@ -456,25 +456,25 @@ fn update_roulette(state: State, window: rocket_raylib.Window, clicked: Bool, mo
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()):
             return roulette_place_focus(state)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()) or clicked and components.contains(roulette_view.undo_rect(height), mouse_x, mouse_y):
-            match api.with_undo(state.roulette):
+            match roulette_api.with_undo(state.roulette):
                 case Ok(session):
                     return with_roulette(state, session, state.roulette_spin_end)
                 case Err(error):
                     return with_error(state, error)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_d()) or clicked and components.contains(roulette_view.clear_rect(height), mouse_x, mouse_y):
-            match api.with_clear(state.roulette):
+            match roulette_api.with_clear(state.roulette):
                 case Ok(session):
                     return with_roulette(state, session, state.roulette_spin_end)
                 case Err(error):
                     return with_error(state, error)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(roulette_view.repeat_rect(height), mouse_x, mouse_y):
-            match api.with_repeat(state.roulette):
+            match roulette_api.with_repeat(state.roulette):
                 case Ok(session):
                     return with_roulette(state, session, state.roulette_spin_end)
                 case Err(error):
                     return with_error(state, error)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(roulette_view.spin_rect(height), mouse_x, mouse_y):
-            match api.with_spin(state.roulette):
+            match roulette_api.with_spin(state.roulette):
                 case Ok(session):
                     return with_roulette(state, session, now + 2.0)
                 case Err(error):
@@ -490,7 +490,7 @@ fn update_roulette(state: State, window: rocket_raylib.Window, clicked: Bool, mo
             if roulette_view.is_bet_target(mouse_x, mouse_y, width):
                 return roulette_place_mouse(state, mouse_x, mouse_y, width)
     if phase == 1 and now >= state.roulette_spin_end:
-        match api.with_settlement(state.roulette):
+        match roulette_api.with_settlement(state.roulette):
             case Ok(session):
                 let settings = persistence.with_balance(state.settings, session.game.balance)
                 return save_settings(with_roulette(rebuild(state, state.screen, state.game, state.selected_bet, settings, "Roulette spin saved", "", false, true, state.next_step, state.saved_round), session, state.roulette_spin_end), settings)
@@ -498,13 +498,13 @@ fn update_roulette(state: State, window: rocket_raylib.Window, clicked: Bool, mo
                 return with_error(state, error)
     if phase == 2:
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(roulette_view.next_rect(height), mouse_x, mouse_y):
-            match api.with_next_round(state.roulette):
+            match roulette_api.with_next_round(state.roulette):
                 case Ok(session):
                     return with_roulette(state, session, 0.0)
                 case Err(error):
                     return with_error(state, error)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(roulette_view.rebet_rect(height), mouse_x, mouse_y):
-            match api.with_rebet(state.roulette):
+            match roulette_api.with_rebet(state.roulette):
                 case Ok(session):
                     return with_roulette(state, session, 0.0)
                 case Err(error):

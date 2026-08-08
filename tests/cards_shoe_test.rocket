@@ -1,34 +1,34 @@
-import src.blackjack.cards
-import src.blackjack.model
-import src.blackjack.rules
+import src.blackjack.blackjack_cards
+import src.blackjack.blackjack_model
+import src.blackjack.blackjack_rules
 import src.blackjack.shoe
 import std.collections
 
-fn same(left: model.Card, right: model.Card) -> Bool:
+fn same(left: blackjack_model.Card, right: blackjack_model.Card) -> Bool:
     return left.rank == right.rank and left.suit == right.suit
 
 fn run() -> Result[Int, String]:
-    match cards.create(0, 0):
+    match blackjack_cards.create(0, 0):
         case Ok(value):
             return Ok(1)
         case Err(error):
             let expected = true
-    match cards.create(14, 0):
+    match blackjack_cards.create(14, 0):
         case Ok(value):
             return Ok(2)
         case Err(error):
             let expected = true
-    match cards.create(1, -1):
+    match blackjack_cards.create(1, -1):
         case Ok(value):
             return Ok(3)
         case Err(error):
             let expected = true
-    match cards.create(1, 4):
+    match blackjack_cards.create(1, 4):
         case Ok(value):
             return Ok(4)
         case Err(error):
             let expected = true
-    let valid = cards.create(13, 3)?
+    let valid = blackjack_cards.create(13, 3)?
     if valid.rank != 13 or valid.suit != 3:
         return Ok(5)
     let deck = shoe.ordered(1)
@@ -66,9 +66,9 @@ fn run() -> Result[Int, String]:
         index = index + 1
     if not difference_found:
         return Ok(11)
-    var one: Array[model.Card] = []
+    var one: Array[blackjack_model.Card] = []
     one = collections.append(one, valid)
-    let one_shoe = model.Shoe(one, 0, 1)
+    let one_shoe = blackjack_model.Shoe(one, 0, 1)
     let drawn = shoe.draw(one_shoe)?
     if not same(drawn.card, valid):
         return Ok(12)
@@ -77,11 +77,11 @@ fn run() -> Result[Int, String]:
             return Ok(13)
         case Err(error):
             let expected = true
-    let table = rules.standard()
+    let table = blackjack_rules.standard()
     let full = shoe.create(table, 77)
     if shoe.should_shuffle(full, 20):
         return Ok(14)
-    let cut = model.Shoe(full.cards, full.cut_index, full.cut_index)
+    let cut = blackjack_model.Shoe(full.cards, full.cut_index, full.cut_index)
     if not shoe.should_shuffle(cut, 20):
         return Ok(15)
     let prepared = shoe.prepared(cut, table, 77, 2, 4)

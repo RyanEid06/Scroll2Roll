@@ -54,7 +54,7 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
 - The untouched original failing draft is preserved under `legacy/Blackjack-v1`.
 - A modular rendering-independent Blackjack engine implements checked cards, exact hand values, a deterministic six-deck shoe, cut-card reshuffling, table limits, player/AI betting, legal actions, Hit, Stand, Double Down, Split, Double After Split, a four-hand maximum, split-Ace one-card behavior, no standard resplit, Late Surrender, dealer stand on soft 17, naturals, exact 3:2 settlement, and deterministic AI/basic-strategy progression.
 - Complete and consecutive rounds have bounded transitions and nonnegative play-money balances.
-- A small `src/blackjack/api.rocket` facade is the only rules boundary used by the visual table.
+- A small `src/blackjack/blackjack_api.rocket` facade is the only rules boundary used by the visual table.
 - The raylib application implements startup, reusable lobby routing, settings, exit confirmation, keyboard/mouse controls, playable Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, and No-Limit Hold'em tables, zero-to-five AI settings, disabled illegal actions, outcomes, next round/hand, restart/reset, and lobby return.
 - Versioned local persistence stores display/audio preferences, AI count, first-run state, and approved play-money progress at `%LOCALAPPDATA%\Scroll2Roll\settings.s2r`, with safe missing/invalid/older-data recovery.
 - The static website and Cloudflare Pages staging flow are implemented without claiming browser play.
@@ -164,14 +164,23 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
   hover, definition, semantic tokens, and live diagnostics without protocol
   stderr; the earlier full interactive Stop/Error List/navigation/source-debug
   baseline remains the durable interaction proof.
-- `Scroll2Roll-0.2.0-windows-x64.zip` is 1,688,614 bytes with SHA-256
-  `1F90A9EB0814A7C138A48B85F96B1D29AA19069738452EC73BC8567B682E565C`.
+- `Scroll2Roll-0.2.0-windows-x64.zip` is 1,689,013 bytes with SHA-256
+  `0106CDE2DD01A784BBE087D3061A4A3E42CECD6F303466F6B1628FFB66AE9071`.
   Its internal checksums, forbidden-content scan, and relocated headless smoke
   all pass.
 - The three-file source site and four-file staged site pass validation with the
   release archive. The staged tree remains below Cloudflare Pages Free's
   officially rechecked 20,000-file and 25-MiB-per-asset limits. Nothing was
   pushed, published, deployed, released, or signed.
+- Visual Studio tool discovery is repaired persistently through the Windows user
+  `ROCKET_COMPILER` and `ROCKET_LANGUAGE_SERVER` values; those local paths remain
+  outside Git. Twenty-two colliding per-game modules were renamed with
+  game-prefixed basenames, leaving 48 unique `src` basenames. An unoptimized
+  build produced a 40-source map with zero basename collisions. Visual Studio
+  Debug then loaded the pinned LSP, attached to and launched Scroll2Roll without
+  either reported dialog, and Stop Rocket returned the IDE to design mode with
+  no game process left. Debug and Release still pass all 26 tests and formatting
+  checks. `scripts/validate.ps1` now prevents basename regressions.
 
 ## Deliberate limitations
 
@@ -245,6 +254,8 @@ Spacing, typography, component states, borders, timing, and responsive layout va
   unsupported data.
 - Maintain one local play-credit balance across games, transferring it only at
   engine-defined safe settlement/cash-out/hand boundaries.
+- Keep every compiled Rocket source basename unique so frozen CodeView records
+  remain unambiguous without changing Rocket 2.0 or its Visual Studio extension.
 
 ## Files that must remain out of Git
 

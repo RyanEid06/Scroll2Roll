@@ -1,13 +1,13 @@
-import src.holdem.cards
+import src.holdem.holdem_cards
 import src.holdem.evaluator
-import src.holdem.model
-import src.holdem.rules
+import src.holdem.holdem_model
+import src.holdem.holdem_rules
 import std.collections
 
 fn remainder(value: Int, divisor: Int) -> Int:
     return value - value / divisor * divisor
 
-fn combined(game: model.Game, seat: Int) -> Array[model.Card]:
+fn combined(game: holdem_model.Game, seat: Int) -> Array[holdem_model.Card]:
     var result = game.players[seat].hole
     var index = 0
     while index < collections.length(game.community):
@@ -15,11 +15,11 @@ fn combined(game: model.Game, seat: Int) -> Array[model.Card]:
         index = index + 1
     return result
 
-pub fn preflop_score(hole: Array[model.Card]) -> Int:
+pub fn preflop_score(hole: Array[holdem_model.Card]) -> Int:
     if collections.length(hole) != 2:
         return 0
-    var high = cards.rank_value(hole[0])
-    var low = cards.rank_value(hole[1])
+    var high = holdem_cards.rank_value(hole[0])
+    var low = holdem_cards.rank_value(hole[1])
     if low > high:
         let temporary = high
         high = low
@@ -36,41 +36,41 @@ pub fn preflop_score(hole: Array[model.Card]) -> Int:
         score = score - 3
     return score
 
-fn made_category(game: model.Game, seat: Int) -> Result[Int, String]:
+fn made_category(game: holdem_model.Game, seat: Int) -> Result[Int, String]:
     if collections.length(game.community) < 3:
         return Ok(0)
     return Ok(evaluator.evaluate(combined(game, seat))?.category)
 
-fn bounded_raise_target(game: model.Game, seat: Int, variation: Int) -> Int:
-    var target = rules.minimum_raise_target(game) + variation * game.big_blind
-    let maximum = rules.maximum_target(game, seat)
+fn bounded_raise_target(game: holdem_model.Game, seat: Int, variation: Int) -> Int:
+    var target = holdem_rules.minimum_raise_target(game) + variation * game.big_blind
+    let maximum = holdem_rules.maximum_target(game, seat)
     if target > maximum:
         target = maximum
     return target
 
-pub fn decide(game: model.Game, seat: Int) -> Result[model.Decision, String]:
+pub fn decide(game: holdem_model.Game, seat: Int) -> Result[holdem_model.Decision, String]:
     if game.active != seat or seat < 0 or seat >= collections.length(game.players):
         return Err("AI decision requires its active Hold'em seat")
     if game.players[seat].is_human:
         return Err("AI cannot decide for the human seat")
-    let variation = remainder(game.seed + game.hand_number * 97 + seat * 31 + rules.street_code(game.street) * 17 + collections.length(game.action_history), 3)
+    let variation = remainder(game.seed + game.hand_number * 97 + seat * 31 + holdem_rules.street_code(game.street) * 17 + collections.length(game.action_history), 3)
     let preflop = preflop_score(game.players[seat].hole)
     let category = made_category(game, seat)?
     let strong = preflop >= 25 or category >= 2
     let medium = preflop >= 17 or category >= 1
-    let call = rules.call_amount(game, seat)
+    let call = holdem_rules.call_amount(game, seat)
     let target = bounded_raise_target(game, seat, variation)
     if call == 0:
-        if strong and rules.can_raise_to(game, seat, target) and variation > 0:
-            return Ok(model.Decision(3, target))
-        return Ok(model.Decision(1, 0))
+        if strong and holdem_rules.can_raise_to(game, seat, target) and variation > 0:
+            return Ok(holdem_model.Decision(3, target))
+        return Ok(holdem_model.Decision(1, 0))
     if strong:
-        if variation == 2 and rules.can_raise_to(game, seat, target):
-            return Ok(model.Decision(3, target))
-        return Ok(model.Decision(2, 0))
+        if variation == 2 and holdem_rules.can_raise_to(game, seat, target):
+            return Ok(holdem_model.Decision(3, target))
+        return Ok(holdem_model.Decision(2, 0))
     let stack_limit = game.players[seat].stack / 5
     if medium and(call <= game.big_blind * 4 or call <= stack_limit):
-        return Ok(model.Decision(2, 0))
+        return Ok(holdem_model.Decision(2, 0))
     if call <= game.big_blind and variation == 0:
-        return Ok(model.Decision(2, 0))
-    return Ok(model.Decision(0, 0))
+        return Ok(holdem_model.Decision(2, 0))
+    return Ok(holdem_model.Decision(0, 0))

@@ -1,8 +1,8 @@
 import src.app.components
 import src.app.theme
-import src.plinko.engine
-import src.plinko.model
-import src.plinko.rules
+import src.plinko.plinko_engine
+import src.plinko.plinko_model
+import src.plinko.plinko_rules
 import src.rocket_raylib
 import std.collections
 import std.string
@@ -62,7 +62,7 @@ fn row_gap(rows: Int, height: Int) -> Int:
 fn board_top() -> Int:
     return 94
 
-fn draw_board(frame: rocket_raylib.Frame, game: model.Game, width: Int, height: Int, stage: Int) -> Result[Bool, String]:
+fn draw_board(frame: rocket_raylib.Frame, game: plinko_model.Game, width: Int, height: Int, stage: Int) -> Result[Bool, String]:
     let center = board_center(width)
     let horizontal = peg_gap(game.rows, width)
     let vertical = row_gap(game.rows, height)
@@ -75,7 +75,7 @@ fn draw_board(frame: rocket_raylib.Frame, game: model.Game, width: Int, height: 
             rocket_raylib.draw_circle(frame, x, y, 4.0, theme.border())?
             peg = peg + 1
         row = row + 1
-    let multipliers = rules.multipliers(game.rows, game.risk)?
+    let multipliers = plinko_rules.multipliers(game.rows, game.risk)?
     let bucket_y = board_top() + game.rows * vertical + 12
     var bucket = 0
     while bucket <= game.rows:
@@ -87,7 +87,7 @@ fn draw_board(frame: rocket_raylib.Frame, game: model.Game, width: Int, height: 
         let label = string.concat(string.from_int(multipliers[bucket] / 100), "%")
         rocket_raylib.draw_text(frame, label, x - horizontal / 2 + 4, bucket_y + 10, 10, theme.text())?
         bucket = bucket + 1
-    if engine.phase_code(game.phase) == 1:
+    if plinko_engine.phase_code(game.phase) == 1:
         var ball = 0
         while ball < collections.length(game.pending):
             var ball_stage = stage - ball * 2
@@ -120,7 +120,7 @@ fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result
         index = index + 1
     return Ok(true)
 
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: model.Game, stage: Int, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: plinko_model.Game, stage: Int, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     rocket_raylib.draw_text(frame, "PLINKO", 32, 28, theme.heading_size(), theme.gold())?
@@ -131,20 +131,20 @@ pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: mode
     draw_board(frame, game, width, height, stage)?
     components.panel(frame, components.rect(width - 350, 110, 272, 330))?
     rocket_raylib.draw_text(frame, string.concat("Rows: ", string.from_int(game.rows)), width - 270, 140, theme.body_size(), theme.text())?
-    components.button(window, frame, rows_minus_rect(width), "-", engine.phase_code(game.phase) == 0, components.contains(rows_minus_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, rows_plus_rect(width), "+", engine.phase_code(game.phase) == 0, components.contains(rows_plus_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, risk_rect(width), string.concat("Risk: ", rules.risk_name(game.risk)), engine.phase_code(game.phase) == 0, components.contains(risk_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, rows_minus_rect(width), "-", plinko_engine.phase_code(game.phase) == 0, components.contains(rows_minus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, rows_plus_rect(width), "+", plinko_engine.phase_code(game.phase) == 0, components.contains(rows_plus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, risk_rect(width), string.concat("Risk: ", plinko_rules.risk_name(game.risk)), plinko_engine.phase_code(game.phase) == 0, components.contains(risk_rect(width), mouse_x, mouse_y), false)?
     rocket_raylib.draw_text(frame, string.concat("Bet: ", string.from_int(game.bet)), width - 270, 250, theme.body_size(), theme.text())?
-    components.button(window, frame, bet_minus_rect(width), "-", engine.phase_code(game.phase) == 0, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, bet_plus_rect(width), "+", engine.phase_code(game.phase) == 0, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, bet_minus_rect(width), "-", plinko_engine.phase_code(game.phase) == 0, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, bet_plus_rect(width), "+", plinko_engine.phase_code(game.phase) == 0, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
     rocket_raylib.draw_text(frame, string.concat("Balls: ", string.from_int(game.batch_count)), width - 270, 304, theme.body_size(), theme.text())?
-    components.button(window, frame, batch_minus_rect(width), "-", engine.phase_code(game.phase) == 0, components.contains(batch_minus_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, batch_plus_rect(width), "+", engine.phase_code(game.phase) == 0, components.contains(batch_plus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, batch_minus_rect(width), "-", plinko_engine.phase_code(game.phase) == 0, components.contains(batch_minus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, batch_plus_rect(width), "+", plinko_engine.phase_code(game.phase) == 0, components.contains(batch_plus_rect(width), mouse_x, mouse_y), false)?
     let wager = game.bet * game.batch_count
-    components.button(window, frame, drop_rect(width), string.concat("Drop ", string.from_int(wager)), engine.phase_code(game.phase) == 0 and wager <= game.balance, components.contains(drop_rect(width), mouse_x, mouse_y), true)?
-    let expected = rules.expected_return_basis_points(game.rows, game.risk)?
+    components.button(window, frame, drop_rect(width), string.concat("Drop ", string.from_int(wager)), plinko_engine.phase_code(game.phase) == 0 and wager <= game.balance, components.contains(drop_rect(width), mouse_x, mouse_y), true)?
+    let expected = plinko_rules.expected_return_basis_points(game.rows, game.risk)?
     rocket_raylib.draw_text(frame, string.concat("Audited return: ", string.concat(string.from_int(expected / 100), string.concat(".", string.from_int(expected - expected / 100 * 100)))), width - 330, 414, theme.small_size(), theme.muted())?
-    let phase = engine.phase_code(game.phase)
+    let phase = plinko_engine.phase_code(game.phase)
     if phase == 1:
         rocket_raylib.draw_text(frame, "Animation follows precomputed engine paths", 32, height - 56, theme.body_size(), theme.gold())?
     if phase == 2:

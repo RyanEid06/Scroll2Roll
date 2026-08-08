@@ -1,4 +1,4 @@
-import src.crossing.model
+import src.crossing.crossing_model
 
 pub fn world_width() -> Int:
     return 900
@@ -35,13 +35,13 @@ pub fn lane_kind(lane: Int) -> Int:
         return 4
     return 0
 
-pub fn hazard_code(kind: model.HazardKind) -> Int:
+pub fn hazard_code(kind: crossing_model.HazardKind) -> Int:
     match kind:
-        case model.Car:
+        case crossing_model.Car:
             return 0
-        case model.Tram:
+        case crossing_model.Tram:
             return 1
-        case model.Log:
+        case crossing_model.Log:
             return 2
 
 pub fn multiplier_for(checkpoints: Int) -> Int:
@@ -60,7 +60,7 @@ pub fn overlaps(player_x: Int, hazard_position: Int, hazard_length: Int) -> Bool
     let player_right = player_x + player_width() / 2
     return player_right > hazard_position and player_left < hazard_position + hazard_length
 
-pub fn valid_hazard(hazard: model.Hazard) -> Bool:
+pub fn valid_hazard(hazard: crossing_model.Hazard) -> Bool:
     if hazard.lane < 1 or hazard.lane >= lane_count() - 1:
         return false
     if hazard.length < 40 or hazard.length > world_width():

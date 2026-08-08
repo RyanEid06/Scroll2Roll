@@ -1,85 +1,85 @@
-import src.blackjack.cards
-import src.blackjack.engine
-import src.blackjack.model
-import src.blackjack.rules
+import src.blackjack.blackjack_cards
+import src.blackjack.blackjack_engine
+import src.blackjack.blackjack_model
+import src.blackjack.blackjack_rules
 import std.collections
 
-fn has_action(game: model.Game, code: Int) -> Bool:
-    let actions = engine.available_actions(game)
+fn has_action(game: blackjack_model.Game, code: Int) -> Bool:
+    let actions = blackjack_engine.available_actions(game)
     var index = 0
     while index < collections.length(actions):
-        if engine.action_code(actions[index]) == code:
+        if blackjack_engine.action_code(actions[index]) == code:
             return true
         index = index + 1
     return false
 
-fn game_with_hands(hands: Array[model.Hand], draw_cards: Array[model.Card], table: model.Rules, balance: Int) -> Result[model.Game, String]:
-    let players = [model.Player(0, "Tester", true, balance, 0, hands, 0)]
-    let dealer = cards.make_hand([cards.create(10, 0)?, cards.create(7, 1)?], 0, false)
-    let results: Array[model.HandResult] = []
-    return Ok(model.Game(table, model.Shoe(draw_cards, 0, collections.length(draw_cards)), dealer, players, model.PlayerTurns(), 0, 1, 99, "Test turn", results))
+fn game_with_hands(hands: Array[blackjack_model.Hand], draw_cards: Array[blackjack_model.Card], table: blackjack_model.Rules, balance: Int) -> Result[blackjack_model.Game, String]:
+    let players = [blackjack_model.Player(0, "Tester", true, balance, 0, hands, 0)]
+    let dealer = blackjack_cards.make_hand([blackjack_cards.create(10, 0)?, blackjack_cards.create(7, 1)?], 0, false)
+    let results: Array[blackjack_model.HandResult] = []
+    return Ok(blackjack_model.Game(table, blackjack_model.Shoe(draw_cards, 0, collections.length(draw_cards)), dealer, players, blackjack_model.PlayerTurns(), 0, 1, 99, "Test turn", results))
 
-fn one_hand(first: Int, second: Int, bet: Int, from_split: Bool, action_count: Int) -> Result[model.Hand, String]:
-    let base = cards.make_hand([cards.create(first, 0)?, cards.create(second, 1)?], bet, from_split)
-    return Ok(model.Hand(base.cards, bet, false, false, false, from_split, false, action_count, false))
+fn one_hand(first: Int, second: Int, bet: Int, from_split: Bool, action_count: Int) -> Result[blackjack_model.Hand, String]:
+    let base = blackjack_cards.make_hand([blackjack_cards.create(first, 0)?, blackjack_cards.create(second, 1)?], bet, from_split)
+    return Ok(blackjack_model.Hand(base.cards, bet, false, false, false, from_split, false, action_count, false))
 
 fn run() -> Result[Int, String]:
-    let initial = engine.new_game("Tester", 100, 0, 7)?
-    match engine.set_bet(initial, 0, 8):
+    let initial = blackjack_engine.new_game("Tester", 100, 0, 7)?
+    match blackjack_engine.set_bet(initial, 0, 8):
         case Ok(value):
             return Ok(1)
         case Err(error):
             let expected = true
-    match engine.set_bet(initial, 0, 1002):
+    match blackjack_engine.set_bet(initial, 0, 1002):
         case Ok(value):
             return Ok(2)
         case Err(error):
             let expected = true
-    match engine.set_bet(initial, 0, 11):
+    match blackjack_engine.set_bet(initial, 0, 11):
         case Ok(value):
             return Ok(3)
         case Err(error):
             let expected = true
-    match engine.set_bet(initial, 0, 102):
+    match blackjack_engine.set_bet(initial, 0, 102):
         case Ok(value):
             return Ok(4)
         case Err(error):
             let expected = true
-    let first_bet = engine.set_bet(initial, 0, 20)?
+    let first_bet = blackjack_engine.set_bet(initial, 0, 20)?
     if first_bet.players[0].balance != 80 or first_bet.players[0].pending_bet != 20:
         return Ok(5)
-    let changed = engine.set_bet(first_bet, 0, 40)?
+    let changed = blackjack_engine.set_bet(first_bet, 0, 40)?
     if changed.players[0].balance != 60 or changed.players[0].pending_bet != 40:
         return Ok(6)
-    let cleared = engine.set_bet(changed, 0, 0)?
+    let cleared = blackjack_engine.set_bet(changed, 0, 0)?
     if cleared.players[0].balance != 100 or cleared.players[0].pending_bet != 0:
         return Ok(7)
-    let table = rules.standard()
-    let draw = [cards.create(10, 2)?, cards.create(3, 2)?, cards.create(4, 3)?]
+    let table = blackjack_rules.standard()
+    let draw = [blackjack_cards.create(10, 2)?, blackjack_cards.create(3, 2)?, blackjack_cards.create(4, 3)?]
     let base_hands = [one_hand(10, 6, 20, false, 0)?]
     let hit_game = game_with_hands(base_hands, draw, table, 100)?
-    let hit = engine.apply_action(hit_game, model.Hit())?
+    let hit = blackjack_engine.apply_action(hit_game, blackjack_model.Hit())?
     if collections.length(hit.players[0].hands[0].cards) != 3 or not hit.players[0].hands[0].finished:
         return Ok(8)
-    let stand = engine.apply_action(hit_game, model.Stand())?
-    if not stand.players[0].hands[0].stood or engine.phase_code(stand.phase) != 2:
+    let stand = blackjack_engine.apply_action(hit_game, blackjack_model.Stand())?
+    if not stand.players[0].hands[0].stood or blackjack_engine.phase_code(stand.phase) != 2:
         return Ok(9)
     let double_hands = [one_hand(5, 6, 20, false, 0)?]
-    let doubled = engine.apply_action(game_with_hands(double_hands, draw, table, 100)?, model.Double())?
+    let doubled = blackjack_engine.apply_action(game_with_hands(double_hands, draw, table, 100)?, blackjack_model.Double())?
     if doubled.players[0].hands[0].bet != 40 or doubled.players[0].balance != 80 or not doubled.players[0].hands[0].doubled:
         return Ok(10)
     let pair_hands = [one_hand(8, 8, 20, false, 0)?]
-    let split = engine.apply_action(game_with_hands(pair_hands, draw, table, 100)?, model.Split())?
+    let split = blackjack_engine.apply_action(game_with_hands(pair_hands, draw, table, 100)?, blackjack_model.Split())?
     if collections.length(split.players[0].hands) != 2 or split.players[0].balance != 80:
         return Ok(11)
-    let surrendered = engine.apply_action(hit_game, model.Surrender())?
-    if not surrendered.players[0].hands[0].surrendered or engine.phase_code(surrendered.phase) != 2:
+    let surrendered = blackjack_engine.apply_action(hit_game, blackjack_model.Surrender())?
+    if not surrendered.players[0].hands[0].surrendered or blackjack_engine.phase_code(surrendered.phase) != 2:
         return Ok(12)
     let used_hands = [one_hand(5, 6, 20, false, 1)?]
     let used = game_with_hands(used_hands, draw, table, 100)?
     if has_action(used, 2) or has_action(used, 3) or has_action(used, 4):
         return Ok(13)
-    match engine.apply_action(used, model.Double()):
+    match blackjack_engine.apply_action(used, blackjack_model.Double()):
         case Ok(value):
             return Ok(14)
         case Err(error):
@@ -88,21 +88,21 @@ fn run() -> Result[Int, String]:
     let das_game = game_with_hands([split_hand], draw, table, 100)?
     if not has_action(das_game, 2):
         return Ok(15)
-    let no_das = rules.create(6, false, 4, false, true, false, 10, 1000, 75, 2)?
+    let no_das = blackjack_rules.create(6, false, 4, false, true, false, 10, 1000, 75, 2)?
     if has_action(game_with_hands([split_hand], draw, no_das, 100)?, 2):
         return Ok(16)
     let four_hands = [one_hand(8, 8, 20, false, 0)?, one_hand(2, 3, 20, true, 0)?, one_hand(4, 5, 20, true, 0)?, one_hand(6, 7, 20, true, 0)?]
     if has_action(game_with_hands(four_hands, draw, table, 100)?, 3):
         return Ok(17)
-    let split_aces = engine.apply_action(game_with_hands([one_hand(1, 1, 20, false, 0)?], draw, table, 100)?, model.Split())?
+    let split_aces = blackjack_engine.apply_action(game_with_hands([one_hand(1, 1, 20, false, 0)?], draw, table, 100)?, blackjack_model.Split())?
     if collections.length(split_aces.players[0].hands) != 2 or not split_aces.players[0].hands[0].finished or not split_aces.players[0].hands[1].finished:
         return Ok(18)
-    if engine.phase_code(split_aces.phase) != 2:
+    if blackjack_engine.phase_code(split_aces.phase) != 2:
         return Ok(19)
     let ace_resplit = game_with_hands([one_hand(1, 1, 20, true, 0)?], draw, table, 100)?
     if has_action(ace_resplit, 3):
         return Ok(20)
-    match engine.apply_action(model.Game(initial.rules, initial.shoe, initial.dealer_hand, initial.players, model.Betting(), 0, 1, 1, "Betting", initial.results), model.Hit()):
+    match blackjack_engine.apply_action(blackjack_model.Game(initial.rules, initial.shoe, initial.dealer_hand, initial.players, blackjack_model.Betting(), 0, 1, 1, "Betting", initial.results), blackjack_model.Hit()):
         case Ok(value):
             return Ok(21)
         case Err(error):
