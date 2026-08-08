@@ -19,4 +19,9 @@ Spacing, font sizes, radii, borders, button states, timing, and responsive break
 
 Keyboard focus, disabled states, hover/pressed states, readable hand totals, suit differentiation, and resolution-aware layout are required. Motion must never obscure legal actions or round state.
 
-The implemented startup, lobby, settings, exit confirmation, and Blackjack table use the same token system. The table renders dealer and player/AI regions, a hidden hole card before reveal, split hands, active-hand highlighting, ranks/suits/totals, balance and limits, legal-action states, outcomes, and next/restart/lobby flows. The website preview intentionally echoes this system without claiming browser play.
+The implemented startup, lobby, settings, exit confirmation, Blackjack table,
+and European Roulette table use the same token system. Roulette adds a readable
+red/black/emerald number grid, outside-bet regions, gold keyboard focus and
+chips, an original procedural wheel, engine-locked ball position, help overlay,
+and result history without copying a casino-provider layout. The website
+preview intentionally echoes the system without claiming browser play.

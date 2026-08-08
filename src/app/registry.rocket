@@ -11,7 +11,9 @@ pub fn name(index: Int) -> String:
 pub fn description(index: Int) -> String:
     if index == 0:
         return "Complete table rules, AI players, and split hands"
+    if index == 1:
+        return "Single-zero wheel, complete inside/outside betting"
     return "Future game - not installed"
 
 pub fn available(index: Int) -> Bool:
-    return index == 0
+    return index == 0 or index == 1

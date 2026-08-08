@@ -1,0 +1,96 @@
+import src.roulette.model
+import src.roulette.rules
+import std.collections
+
+fn expect_error(value: Result[model.Bet, String]) -> Bool:
+    match value:
+        case Ok(bet):
+            return false
+        case Err(error):
+            return true
+
+fn run() -> Result[Int, String]:
+    let wheel = rules.wheel_order()
+    if collections.length(wheel) != 37 or wheel[0] != 0 or wheel[1] != 32 or wheel[36] != 26:
+        return Ok(1)
+    var seen: Array[Int] = []
+    var index = 0
+    while index < collections.length(wheel):
+        if wheel[index] < 0 or wheel[index] > 36 or rules.contains(seen, wheel[index]):
+            return Ok(2)
+        seen = collections.append(seen, wheel[index])
+        index = index + 1
+    if not rules.is_red(1) or not rules.is_red(36) or rules.is_red(0) or rules.is_red(2):
+        return Ok(3)
+    if not rules.is_black(2) or rules.is_black(0) or rules.is_black(1):
+        return Ok(4)
+    let straight = rules.straight(17, 10)?
+    let split = rules.split(18, 15, 10)?
+    let zero_split = rules.split(0, 2, 10)?
+    let street = rules.street(16, 10)?
+    let corner = rules.corner(16, 10)?
+    let six = rules.six_line(16, 10)?
+    let basket = rules.basket(10)?
+    let dozen = rules.dozen(2, 10)?
+    let column = rules.column(3, 10)?
+    if collections.length(straight.numbers) != 1 or not rules.wins(straight, 17):
+        return Ok(5)
+    if not rules.wins(split, 15) or not rules.wins(split, 18) or rules.wins(split, 16):
+        return Ok(6)
+    if not rules.wins(zero_split, 0) or not rules.wins(street, 18) or rules.wins(street, 19):
+        return Ok(7)
+    if collections.length(corner.numbers) != 4 or not rules.wins(corner, 20):
+        return Ok(8)
+    if collections.length(six.numbers) != 6 or not rules.wins(six, 21):
+        return Ok(9)
+    if not rules.wins(basket, 0) or not rules.wins(basket, 3) or rules.wins(basket, 4):
+        return Ok(10)
+    if not rules.wins(dozen, 13) or not rules.wins(dozen, 24) or rules.wins(dozen, 25):
+        return Ok(11)
+    if not rules.wins(column, 3) or not rules.wins(column, 36) or rules.wins(column, 35):
+        return Ok(12)
+    let red = rules.outside(model.Red(), 10)?
+    let black = rules.outside(model.Black(), 10)?
+    let odd = rules.outside(model.Odd(), 10)?
+    let even = rules.outside(model.Even(), 10)?
+    let low = rules.outside(model.Low(), 10)?
+    let high = rules.outside(model.High(), 10)?
+    if collections.length(red.numbers) != 18 or not rules.wins(red, 1) or rules.wins(red, 0):
+        return Ok(13)
+    if not rules.wins(black, 2) or not rules.wins(odd, 35) or rules.wins(odd, 36):
+        return Ok(14)
+    if not rules.wins(even, 36) or not rules.wins(low, 18) or not rules.wins(high, 19):
+        return Ok(15)
+    if rules.wins(low, 0) or rules.wins(high, 0):
+        return Ok(16)
+    if rules.return_for(straight, 17) != 360 or rules.return_for(split, 15) != 180:
+        return Ok(17)
+    if rules.return_for(street, 16) != 120 or rules.return_for(corner, 16) != 90:
+        return Ok(18)
+    if rules.return_for(six, 16) != 60 or rules.return_for(basket, 0) != 90:
+        return Ok(19)
+    if rules.return_for(dozen, 13) != 30 or rules.return_for(column, 3) != 30:
+        return Ok(20)
+    if rules.return_for(red, 1) != 20 or rules.return_for(red, 2) != 0:
+        return Ok(21)
+    if not expect_error(rules.straight(-1, 10)) or not expect_error(rules.straight(37, 10)):
+        return Ok(22)
+    if not expect_error(rules.split(1, 5, 10)) or not expect_error(rules.split(0, 4, 10)):
+        return Ok(23)
+    if not expect_error(rules.street(2, 10)) or not expect_error(rules.corner(3, 10)):
+        return Ok(24)
+    if not expect_error(rules.six_line(34, 10)) or not expect_error(rules.dozen(0, 10)):
+        return Ok(25)
+    if not expect_error(rules.column(4, 10)) or not expect_error(rules.straight(1, 3)):
+        return Ok(26)
+    if not expect_error(rules.outside(model.Straight(), 10)):
+        return Ok(27)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

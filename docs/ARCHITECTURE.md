@@ -21,9 +21,17 @@ Circular imports, duplicated visual rules, machine-specific paths, and C++ appli
 - `src/rocket_raylib.rocket`: safe Rocket graphics/input/audio boundary.
 - `native/rocket_raylib_adapter.*`: primitive ABI and resource-token policy only.
 
-`src/app/registry.rocket` is the shell's routing boundary. Blackjack is registered as available; Roulette and Poker appear only as honest future placeholders. Adding a game does not require rewriting startup, lobby, settings, persistence, or common controls.
+`src/app/registry.rocket` is the shell's routing boundary. Blackjack and European Roulette are registered as available; Poker remains an honest future placeholder until its mandated milestone. Adding a game does not require rewriting startup, lobby, settings, persistence, or common controls.
 
 `src/app/blackjack_view.rocket` reads engine state and emits intents through `src/blackjack/api.rocket`. It does not calculate legal moves, hand values, payouts, or dealer behavior.
+
+`src/roulette/model.rocket`, `rules.rocket`, and `engine.rocket` own the complete
+single-zero table, validated bet geometry, limits, seeded wheel result,
+settlement, and history. `src/roulette/api.rocket` wraps the engine in a
+presentation session so the application can hold multiple game states without
+module-alias collisions. `src/app/roulette_view.rocket` owns only table hit
+regions, keyboard focus, procedural rendering, and animation timing; it never
+chooses or changes the winning pocket.
 
 ## Money representation
 
@@ -31,7 +39,7 @@ All play-money values are integer credits. Bets use a table unit compatible with
 
 ## Determinism and testing
 
-Shoe generation accepts an explicit seed. Tests use deterministic state construction through checked helpers and scripted GUI input. Production rendering and audio are excluded from engine decisions. Every safety loop has a finite error-producing bound.
+Shoe and Roulette wheel generation accept explicit seeds. Tests use deterministic state construction through checked helpers and scripted GUI input. Production rendering and audio are excluded from engine decisions. Every safety loop has a finite error-producing bound.
 
 ## Native boundary
 

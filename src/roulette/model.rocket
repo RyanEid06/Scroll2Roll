@@ -1,0 +1,44 @@
+pub enum Phase:
+    Betting
+    Spinning
+    Settled
+
+pub enum BetKind:
+    Straight
+    Split
+    Street
+    Corner
+    SixLine
+    Basket
+    Red
+    Black
+    Odd
+    Even
+    Low
+    High
+    Dozen
+    Column
+
+pub struct Bet:
+    kind: BetKind
+    numbers: Array[Int]
+    stake: Int
+
+pub struct SpinResult:
+    winning_number: Int
+    total_wager: Int
+    total_return: Int
+    net_change: Int
+
+pub struct Game:
+    balance: Int
+    selected_chip: Int
+    bets: Array[Bet]
+    previous_bets: Array[Bet]
+    phase: Phase
+    pending_winner: Int
+    round_number: Int
+    seed: Int
+    history: Array[Int]
+    result: SpinResult
+    message: String

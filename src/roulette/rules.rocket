@@ -1,0 +1,251 @@
+import src.roulette.model
+import std.collections
+import std.string
+
+pub fn wheel_order() -> Array[Int]:
+    return[0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26]
+
+pub fn red_numbers() -> Array[Int]:
+    return[1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+
+pub fn minimum_chip() -> Int:
+    return 5
+
+pub fn maximum_position_wager() -> Int:
+    return 1000
+
+pub fn maximum_total_wager() -> Int:
+    return 5000
+
+pub fn contains(values: Array[Int], target: Int) -> Bool:
+    var index = 0
+    while index < collections.length(values):
+        if values[index] == target:
+            return true
+        index = index + 1
+    return false
+
+pub fn is_red(number: Int) -> Bool:
+    return contains(red_numbers(), number)
+
+pub fn is_black(number: Int) -> Bool:
+    return number >= 1 and number <= 36 and not is_red(number)
+
+pub fn is_valid_chip(value: Int) -> Bool:
+    return value == 5 or value == 10 or value == 25 or value == 50 or value == 100 or value == 500
+
+fn remainder(value: Int, divisor: Int) -> Int:
+    return value - value / divisor * divisor
+
+fn make(kind: model.BetKind, numbers: Array[Int], stake: Int) -> Result[model.Bet, String]:
+    if stake < minimum_chip() or remainder(stake, minimum_chip()) != 0:
+        return Err("Roulette stake must be a positive multiple of 5 credits")
+    return Ok(model.Bet(kind, numbers, stake))
+
+pub fn straight(number: Int, stake: Int) -> Result[model.Bet, String]:
+    if number < 0 or number > 36:
+        return Err("Straight bet pocket must be between 0 and 36")
+    return make(model.Straight(), [number], stake)
+
+pub fn split(first_value: Int, second_value: Int, stake: Int) -> Result[model.Bet, String]:
+    var first = first_value
+    var second = second_value
+    if first > second:
+        let swap = first
+        first = second
+        second = swap
+    if first == 0 and second >= 1 and second <= 3:
+        return make(model.Split(), [first, second], stake)
+    if first < 1 or second > 36:
+        return Err("Split bet pockets are outside the table")
+    let vertical = second - first == 3
+    let horizontal = second - first == 1 and(first - 1) / 3 ==(second - 1) / 3
+    if not vertical and not horizontal:
+        return Err("Split bet pockets must share a table edge")
+    return make(model.Split(), [first, second], stake)
+
+pub fn street(first: Int, stake: Int) -> Result[model.Bet, String]:
+    if first < 1 or first > 34 or remainder(first - 1, 3) != 0:
+        return Err("Street bet must start at 1, 4, ..., or 34")
+    return make(model.Street(), [first, first + 1, first + 2], stake)
+
+pub fn corner(first: Int, stake: Int) -> Result[model.Bet, String]:
+    if first < 1 or first > 32 or remainder(first - 1, 3) == 2:
+        return Err("Corner bet must identify a valid four-pocket intersection")
+    return make(model.Corner(), [first, first + 1, first + 3, first + 4], stake)
+
+pub fn six_line(first: Int, stake: Int) -> Result[model.Bet, String]:
+    if first < 1 or first > 31 or remainder(first - 1, 3) != 0:
+        return Err("Six-line bet must start at 1, 4, ..., or 31")
+    return make(model.SixLine(), [first, first + 1, first + 2, first + 3, first + 4, first + 5], stake)
+
+pub fn basket(stake: Int) -> Result[model.Bet, String]:
+    return make(model.Basket(), [0, 1, 2, 3], stake)
+
+fn dozen_numbers(index: Int) -> Array[Int]:
+    var values: Array[Int] = []
+    let first = 1 +(index - 1) * 12
+    var number = first
+    while number < first + 12:
+        values = collections.append(values, number)
+        number = number + 1
+    return values
+
+fn column_numbers(index: Int) -> Array[Int]:
+    var values: Array[Int] = []
+    var number = index
+    while number <= 36:
+        values = collections.append(values, number)
+        number = number + 3
+    return values
+
+pub fn dozen(index: Int, stake: Int) -> Result[model.Bet, String]:
+    if index < 1 or index > 3:
+        return Err("Dozen index must be between 1 and 3")
+    return make(model.Dozen(), dozen_numbers(index), stake)
+
+pub fn column(index: Int, stake: Int) -> Result[model.Bet, String]:
+    if index < 1 or index > 3:
+        return Err("Column index must be between 1 and 3")
+    return make(model.Column(), column_numbers(index), stake)
+
+pub fn outside(kind: model.BetKind, stake: Int) -> Result[model.Bet, String]:
+    var values: Array[Int] = []
+    var number = 1
+    while number <= 36:
+        var covered = false
+        match kind:
+            case model.Red:
+                covered = is_red(number)
+            case model.Black:
+                covered = is_black(number)
+            case model.Odd:
+                covered = remainder(number, 2) == 1
+            case model.Even:
+                covered = remainder(number, 2) == 0
+            case model.Low:
+                covered = number <= 18
+            case model.High:
+                covered = number >= 19
+            case model.Straight:
+                return Err("Straight is not an outside bet")
+            case model.Split:
+                return Err("Split is not an outside bet")
+            case model.Street:
+                return Err("Street is not an outside bet")
+            case model.Corner:
+                return Err("Corner is not an outside bet")
+            case model.SixLine:
+                return Err("Six-line is not an outside bet")
+            case model.Basket:
+                return Err("Basket is not an outside bet")
+            case model.Dozen:
+                return Err("Use the dozen constructor")
+            case model.Column:
+                return Err("Use the column constructor")
+        if covered:
+            values = collections.append(values, number)
+        number = number + 1
+    return make(kind, values, stake)
+
+pub fn kind_code(kind: model.BetKind) -> Int:
+    match kind:
+        case model.Straight:
+            return 0
+        case model.Split:
+            return 1
+        case model.Street:
+            return 2
+        case model.Corner:
+            return 3
+        case model.SixLine:
+            return 4
+        case model.Basket:
+            return 5
+        case model.Red:
+            return 6
+        case model.Black:
+            return 7
+        case model.Odd:
+            return 8
+        case model.Even:
+            return 9
+        case model.Low:
+            return 10
+        case model.High:
+            return 11
+        case model.Dozen:
+            return 12
+        case model.Column:
+            return 13
+
+pub fn kind_name(kind: model.BetKind) -> String:
+    match kind:
+        case model.Straight:
+            return "Straight"
+        case model.Split:
+            return "Split"
+        case model.Street:
+            return "Street"
+        case model.Corner:
+            return "Corner"
+        case model.SixLine:
+            return "Six-line"
+        case model.Basket:
+            return "Basket"
+        case model.Red:
+            return "Red"
+        case model.Black:
+            return "Black"
+        case model.Odd:
+            return "Odd"
+        case model.Even:
+            return "Even"
+        case model.Low:
+            return "1-18"
+        case model.High:
+            return "19-36"
+        case model.Dozen:
+            return "Dozen"
+        case model.Column:
+            return "Column"
+
+pub fn bet_name(bet: model.Bet) -> String:
+    var name = kind_name(bet.kind)
+    if collections.length(bet.numbers) == 1:
+        name = string.concat(name, string.concat(" ", string.from_int(bet.numbers[0])))
+    return string.concat(name, string.concat(" - ", string.from_int(bet.stake)))
+
+pub fn profit_odds(kind: model.BetKind) -> Int:
+    let code = kind_code(kind)
+    if code == 0:
+        return 35
+    if code == 1:
+        return 17
+    if code == 2:
+        return 11
+    if code == 3 or code == 5:
+        return 8
+    if code == 4:
+        return 5
+    if code == 12 or code == 13:
+        return 2
+    return 1
+
+pub fn wins(bet: model.Bet, winning_number: Int) -> Bool:
+    return winning_number >= 0 and winning_number <= 36 and contains(bet.numbers, winning_number)
+
+pub fn return_for(bet: model.Bet, winning_number: Int) -> Int:
+    if not wins(bet, winning_number):
+        return 0
+    return bet.stake *(profit_odds(bet.kind) + 1)
+
+pub fn same_position(left: model.Bet, right: model.Bet) -> Bool:
+    if kind_code(left.kind) != kind_code(right.kind) or collections.length(left.numbers) != collections.length(right.numbers):
+        return false
+    var index = 0
+    while index < collections.length(left.numbers):
+        if left.numbers[index] != right.numbers[index]:
+            return false
+        index = index + 1
+    return true

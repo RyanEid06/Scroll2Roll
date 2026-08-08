@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Scroll2Roll is a local, account-free, play-money Blackjack casino for Windows x64.">
-  <title>Scroll2Roll — Play-money Blackjack for Windows</title>
+  <meta name="description" content="Scroll2Roll is a local, account-free, play-money Blackjack and European Roulette casino for Windows x64.">
+  <title>Scroll2Roll — Play-money casino for Windows</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,6 +12,7 @@
     <a class="brand" href="#top" aria-label="Scroll2Roll home">SCROLL<span>2</span>ROLL</a>
     <nav aria-label="Primary navigation">
       <a href="#blackjack">Blackjack</a>
+      <a href="#roulette">Roulette</a>
       <a href="#install">Installation</a>
       <a href="#privacy">Privacy</a>
     </nav>
@@ -22,9 +23,9 @@
       <div>
         <p class="eyebrow">Native Rocket 2.0 · Windows x64</p>
         <h1>A polished casino table that stays on your PC.</h1>
-        <p class="lede">Scroll2Roll begins with complete Blackjack, up to five AI players, exact play-credit payouts, and a reusable casino lobby. No account. No cloud save. No real-money wagering.</p>
+        <p class="lede">Scroll2Roll includes complete Blackjack and single-zero European Roulette with exact play-credit payouts and a reusable casino lobby. No account. No cloud save. No real-money wagering.</p>
         <div class="actions">
-          <a class="button primary" href="downloads/Scroll2Roll-0.1.0-windows-x64.zip">Download 0.1.0 for Windows</a>
+          <a class="button primary" href="downloads/Scroll2Roll-0.2.0-windows-x64.zip">Download 0.2.0 for Windows</a>
           <a class="button secondary" href="#controls">View controls</a>
         </div>
         <p class="fine">Local unsigned release candidate. Verify the included SHA-256 checksums. Credits have no monetary value.</p>
@@ -35,6 +36,19 @@
         <div class="table-copy">Dealer stands on soft 17</div>
         <div class="player"><small>YOUR HAND</small><div class="cards"><b>10<br><i>S</i></b><b>8<br><i>D</i></b></div><strong>Total 18</strong></div>
         <div class="preview-actions"><span>Hit</span><span>Stand</span><span>Double</span><span>Split</span></div>
+      </div>
+    </section>
+
+    <section id="roulette" class="section band">
+      <div class="wrap">
+        <p class="eyebrow">The complete European wheel</p>
+        <h2>Every table position, one deterministic result.</h2>
+        <div class="feature-grid">
+          <article><h3>Complete betting layout</h3><p>Place straight, split, street, corner, six-line, basket, dozen, column, red/black, odd/even, and low/high bets with chips, undo, clear, repeat, and rebet.</p></article>
+          <article><h3>Correct single-zero payouts</h3><p>The rendering-independent engine validates table geometry and settles every simultaneous wager with documented European Roulette odds.</p></article>
+          <article><h3>Auditable animation</h3><p>An explicit seeded engine result is locked before the procedural wheel moves. Animation follows that result and never rerolls it.</p></article>
+          <article><h3>Keyboard and mouse</h3><p>Use the complete clickable table or cycle every bet family and legal target from the keyboard, with visible help and disabled states.</p></article>
+        </div>
       </div>
     </section>
 
@@ -58,7 +72,7 @@
 
     <section id="controls" class="section wrap">
       <p class="eyebrow">Keyboard and mouse</p><h2>Clear controls, visible legality.</h2>
-      <div class="controls"><span><kbd>Enter</kbd> Deal / continue</span><span><kbd>H</kbd> Hit</span><span><kbd>S</kbd> Stand</span><span><kbd>D</kbd> Double</span><span><kbd>P</kbd> Split</span><span><kbd>R</kbd> Surrender</span><span><kbd>N</kbd> Next round</span><span><kbd>B</kbd> Lobby</span></div>
+      <div class="controls"><span><kbd>Enter</kbd> Deal / place</span><span><kbd>Tab</kbd> Roulette bet type</span><span><kbd>H</kbd> Hit / undo</span><span><kbd>S</kbd> Stand / spin</span><span><kbd>D</kbd> Double / clear</span><span><kbd>P</kbd> Split / help</span><span><kbd>R</kbd> Surrender / rebet</span><span><kbd>N</kbd> Next round</span><span><kbd>B</kbd> Lobby</span></div>
     </section>
 
     <section id="privacy" class="section band">
@@ -66,6 +80,6 @@
     </section>
   </main>
 
-  <footer class="wrap"><strong>Scroll2Roll 0.1.0</strong><span>Native Rocket application · Website prepared for Cloudflare Pages</span></footer>
+  <footer class="wrap"><strong>Scroll2Roll 0.2.0</strong><span>Native Rocket application · Website prepared for Cloudflare Pages</span></footer>
 </body>
 </html>

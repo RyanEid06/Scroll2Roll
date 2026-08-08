@@ -17,8 +17,8 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
 - [x] Run the release acceptance matrix and document deliberate limitations honestly.
 - [x] Record the owner-approved 0.2.0 expansion architecture, payout math,
   deterministic strategy, UI contracts, migration policy, and acceptance gates.
-- [ ] Add save-v2 migration and the reusable multi-game session foundation.
-- [ ] Complete European Roulette and rerun the full Blackjack regression gate.
+- [x] Add save-v2 migration and the reusable multi-game session foundation.
+- [x] Complete European Roulette and rerun the full Blackjack regression gate.
 - [ ] Complete Plinko with audited row/risk expected-return tables.
 - [ ] Complete the original Coop Climb step-and-cash-out game.
 - [ ] Complete the original real-time Midnight Crossing arcade game.

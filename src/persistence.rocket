@@ -20,7 +20,7 @@ pub struct LoadResult:
     message: String
 
 pub fn defaults() -> Settings:
-    return Settings(1, true, 70, 1280, 720, 3, 1000, true)
+    return Settings(2, true, 70, 1280, 720, 3, 1000, true)
 
 fn bool_text(value: Bool) -> String:
     if value:
@@ -29,7 +29,7 @@ fn bool_text(value: Bool) -> String:
 
 fn encode(value: Settings) -> String:
     var lines: Array[String] = []
-    lines = collections.append(lines, "scroll2roll-save-1")
+    lines = collections.append(lines, "scroll2roll-save-2")
     lines = collections.append(lines, bool_text(value.audio_enabled))
     lines = collections.append(lines, string.from_int(value.volume_percent))
     lines = collections.append(lines, string.from_int(value.window_width))
@@ -43,7 +43,7 @@ pub fn parse(text: String) -> Result[Settings, String]:
     let lines = string.split(string.trim(text), "\n")
     if collections.length(lines) != 8:
         return Err("Save data has an unexpected field count")
-    if lines[0] != "scroll2roll-save-1":
+    if lines[0] != "scroll2roll-save-1" and lines[0] != "scroll2roll-save-2":
         return Err("Save data version is unsupported")
     let audio = string.parse_int(lines[1])?
     let volume = string.parse_int(lines[2])?
@@ -62,7 +62,7 @@ pub fn parse(text: String) -> Result[Settings, String]:
         return Err("Save data AI count is out of range")
     if balance < 10 or balance > 1000000:
         return Err("Save data play balance is out of range")
-    return Ok(Settings(1, audio == 1, volume, width, height, ai_count, balance, first == 1))
+    return Ok(Settings(2, audio == 1, volume, width, height, ai_count, balance, first == 1))
 
 pub fn load(file_path: String) -> LoadResult:
     if not file.exists(file_path):
@@ -71,6 +71,9 @@ pub fn load(file_path: String) -> LoadResult:
         case Ok(text):
             match parse(text):
                 case Ok(settings):
+                    let lines = string.split(string.trim(text), "\n")
+                    if lines[0] == "scroll2roll-save-1":
+                        return LoadResult(settings, false, "Version 1 local settings migrated to version 2")
                     return LoadResult(settings, false, "Local settings loaded")
                 case Err(error):
                     return LoadResult(defaults(), true, error)
@@ -95,7 +98,7 @@ pub fn default_path() -> Result[String, String]:
     return Ok(path.join(data_directory()?, "settings.s2r"))
 
 pub fn with_audio(value: Settings, enabled: Bool) -> Settings:
-    return Settings(1, enabled, value.volume_percent, value.window_width, value.window_height, value.ai_count, value.play_balance, false)
+    return Settings(2, enabled, value.volume_percent, value.window_width, value.window_height, value.ai_count, value.play_balance, false)
 
 pub fn with_volume(value: Settings, volume: Int) -> Settings:
     var clamped = volume
@@ -103,7 +106,7 @@ pub fn with_volume(value: Settings, volume: Int) -> Settings:
         clamped = 0
     if clamped > 100:
         clamped = 100
-    return Settings(1, value.audio_enabled, clamped, value.window_width, value.window_height, value.ai_count, value.play_balance, false)
+    return Settings(2, value.audio_enabled, clamped, value.window_width, value.window_height, value.ai_count, value.play_balance, false)
 
 pub fn with_ai_count(value: Settings, count: Int) -> Settings:
     var clamped = count
@@ -111,7 +114,7 @@ pub fn with_ai_count(value: Settings, count: Int) -> Settings:
         clamped = 0
     if clamped > 5:
         clamped = 5
-    return Settings(1, value.audio_enabled, value.volume_percent, value.window_width, value.window_height, clamped, value.play_balance, false)
+    return Settings(2, value.audio_enabled, value.volume_percent, value.window_width, value.window_height, clamped, value.play_balance, false)
 
 pub fn with_balance(value: Settings, balance: Int) -> Settings:
     var safe = balance
@@ -119,4 +122,4 @@ pub fn with_balance(value: Settings, balance: Int) -> Settings:
         safe = 1000
     if safe > 1000000:
         safe = 1000000
-    return Settings(1, value.audio_enabled, value.volume_percent, value.window_width, value.window_height, value.ai_count, safe, false)
+    return Settings(2, value.audio_enabled, value.volume_percent, value.window_width, value.window_height, value.ai_count, safe, false)

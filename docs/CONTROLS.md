@@ -22,6 +22,26 @@
 
 Disabled controls indicate actions rejected by the tested Blackjack engine. Split Aces receive one card each, the dealer stands on soft 17, and Blackjack pays 3:2.
 
+## European Roulette
+
+- Mouse: place chips on number centers, shared edges (splits), intersections
+  (corners), the street/six-line rail, basket, columns, dozens, and outside
+  boxes.
+- `Tab`: cycle the keyboard bet type.
+- `Left` / `Right`: select a valid target for that bet type.
+- `Up` / `Down`: cycle chip denominations.
+- `Enter`: place the selected chip on the keyboard target.
+- `S`: spin after at least one wager.
+- `H`: undo the last chip placement.
+- `D`: clear and refund all unspun bets.
+- `R`: repeat/rebet the last settled layout when affordable.
+- `N`: start the next betting round after settlement.
+- `P`: open or close complete rules and payout help.
+- `B` / `Escape`: return to the lobby only when no wager or spin is live.
+
+The seeded winning pocket is locked by the engine before animation. The visual
+wheel cannot reroll or alter settlement.
+
 ## Settings
 
 - `M`: toggle audio.

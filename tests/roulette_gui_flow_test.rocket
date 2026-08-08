@@ -1,0 +1,119 @@
+import src.app.application
+import src.app.roulette_view
+import src.roulette.engine
+import src.roulette.rules
+import src.rocket_raylib
+import src.rocket_raylib_testing
+import std.collections
+import std.file
+import std.testing
+
+fn press(window: rocket_raylib.Window, key: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_key(key, true, false)
+    return application.step_for_test(state, window)
+
+fn click(window: rocket_raylib.Window, x: Int, y: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_mouse(x, y, true)
+    return application.step_for_test(state, window)
+
+fn frame(window: rocket_raylib.Window, state: application.State) -> Result[application.State, String]:
+    application.draw_for_test(window, state)?
+    return Ok(application.step_for_test(state, window))
+
+fn run() -> Result[Int, String]:
+    if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
+        return Ok(1)
+    let temporary = testing.temp_directory("scroll2roll-roulette-gui")?
+    let save_path = testing.fixture_path(temporary, "settings.s2r")?
+    let horizontal_split = roulette_view.mouse_bet(140, 150, 1280, 10)?
+    let vertical_split = roulette_view.mouse_bet(102, 176, 1280, 10)?
+    let corner = roulette_view.mouse_bet(140, 176, 1280, 10)?
+    let street = roulette_view.mouse_bet(102, 270, 1280, 10)?
+    let six_line = roulette_view.mouse_bet(140, 270, 1280, 10)?
+    let basket = roulette_view.mouse_bet(40, 300, 1280, 10)?
+    if rules.kind_code(horizontal_split.kind) != 1 or horizontal_split.numbers[0] != 3 or horizontal_split.numbers[1] != 6:
+        return Ok(19)
+    if rules.kind_code(vertical_split.kind) != 1 or vertical_split.numbers[0] != 2 or vertical_split.numbers[1] != 3:
+        return Ok(20)
+    if rules.kind_code(corner.kind) != 3 or corner.numbers[0] != 2 or corner.numbers[3] != 6:
+        return Ok(21)
+    if rules.kind_code(street.kind) != 2 or street.numbers[0] != 1 or street.numbers[2] != 3:
+        return Ok(22)
+    if rules.kind_code(six_line.kind) != 4 or six_line.numbers[0] != 1 or six_line.numbers[5] != 6:
+        return Ok(23)
+    if rules.kind_code(basket.kind) != 5 or basket.numbers[0] != 0 or basket.numbers[3] != 3:
+        return Ok(24)
+    match rocket_raylib.open_window(1280, 720, "Roulette scripted GUI"):
+        case Ok(window):
+            var state = application.initial_for_test(save_path)?
+            state = press(window, rocket_raylib.key_enter(), state)
+            if state.screen != 1:
+                return Ok(2)
+            state = click(window, 520, 300, state)
+            if state.screen != 4 or engine.phase_code(state.roulette.game.phase) != 0:
+                return Ok(3)
+            state = press(window, rocket_raylib.key_p(), state)
+            if not state.roulette_help:
+                return Ok(4)
+            application.draw_for_test(window, state)?
+            state = press(window, rocket_raylib.key_p(), state)
+            if state.roulette_help:
+                return Ok(5)
+            state = press(window, rocket_raylib.key_enter(), state)
+            if collections.length(state.roulette.game.bets) != 1 or state.roulette.game.bets[0].numbers[0] != 0:
+                return Ok(6)
+            state = press(window, rocket_raylib.key_tab(), state)
+            state = press(window, rocket_raylib.key_right(), state)
+            state = press(window, rocket_raylib.key_enter(), state)
+            if collections.length(state.roulette.game.bets) != 2:
+                return Ok(7)
+            state = press(window, rocket_raylib.key_h(), state)
+            if collections.length(state.roulette.game.bets) != 1:
+                return Ok(8)
+            state = click(window, 1058, 94, state)
+            if state.roulette.game.selected_chip != 25:
+                return Ok(9)
+            state = click(window, 102, 150, state)
+            state = click(window, 380, 310, state)
+            if collections.length(state.roulette.game.bets) != 3:
+                return Ok(10)
+            let wager = engine.total_wager(state.roulette.game)
+            state = press(window, rocket_raylib.key_s(), state)
+            if engine.phase_code(state.roulette.game.phase) != 1 or state.roulette.game.pending_winner < 0:
+                return Ok(11)
+            var guard = 0
+            while engine.phase_code(state.roulette.game.phase) != 2 and guard < 180:
+                state = frame(window, state)?
+                guard = guard + 1
+            if guard >= 180 or engine.phase_code(state.roulette.game.phase) != 2:
+                return Ok(12)
+            if state.roulette.game.result.total_wager != wager or not file.exists(save_path):
+                return Ok(13)
+            application.draw_for_test(window, state)?
+            state = press(window, rocket_raylib.key_r(), state)
+            if engine.phase_code(state.roulette.game.phase) != 0 or engine.total_wager(state.roulette.game) != wager:
+                return Ok(14)
+            state = press(window, rocket_raylib.key_d(), state)
+            if engine.total_wager(state.roulette.game) != 0:
+                return Ok(15)
+            state = press(window, rocket_raylib.key_b(), state)
+            if state.screen != 1:
+                return Ok(16)
+            let saved_balance = state.settings.play_balance
+            if saved_balance != state.roulette.game.balance:
+                return Ok(17)
+            let closed = rocket_raylib.close_window(window)
+            testing.cleanup_temp(temporary)?
+            if rocket_raylib_testing.buffer_live_count() != 0:
+                return Ok(18)
+            return Ok(0)
+        case Err(error):
+            return Err(error)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

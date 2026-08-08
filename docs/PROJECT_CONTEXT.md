@@ -21,12 +21,13 @@ Scroll2Roll is a polished, local, single-player, play-money casino shell that ca
 
 All 13 implementation and validation milestones in `MASTER_PLAN.md` are complete locally. No push, release publication, Cloudflare deployment, or signing was performed.
 
-The owner has now approved the 0.2.0 expansion defined in
+The owner has approved the 0.2.0 expansion defined in
 `EXPANSION_PLAN.md`: European Roulette, Plinko, Chicken (presented as the
 original Coop Climb), Cross the Road (presented as the original real-time
 Midnight Crossing), and single-player No-Limit Texas Hold'em, implemented in
-that order. The expansion plan is complete; game implementation has not yet
-started. All five games must be complete before 0.2.0 acceptance.
+that order. European Roulette and the save-v2 foundation are complete. Plinko,
+Chicken, Cross the Road, and Hold'em remain. All five games must be complete
+before final 0.2.0 acceptance.
 
 ## Explicit non-goals
 
@@ -53,19 +54,29 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
 - Versioned local persistence stores display/audio preferences, AI count, first-run state, and approved play-money progress at `%LOCALAPPDATA%\Scroll2Roll\settings.s2r`, with safe missing/invalid/older-data recovery.
 - The static website and Cloudflare Pages staging flow are implemented without claiming browser play.
 - Release packaging includes the native executable, version, notices, controls, troubleshooting, and checksums, and passes relocated headless smoke validation.
+- Version 2 persistence writes `scroll2roll-save-2`, migrates valid
+  `scroll2roll-save-1` settings and credits, and safely recovers from missing,
+  invalid, or unsupported data.
+- European Roulette is fully playable through its rendering-independent engine
+  and presentation API. It implements the single-zero 0-36 wheel; correct
+  colors; straight, split, street, corner, six-line, basket, dozen, column,
+  red/black, odd/even, and low/high wagers; per-position/total limits; multiple
+  wagers; undo, clear, repeat, rebet; deterministic result-locked animation;
+  exact settlement; bounded history; help; keyboard/mouse controls; restart;
+  and safe lobby return.
 
 ## Architecture
 
 Dependency direction is one way:
 
-1. Shared Blackjack model values.
-2. Cards/hand evaluation, rules, shoe, settlement, and strategy.
-3. The engine state machine and presentation-facing API.
+1. Per-game model values and validated rule constructors.
+2. Rendering-independent Blackjack and Roulette engines and settlement.
+3. Small presentation-facing APIs and sessions.
 4. Versioned local persistence isolated from rules.
-5. Reusable router, design tokens, components, lobby, settings, and Blackjack view.
+5. Reusable router, design tokens, components, lobby, settings, and per-game views.
 6. The safe Rocket raylib wrapper over a primitive C++ adapter.
 
-Rendering never owns Blackjack rules. The C++ adapter never owns application or casino state. Deterministic headless tests do not require a real window or audio device.
+Rendering never owns game rules or random outcomes. The C++ adapter never owns application or casino state. Deterministic headless tests do not require a real window or audio device.
 
 ## Verified evidence
 
@@ -82,12 +93,17 @@ Rendering never owns Blackjack rules. The C++ adapter never owns application or 
 - The 0.2.0 expansion baseline was rerun on 2026-08-08: Debug and Release each
   passed native build, `rocketc check`, all 10 existing tests, and both
   formatting checks before new game implementation began.
+- The complete post-Roulette Rocket suite passes 13/13, including the original
+  10 tests plus focused Roulette rules, session, and scripted keyboard/mouse GUI
+  flows.
 
 ## Deliberate limitations
 
 - Version 0.1.0 is unsigned. Windows may show an unknown-publisher warning; trusted code signing is not claimed.
 - The game is local-only and play-money-only. Credits are not transferable and have no cash value.
-- Roulette and Poker are noninteractive future placeholders, not implemented games.
+- Poker remains a noninteractive future placeholder until its mandated final
+  game milestone. Plinko, Chicken, and Cross the Road entries are added only
+  when their implementations are complete.
 - The packaged application uses procedural UI art and a short generated tone; it does not ship a screenshot-baseline suite or external art/audio catalog.
 - The frozen Rocket debugger represented the scalar `status` local during acceptance; managed locals such as the argument array may display as unavailable in the native debugger.
 - The frozen LSP's formatter is exposed through its `source.format.rocket` code-action contract and the reproducible `rocketc fmt` workflow; Visual Studio's generic `Edit.FormatDocument` command is not advertised for Rocket documents.
@@ -116,11 +132,13 @@ Spacing, typography, component states, borders, timing, and responsive layout va
 - Completed: owner-approved 0.2.0 architecture, rules, payout math,
   deterministic strategy, UI contracts, migration design, milestone gates, and
   acceptance criteria in `EXPANSION_PLAN.md`.
-- Current: expansion milestone E0, adding the 0.2.0/save-v2 foundation before
-  European Roulette.
-- Next: complete European Roulette engine, API, tests, full UI flow,
-  documentation, and Blackjack regression gate; then proceed in the mandated
-  game order.
+- Completed: expansion milestone E0, including version 0.2.0 identity,
+  save-v1-to-save-v2 migration, and the multi-game session boundary.
+- Completed: expansion milestone E1, complete European Roulette engine, API,
+  UI, persistence flow, deterministic tests, and Blackjack regression gate.
+- Current: expansion milestone E2, Plinko.
+- Next: implement audited 8-16-row low/medium/high Plinko engines and tables,
+  complete UI/animation, deterministic tests, and the full regression gate.
 
 ## Major decisions
 
@@ -144,7 +162,7 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 
 Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`, and this file
 completely. Inspect Git status and preserve user changes. The 0.1.0 Blackjack
-baseline and its 10 tests pass in Debug and Release. Continue from **Milestones**
+baseline remains preserved and the post-Roulette suite passes 13/13. Continue from **Milestones**
 in the exact approved game order. Use frozen Rocket 2.0 and the pinned raylib
 integration, rerun all prior tests at every game gate, update this handoff, make
 logical local commits, and do not push, publish, deploy, sign, or add an
