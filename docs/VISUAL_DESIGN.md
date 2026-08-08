@@ -25,3 +25,9 @@ red/black/emerald number grid, outside-bet regions, gold keyboard focus and
 chips, an original procedural wheel, engine-locked ball position, help overlay,
 and result history without copying a casino-provider layout. The website
 preview intentionally echoes the system without claiming browser play.
+
+Plinko reuses the same shell and tokens with a responsive triangular peg field,
+symmetrical multiplier buckets, gold balls, a compact configuration rail, and
+a rules overlay. At the 800x600 minimum, the board contracts horizontally and
+vertically so it remains separate from controls and settlement actions. Motion
+is staged from tested engine paths and cannot alter a landing bucket.

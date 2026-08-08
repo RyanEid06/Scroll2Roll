@@ -1,0 +1,31 @@
+pub enum Risk:
+    Low
+    Medium
+    High
+
+pub enum Phase:
+    Ready
+    Dropping
+    Settled
+
+pub struct DropResult:
+    path: Array[Int]
+    bucket: Int
+    multiplier_basis_points: Int
+    stake: Int
+    payout: Int
+
+pub struct Game:
+    balance: Int
+    rows: Int
+    risk: Risk
+    bet: Int
+    batch_count: Int
+    phase: Phase
+    pending: Array[DropResult]
+    history: Array[DropResult]
+    total_wager: Int
+    total_return: Int
+    round_number: Int
+    seed: Int
+    message: String

@@ -9,7 +9,7 @@ $index = Join-Path $Site 'index.html'
 $css = Join-Path $Site 'styles.css'
 if (-not (Test-Path -LiteralPath $index) -or -not (Test-Path -LiteralPath $css)) { throw 'Website index or stylesheet is missing.' }
 $html = Get-Content -Raw -LiteralPath $index
-foreach ($required in @('play-money', 'Windows x64', 'Blackjack', 'European Roulette', 'Privacy', 'Installation', 'Troubleshooting', 'Scroll2Roll-0.2.0-windows-x64.zip')) {
+foreach ($required in @('play-money', 'Windows x64', 'Blackjack', 'European Roulette', 'Plinko', 'Privacy', 'Installation', 'Troubleshooting', 'Scroll2Roll-0.2.0-windows-x64.zip')) {
     if ($html -notmatch [regex]::Escape($required)) { throw "Website is missing required text: $required" }
 }
 if ($html -match 'browser.playable|deposit now|withdraw winnings') { throw 'Website contains a prohibited product claim.' }

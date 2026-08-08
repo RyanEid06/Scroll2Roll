@@ -2,7 +2,7 @@
 
 No feature claim is complete until its focused test passes.
 
-The implemented matrix covers Rocket check/build/test, Blackjack card/shoe/rule invariants, complete European Roulette bet geometry and payouts, deterministic complete and consecutive sessions, nonnegative balances, safety limits, save-v1 migration/save-v2 recovery, scripted GUI input, native resource lifetimes, package contents, sanitized relocation, and static website checks.
+The implemented matrix covers Rocket check/build/test, Blackjack card/shoe/rule invariants, complete European Roulette bet geometry and payouts, exact Plinko probability/return tables, deterministic complete and consecutive sessions, nonnegative balances, safety limits, save-v1 migration/save-v2 recovery, scripted GUI input, native resource lifetimes, package contents, sanitized relocation, and static website checks.
 
 Test setup helpers must return explicit failure or a nonzero test status when construction is invalid. They must never substitute a plausible fallback card, state, or resource.
 
@@ -17,6 +17,9 @@ Test setup helpers must return explicit failure or a nonzero test status when co
 - `roulette_rules_test.rocket`: wheel uniqueness, colors, every inside/outside bet constructor, invalid geometry, zero behavior, and exact payouts.
 - `roulette_session_test.rocket`: simultaneous wagers, limits, undo/clear/repeat/rebet, deterministic spins, settlement, history bounds, and multi-round balances.
 - `roulette_gui_flow_test.rocket`: complete keyboard/mouse table flow, help, chip selection, engine-locked animation, persistence, rebet, clear, and lobby return.
+- `plinko_math_test.rocket`: combinations, outcome counts, table symmetry, risk ordering, payout rounding, and exact 8-16-row expected returns documented in `PLINKO_MATH.md`.
+- `plinko_session_test.rocket`: deterministic paths, batch validation, prepaid wagers, locked configuration, settlement, history bounds, failure paths, and consecutive-round balances.
+- `plinko_gui_flow_test.rocket`: responsive lobby routing, keyboard/mouse configuration, help, bounded multi-ball animation, settlement, persistence, next round, and lobby return.
 - Four reviewed raylib tests cover API behavior, audio stress, resource lifetime, and missing assets.
 
-The current suite passes 13/13 tests. Package relocation and source/staged website checks are separate scripts. Exact evidence is recorded in `VALIDATION.md`; generated evidence stays under ignored `out/`.
+The current suite passes 16/16 tests. Package relocation and source/staged website checks are separate scripts. Exact evidence is recorded in `VALIDATION.md`; generated evidence stays under ignored `out/`.

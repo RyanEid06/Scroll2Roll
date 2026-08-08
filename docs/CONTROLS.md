@@ -42,6 +42,22 @@ Disabled controls indicate actions rejected by the tested Blackjack engine. Spli
 The seeded winning pocket is locked by the engine before animation. The visual
 wheel cannot reroll or alter settlement.
 
+## Plinko
+
+- `Left` / `Right`: choose 8-16 peg rows.
+- `Tab`: cycle Low, Medium, and High risk.
+- `Down` / `Up`: reduce or increase the per-ball bet by 5 credits.
+- `M`: cycle a bounded batch of 1-10 balls.
+- `Enter`: prepay and drop the configured batch.
+- `P`: open or close the rules and return help.
+- `N`: begin the next round after settlement.
+- `B` / `Escape`: return to the lobby only while ready or settled.
+- Mouse: use every configuration, drop, help, next-round, and lobby control.
+
+Each animation follows a seeded path already fixed by the engine. Rows, risk,
+bet, and batch size are locked during a drop. Exact multiplier and expected-
+return tables are documented in `PLINKO_MATH.md`.
+
 ## Settings
 
 - `M`: toggle audio.

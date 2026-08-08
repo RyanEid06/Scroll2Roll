@@ -22,6 +22,11 @@ Roulette disables Spin until a bet is placed, Repeat/Rebet until a settled
 layout exists, and lobby return while a wager or spin is live. Use Undo or Clear
 before leaving an unspun layout.
 
+Plinko disables configuration during a live drop and disables Drop when the
+complete prepaid batch exceeds the available balance. Wait for the bounded
+animation to settle, then choose Next or return to the lobby. A batch contains
+at most 10 balls and cannot run indefinitely.
+
 ## Reporting a problem
 
 Record the version, the exact action sequence, and whether the problem occurs in the portable package or a development build. Never attach personal or sensitive data; Scroll2Roll does not need any.

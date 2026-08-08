@@ -1,0 +1,98 @@
+import src.plinko.model
+import std.collections
+
+pub fn risk_code(risk: model.Risk) -> Int:
+    match risk:
+        case model.Low:
+            return 0
+        case model.Medium:
+            return 1
+        case model.High:
+            return 2
+
+pub fn risk_name(risk: model.Risk) -> String:
+    match risk:
+        case model.Low:
+            return "Low"
+        case model.Medium:
+            return "Medium"
+        case model.High:
+            return "High"
+
+pub fn target_return_basis_points() -> Int:
+    return 9600
+
+pub fn valid_rows(rows: Int) -> Bool:
+    return rows >= 8 and rows <= 16
+
+pub fn valid_bet(bet: Int) -> Bool:
+    return bet >= 5 and bet <= 1000 and bet / 5 * 5 == bet
+
+pub fn combinations(rows: Int, bucket: Int) -> Int:
+    if rows < 0 or bucket < 0 or bucket > rows:
+        return 0
+    var k = bucket
+    if k > rows - k:
+        k = rows - k
+    var value = 1
+    var index = 1
+    while index <= k:
+        value = value *(rows - k + index) / index
+        index = index + 1
+    return value
+
+pub fn outcome_count(rows: Int) -> Int:
+    var value = 1
+    var index = 0
+    while index < rows:
+        value = value * 2
+        index = index + 1
+    return value
+
+fn absolute(value: Int) -> Int:
+    if value < 0:
+        return 0 - value
+    return value
+
+fn raw_score(rows: Int, bucket: Int, risk: model.Risk) -> Int:
+    let distance = absolute(bucket * 2 - rows)
+    let square = distance * distance
+    let code = risk_code(risk)
+    if code == 0:
+        return 10000 + square * 100
+    if code == 1:
+        return 5000 + square * 300
+    return 1000 + square * square * 10
+
+fn weighted_raw_total(rows: Int, risk: model.Risk) -> Int:
+    var total = 0
+    var bucket = 0
+    while bucket <= rows:
+        total = total + combinations(rows, bucket) * raw_score(rows, bucket, risk)
+        bucket = bucket + 1
+    return total
+
+pub fn multipliers(rows: Int, risk: model.Risk) -> Result[Array[Int], String]:
+    if not valid_rows(rows):
+        return Err("Plinko rows must be between 8 and 16")
+    let outcomes = outcome_count(rows)
+    let weighted = weighted_raw_total(rows, risk)
+    var values: Array[Int] = []
+    var bucket = 0
+    while bucket <= rows:
+        let multiplier = raw_score(rows, bucket, risk) * target_return_basis_points() * outcomes / weighted
+        values = collections.append(values, multiplier)
+        bucket = bucket + 1
+    return Ok(values)
+
+pub fn expected_return_basis_points(rows: Int, risk: model.Risk) -> Result[Int, String]:
+    let values = multipliers(rows, risk)?
+    var weighted = 0
+    var bucket = 0
+    while bucket <= rows:
+        weighted = weighted + combinations(rows, bucket) * values[bucket]
+        bucket = bucket + 1
+    return Ok(weighted / outcome_count(rows))
+
+pub fn payout(stake: Int, multiplier_basis_points: Int) -> Int:
+    return stake * multiplier_basis_points / 10000

@@ -1,0 +1,117 @@
+import src.plinko.engine
+import src.plinko.model
+import std.collections
+
+fn same_path(left: Array[Int], right: Array[Int]) -> Bool:
+    if collections.length(left) != collections.length(right):
+        return false
+    var index = 0
+    while index < collections.length(left):
+        if left[index] != right[index]:
+            return false
+        index = index + 1
+    return true
+
+fn run() -> Result[Int, String]:
+    match engine.new_game(4, 1):
+        case Ok(game):
+            return Ok(1)
+        case Err(error):
+            let expected = true
+    var game = engine.new_game(5000, 31337)?
+    if engine.phase_code(game.phase) != 0 or game.rows != 12 or game.bet != 10:
+        return Ok(2)
+    match engine.with_rows(game, 7):
+        case Ok(value):
+            return Ok(3)
+        case Err(error):
+            let expected = true
+    match engine.with_bet(game, 11):
+        case Ok(value):
+            return Ok(4)
+        case Err(error):
+            let expected = true
+    match engine.with_batch(game, 11):
+        case Ok(value):
+            return Ok(5)
+        case Err(error):
+            let expected = true
+    game = engine.with_rows(game, 16)?
+    game = engine.with_risk(game, model.High())?
+    game = engine.with_bet(game, 25)?
+    game = engine.with_batch(game, 5)?
+    let duplicate = engine.with_batch(engine.with_bet(engine.with_risk(engine.with_rows(engine.new_game(5000, 31337)?, 16)?, model.High())?, 25)?, 5)?
+    let dropping = engine.drop(game)?
+    let same = engine.drop(duplicate)?
+    if engine.phase_code(dropping.phase) != 1 or collections.length(dropping.pending) != 5:
+        return Ok(6)
+    if dropping.balance != 4875 or dropping.total_wager != 125:
+        return Ok(7)
+    var index = 0
+    while index < collections.length(dropping.pending):
+        let result = dropping.pending[index]
+        if collections.length(result.path) != 16 or result.bucket < 0 or result.bucket > 16:
+            return Ok(8)
+        var rights = 0
+        var step = 0
+        while step < collections.length(result.path):
+            if result.path[step] < 0 or result.path[step] > 1:
+                return Ok(9)
+            rights = rights + result.path[step]
+            step = step + 1
+        if rights != result.bucket or not same_path(result.path, same.pending[index].path):
+            return Ok(10)
+        if result.payout < 0:
+            return Ok(11)
+        index = index + 1
+    match engine.with_rows(dropping, 8):
+        case Ok(value):
+            return Ok(12)
+        case Err(error):
+            let expected = true
+    let settled = engine.settle(dropping)?
+    var expected_return = 0
+    index = 0
+    while index < collections.length(settled.pending):
+        expected_return = expected_return + settled.pending[index].payout
+        index = index + 1
+    if engine.phase_code(settled.phase) != 2 or settled.total_return != expected_return:
+        return Ok(13)
+    if settled.balance != 4875 + expected_return or collections.length(settled.history) != 5:
+        return Ok(14)
+    var current = settled
+    var round = 1
+    while round < 12:
+        current = engine.next_round(current)?
+        current = engine.with_rows(current, 8 + round - round / 9 * 9)?
+        current = engine.with_risk(current, model.Low())?
+        current = engine.with_bet(current, 5)?
+        current = engine.with_batch(current, 1)?
+        current = engine.complete_drop(current)?
+        if current.balance < 0:
+            return Ok(15)
+        round = round + 1
+    if current.round_number != 12 or collections.length(current.history) > 20:
+        return Ok(16)
+    var poor = engine.new_game(10, 2)?
+    poor = engine.with_bet(poor, 10)?
+    poor = engine.with_batch(poor, 2)?
+    match engine.drop(poor):
+        case Ok(value):
+            return Ok(17)
+        case Err(error):
+            let expected = true
+    match engine.next_round(game):
+        case Ok(value):
+            return Ok(18)
+        case Err(error):
+            let expected = true
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

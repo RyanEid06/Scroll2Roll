@@ -25,7 +25,7 @@ The owner has approved the 0.2.0 expansion defined in
 `EXPANSION_PLAN.md`: European Roulette, Plinko, Chicken (presented as the
 original Coop Climb), Cross the Road (presented as the original real-time
 Midnight Crossing), and single-player No-Limit Texas Hold'em, implemented in
-that order. European Roulette and the save-v2 foundation are complete. Plinko,
+that order. European Roulette, Plinko, and the save-v2 foundation are complete.
 Chicken, Cross the Road, and Hold'em remain. All five games must be complete
 before final 0.2.0 acceptance.
 
@@ -50,7 +50,7 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
 - A modular rendering-independent Blackjack engine implements checked cards, exact hand values, a deterministic six-deck shoe, cut-card reshuffling, table limits, player/AI betting, legal actions, Hit, Stand, Double Down, Split, Double After Split, a four-hand maximum, split-Ace one-card behavior, no standard resplit, Late Surrender, dealer stand on soft 17, naturals, exact 3:2 settlement, and deterministic AI/basic-strategy progression.
 - Complete and consecutive rounds have bounded transitions and nonnegative play-money balances.
 - A small `src/blackjack/api.rocket` facade is the only rules boundary used by the visual table.
-- The raylib application implements startup, reusable lobby routing, settings, exit confirmation, keyboard/mouse controls, honest Roulette/Poker future placeholders, zero-to-five AI players, dealer and split-hand presentation, hidden/revealed hole card, disabled illegal actions, outcomes, next round, restart, and lobby return.
+- The raylib application implements startup, reusable lobby routing, settings, exit confirmation, keyboard/mouse controls, playable Blackjack, Roulette, and Plinko tables, an honest Poker future placeholder, zero-to-five AI players, disabled illegal actions, outcomes, next round, restart, and lobby return.
 - Versioned local persistence stores display/audio preferences, AI count, first-run state, and approved play-money progress at `%LOCALAPPDATA%\Scroll2Roll\settings.s2r`, with safe missing/invalid/older-data recovery.
 - The static website and Cloudflare Pages staging flow are implemented without claiming browser play.
 - Release packaging includes the native executable, version, notices, controls, troubleshooting, and checksums, and passes relocated headless smoke validation.
@@ -64,13 +64,20 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
   wagers; undo, clear, repeat, rebet; deterministic result-locked animation;
   exact settlement; bounded history; help; keyboard/mouse controls; restart;
   and safe lobby return.
+- Plinko is fully playable for 8-16 rows at Low, Medium, and High risk. Exact
+  symmetric multiplier tables are normalized and audited against binomial
+  landing probabilities for a 95.99%-96.00% theoretical return. Its engine
+  commits explicit seeded 50/50 paths before a bounded 1-10-ball animation,
+  prepays the batch, floors fractional-credit payouts, locks live
+  configuration, preserves bounded history, and supports complete keyboard and
+  mouse play. `PLINKO_MATH.md` publishes every table and return calculation.
 
 ## Architecture
 
 Dependency direction is one way:
 
 1. Per-game model values and validated rule constructors.
-2. Rendering-independent Blackjack and Roulette engines and settlement.
+2. Rendering-independent Blackjack, Roulette, and Plinko engines and settlement.
 3. Small presentation-facing APIs and sessions.
 4. Versioned local persistence isolated from rules.
 5. Reusable router, design tokens, components, lobby, settings, and per-game views.
@@ -93,17 +100,20 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
 - The 0.2.0 expansion baseline was rerun on 2026-08-08: Debug and Release each
   passed native build, `rocketc check`, all 10 existing tests, and both
   formatting checks before new game implementation began.
-- The complete post-Roulette Rocket suite passes 13/13, including the original
-  10 tests plus focused Roulette rules, session, and scripted keyboard/mouse GUI
-  flows.
+- The complete post-Plinko Rocket suite passes 16/16, including the original 10
+  tests plus focused Roulette and Plinko rules/math, session, and scripted
+  keyboard/mouse GUI flows.
+- Debug and Release milestone-E2 validation each pass the native build,
+  `rocketc check`, all 16 tests, and both formatting checks. Source website
+  validation also passes with only implemented games claimed.
 
 ## Deliberate limitations
 
 - Version 0.1.0 is unsigned. Windows may show an unknown-publisher warning; trusted code signing is not claimed.
 - The game is local-only and play-money-only. Credits are not transferable and have no cash value.
 - Poker remains a noninteractive future placeholder until its mandated final
-  game milestone. Plinko, Chicken, and Cross the Road entries are added only
-  when their implementations are complete.
+  game milestone. Chicken and Cross the Road entries are added only when their
+  implementations are complete.
 - The packaged application uses procedural UI art and a short generated tone; it does not ship a screenshot-baseline suite or external art/audio catalog.
 - The frozen Rocket debugger represented the scalar `status` local during acceptance; managed locals such as the argument array may display as unavailable in the native debugger.
 - The frozen LSP's formatter is exposed through its `source.format.rocket` code-action contract and the reproducible `rocketc fmt` workflow; Visual Studio's generic `Edit.FormatDocument` command is not advertised for Rocket documents.
@@ -136,9 +146,11 @@ Spacing, typography, component states, borders, timing, and responsive layout va
   save-v1-to-save-v2 migration, and the multi-game session boundary.
 - Completed: expansion milestone E1, complete European Roulette engine, API,
   UI, persistence flow, deterministic tests, and Blackjack regression gate.
-- Current: expansion milestone E2, Plinko.
-- Next: implement audited 8-16-row low/medium/high Plinko engines and tables,
-  complete UI/animation, deterministic tests, and the full regression gate.
+- Completed: expansion milestone E2, audited 8-16-row Plinko engine and tables,
+  bounded multi-ball UI/animation, deterministic tests, and regression gate.
+- Current: expansion milestone E3, Chicken presented as Coop Climb.
+- Next: implement the specified step-and-cash-out Chicken engine, complete UI,
+  deterministic tests, and the full regression gate.
 
 ## Major decisions
 
@@ -162,7 +174,7 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 
 Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`, and this file
 completely. Inspect Git status and preserve user changes. The 0.1.0 Blackjack
-baseline remains preserved and the post-Roulette suite passes 13/13. Continue from **Milestones**
+baseline remains preserved and the post-Plinko suite passes 16/16. Continue from **Milestones**
 in the exact approved game order. Use frozen Rocket 2.0 and the pinned raylib
 integration, rerun all prior tests at every game gate, update this handoff, make
 logical local commits, and do not push, publish, deploy, sign, or add an

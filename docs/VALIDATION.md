@@ -34,6 +34,30 @@ baseline for every game milestone in `EXPANSION_PLAN.md`.
 - Source website validation passes for the updated 0.2.0 Blackjack and European
   Roulette claims. No package publication or deployment was performed.
 
+## Expansion milestone E2 - Plinko
+
+- `plinko_math_test.rocket` verifies every row count from 8 through 16 for all
+  three risk levels: exact binomial outcome counts, symmetric multiplier
+  arrays, intended risk ordering, valid configuration, payout rounding, and
+  theoretical return between 95.99% and 96.00%. Every audited table is
+  published in `PLINKO_MATH.md`.
+- `plinko_session_test.rocket` verifies explicit-seed 50/50 paths, bucket/path
+  invariants, 1-10-ball batch bounds, prepaid wagers, configuration locking,
+  insufficient-balance errors, exact settlement, bounded history, and 12
+  consecutive rounds without a negative balance.
+- `plinko_gui_flow_test.rocket` verifies responsive lobby routing, help,
+  keyboard and mouse configuration, engine-committed multi-ball animation,
+  bounded settlement, save-v2 persistence, next round, safe lobby return, and
+  native resource cleanup.
+- The complete Rocket suite passes 16/16 with all 10 original Blackjack and
+  infrastructure regressions plus all Roulette tests preserved.
+- Debug and Release `scripts/validate.ps1` each pass the native build,
+  `rocketc check`, all 16 tests, and both formatting checks after complete
+  Plinko integration.
+- Source website validation passes for the updated Blackjack, European
+  Roulette, and Plinko claims. No package publication or deployment was
+  performed.
+
 ## Visual Studio Community 2026
 
 The installed Rocket Language 2.0.3 extension was exercised from this repository with `src/main.rocket` active:
