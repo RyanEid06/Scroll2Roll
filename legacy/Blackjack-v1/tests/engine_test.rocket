@@ -1,0 +1,254 @@
+import src.blackjack
+import std.collections
+
+fn card(rank: Int, suit: Int) -> blackjack.Card:
+    match blackjack.make_card(rank, suit):
+        case Ok(value):
+            return value
+
+        case Err(error):
+            return blackjack.Card(1, 0)
+
+fn test_hand_values() -> Int:
+    let soft_cards = [
+        card(1, 0),
+        card(6, 1)
+    ]
+
+    let soft = blackjack.hand_value(
+        blackjack.make_hand(
+            soft_cards,
+            10,
+            false
+        )
+    )
+
+    if soft.total != 17:
+        return 1
+
+    if not soft.soft:
+        return 2
+
+    let reduced_cards = [
+        card(1, 0),
+        card(9, 1),
+        card(8, 2)
+    ]
+
+    let reduced = blackjack.hand_value(
+        blackjack.make_hand(
+            reduced_cards,
+            10,
+            false
+        )
+    )
+
+    if reduced.total != 18:
+        return 3
+
+    if reduced.soft:
+        return 4
+
+    let blackjack_cards = [
+        card(1, 0),
+        card(13, 1)
+    ]
+
+    let natural = blackjack.hand_value(
+        blackjack.make_hand(
+            blackjack_cards,
+            10,
+            false
+        )
+    )
+
+    if not natural.blackjack:
+        return 5
+
+    if natural.total != 21:
+        return 6
+
+    let split_natural = blackjack.hand_value(
+        blackjack.make_hand(
+            blackjack_cards,
+            10,
+            true
+        )
+    )
+
+    if split_natural.blackjack:
+        return 7
+
+    return 0
+
+fn test_payouts() -> Int:
+    let rules = blackjack.standard_rules()
+
+    let dealer_cards = [
+        card(10, 0),
+        card(8, 1)
+    ]
+
+    let dealer = blackjack.make_hand(
+        dealer_cards,
+        0,
+        false
+    )
+
+    let blackjack_cards = [
+        card(1, 2),
+        card(13, 3)
+    ]
+
+    let natural = blackjack.settle_hand(
+        blackjack.make_hand(
+            blackjack_cards,
+            20,
+            false
+        ),
+        dealer,
+        rules
+    )
+
+    if blackjack.outcome_code(natural.outcome) != 0:
+        return 10
+
+    if natural.payout != 50:
+        return 11
+
+    let win_cards = [
+        card(10, 2),
+        card(9, 3)
+    ]
+
+    let win = blackjack.settle_hand(
+        blackjack.make_hand(
+            win_cards,
+            20,
+            false
+        ),
+        dealer,
+        rules
+    )
+
+    if blackjack.outcome_code(win.outcome) != 1:
+        return 12
+
+    if win.payout != 40:
+        return 13
+
+    let push_cards = [
+        card(10, 2),
+        card(8, 3)
+    ]
+
+    let push = blackjack.settle_hand(
+        blackjack.make_hand(
+            push_cards,
+            20,
+            false
+        ),
+        dealer,
+        rules
+    )
+
+    if blackjack.outcome_code(push.outcome) != 2:
+        return 14
+
+    if push.payout != 20:
+        return 15
+
+    return 0
+
+fn test_chip_breakdown() -> Int:
+    let chips = blackjack.chips_for(691)
+
+    if chips.purple_500 != 1:
+        return 20
+
+    if chips.black_100 != 1:
+        return 21
+
+    if chips.green_25 != 3:
+        return 22
+
+    if chips.blue_10 != 1:
+        return 23
+
+    if chips.red_5 != 1:
+        return 24
+
+    if chips.white_1 != 1:
+        return 25
+
+    return 0
+
+fn run_full_round() -> Result[Int, String]:
+    var game = blackjack.new_game(
+        "Tester",
+        1000,
+        3,
+        777
+    )?
+
+    game = blackjack.set_bet(
+        game,
+        0,
+        20
+    )?
+
+    game = blackjack.place_ai_bets(game)?
+    game = blackjack.start_round(game)?
+
+    var guard = 0
+
+    while blackjack.phase_code(game.phase) != 3:
+        if guard >= 300:
+            return Ok(30)
+
+        if blackjack.phase_code(game.phase) == 1:
+            let action =
+                blackjack.choose_basic_action(game)?
+
+            game = blackjack.apply_action(
+                game,
+                action
+            )?
+
+        else:
+            if blackjack.phase_code(game.phase) == 2:
+                game = blackjack.dealer_step(game)?
+
+        guard = guard + 1
+
+    if collections.length(game.results) == 0:
+        return Ok(31)
+
+    if game.players[0].balance < 0:
+        return Ok(32)
+
+    return Ok(0)
+
+fn main() -> Int:
+    let hand_status = test_hand_values()
+
+    if hand_status != 0:
+        return hand_status
+
+    let payout_status = test_payouts()
+
+    if payout_status != 0:
+        return payout_status
+
+    let chip_status = test_chip_breakdown()
+
+    if chip_status != 0:
+        return chip_status
+
+    match run_full_round():
+        case Ok(status):
+            return status
+
+        case Err(error):
+            print(error)
+            return 40

@@ -1,0 +1,2146 @@
+import std.collections
+import std.random
+import std.string
+
+# Rocket Blackjack headless engine.
+# Monetary values are integer credits. Bets must respect rules.bet_unit so
+# 3:2 blackjack payouts remain exact without floating-point money.
+
+pub enum Phase:
+    Betting
+    PlayerTurns
+    DealerTurn
+    Settled
+
+pub enum Action:
+    Hit
+    Stand
+    Double
+    Split
+    Surrender
+
+pub enum Outcome:
+    BlackjackWin
+    Win
+    Push
+    Lose
+    Surrendered
+
+pub struct Rules:
+    deck_count: Int
+    dealer_hits_soft_17: Bool
+    blackjack_numerator: Int
+    blackjack_denominator: Int
+    max_split_hands: Int
+    allow_double_after_split: Bool
+    allow_surrender: Bool
+    allow_resplit_aces: Bool
+    minimum_bet: Int
+    maximum_bet: Int
+    cut_percent: Int
+    bet_unit: Int
+
+pub struct Card:
+    rank: Int
+    suit: Int
+
+pub struct Hand:
+    cards: Array[Card]
+    bet: Int
+    stood: Bool
+    surrendered: Bool
+    doubled: Bool
+    from_split: Bool
+    split_aces: Bool
+    action_count: Int
+    finished: Bool
+
+pub struct HandValue:
+    total: Int
+    soft: Bool
+    blackjack: Bool
+    busted: Bool
+
+pub struct Player:
+    id: Int
+    name: String
+    is_human: Bool
+    balance: Int
+    pending_bet: Int
+    hands: Array[Hand]
+    active_hand: Int
+
+pub struct Shoe:
+    cards: Array[Card]
+    next_index: Int
+    cut_index: Int
+
+pub struct DrawResult:
+    shoe: Shoe
+    card: Card
+
+pub struct DealPlayersResult:
+    players: Array[Player]
+    shoe: Shoe
+
+pub struct TurnPosition:
+    found: Bool
+    player_index: Int
+    hand_index: Int
+
+pub struct HandSettlement:
+    outcome: Outcome
+    payout: Int
+    player_total: Int
+    dealer_total: Int
+
+pub struct HandResult:
+    player_index: Int
+    hand_index: Int
+    outcome: Outcome
+    payout: Int
+    player_total: Int
+    dealer_total: Int
+
+pub struct ChipStack:
+    total: Int
+    purple_500: Int
+    black_100: Int
+    green_25: Int
+    blue_10: Int
+    red_5: Int
+    white_1: Int
+
+pub struct Game:
+    rules: Rules
+    shoe: Shoe
+    dealer_hand: Hand
+    players: Array[Player]
+    phase: Phase
+    active_player: Int
+    round_number: Int
+    seed: Int
+    message: String
+    results: Array[HandResult]
+
+pub fn standard_rules() -> Rules:
+    # Six-deck shoe, dealer stands on soft 17, blackjack pays 3:2,
+    # double after split, late surrender, up to four split hands.
+    return Rules(6, false, 3, 2, 4, true, true, false, 10, 1000, 75, 2)
+
+fn empty_hand_with_bet(bet: Int, from_split: Bool) -> Hand:
+    let cards: Array[Card] = []
+    return Hand(cards, bet, false, false, false, from_split, false, 0, false)
+
+fn empty_dealer_hand() -> Hand:
+    return empty_hand_with_bet(0, false)
+
+pub fn make_card(rank: Int, suit: Int) -> Result[Card, String]:
+    if rank < 1 or rank > 13:
+        return Err("Card rank must be between 1 and 13")
+    if suit < 0 or suit > 3:
+        return Err("Card suit must be between 0 and 3")
+    return Ok(Card(rank, suit))
+
+pub fn make_hand(cards: Array[Card], bet: Int, from_split: Bool) -> Hand:
+    return Hand(cards, bet, false, false, false, from_split, false, 0, false)
+
+pub fn card_blackjack_value(card: Card) -> Int:
+    if card.rank == 1:
+        return 11
+    if card.rank >= 10:
+        return 10
+    return card.rank
+
+fn rank_name(rank: Int) -> String:
+    if rank == 1:
+        return "A"
+    if rank == 11:
+        return "J"
+    if rank == 12:
+        return "Q"
+    if rank == 13:
+        return "K"
+    return string.from_int(rank)
+
+fn suit_name(suit: Int) -> String:
+    if suit == 0:
+        return "S"
+    if suit == 1:
+        return "H"
+    if suit == 2:
+        return "D"
+    return "C"
+
+pub fn card_name(card: Card) -> String:
+    return string.concat(rank_name(card.rank), suit_name(card.suit))
+
+pub fn hand_value(hand: Hand) -> HandValue:
+    var total = 0
+    var aces = 0
+    var index = 0
+
+    while index < collections.length(hand.cards):
+        let card = hand.cards[index]
+        total = total + card_blackjack_value(card)
+
+        if card.rank == 1:
+            aces = aces + 1
+
+        index = index + 1
+
+    while total > 21 and aces > 0:
+        total = total - 10
+        aces = aces - 1
+
+    let soft = aces > 0
+    let natural =
+        collections.length(hand.cards) == 2
+        and total == 21
+        and not hand.from_split
+
+    return HandValue(total, soft, natural, total > 21)
+
+pub fn phase_code(phase: Phase) -> Int:
+    match phase:
+        case Betting:
+            return 0
+        case PlayerTurns:
+            return 1
+        case DealerTurn:
+            return 2
+        case Settled:
+            return 3
+
+pub fn action_code(action: Action) -> Int:
+    match action:
+        case Hit:
+            return 0
+        case Stand:
+            return 1
+        case Double:
+            return 2
+        case Split:
+            return 3
+        case Surrender:
+            return 4
+
+pub fn outcome_code(outcome: Outcome) -> Int:
+    match outcome:
+        case BlackjackWin:
+            return 0
+        case Win:
+            return 1
+        case Push:
+            return 2
+        case Lose:
+            return 3
+        case Surrendered:
+            return 4
+
+pub fn action_name(action: Action) -> String:
+    match action:
+        case Hit:
+            return "Hit"
+        case Stand:
+            return "Stand"
+        case Double:
+            return "Double"
+        case Split:
+            return "Split"
+        case Surrender:
+            return "Surrender"
+
+pub fn outcome_name(outcome: Outcome) -> String:
+    match outcome:
+        case BlackjackWin:
+            return "Blackjack"
+        case Win:
+            return "Win"
+        case Push:
+            return "Push"
+        case Lose:
+            return "Lose"
+        case Surrendered:
+            return "Surrender"
+
+fn is_multiple(value: Int, unit: Int) -> Bool:
+    return value / unit * unit == value
+
+fn build_cards(deck_count: Int) -> Array[Card]:
+    var cards: Array[Card] = []
+    var deck = 0
+
+    while deck < deck_count:
+        var suit = 0
+
+        while suit < 4:
+            var rank = 1
+
+            while rank <= 13:
+                cards = collections.append(cards, Card(rank, suit))
+                rank = rank + 1
+
+            suit = suit + 1
+
+        deck = deck + 1
+
+    return cards
+
+fn shuffle_cards(cards: Array[Card], seed: Int) -> Array[Card]:
+    random.seed(seed)
+
+    var shuffled = cards
+    var index = collections.length(shuffled) - 1
+
+    while index > 0:
+        let other = random.int(0, index + 1)
+        let temporary = shuffled[index]
+
+        shuffled[index] = shuffled[other]
+        shuffled[other] = temporary
+
+        index = index - 1
+
+    return shuffled
+
+fn create_shoe(rules: Rules, seed: Int) -> Shoe:
+    let shuffled = shuffle_cards(build_cards(rules.deck_count), seed)
+    let cut_index =
+        collections.length(shuffled) * rules.cut_percent / 100
+
+    return Shoe(shuffled, 0, cut_index)
+
+fn draw_card(shoe: Shoe) -> Result[DrawResult, String]:
+    if shoe.next_index >= collections.length(shoe.cards):
+        return Err("The shoe has no cards remaining")
+
+    let card = shoe.cards[shoe.next_index]
+
+    let updated = Shoe(
+        shoe.cards,
+        shoe.next_index + 1,
+        shoe.cut_index
+    )
+
+    return Ok(DrawResult(updated, card))
+
+fn replace_player(
+    players: Array[Player],
+    index: Int,
+    player: Player
+) -> Array[Player]:
+    var updated = players
+    updated[index] = player
+    return updated
+
+fn replace_hand(
+    hands: Array[Hand],
+    index: Int,
+    hand: Hand
+) -> Array[Hand]:
+    var updated = hands
+    updated[index] = hand
+    return updated
+
+fn update_game(
+    game: Game,
+    shoe: Shoe,
+    dealer_hand: Hand,
+    players: Array[Player],
+    phase: Phase,
+    active_player: Int,
+    message: String,
+    results: Array[HandResult]
+) -> Game:
+    return Game(
+        game.rules,
+        shoe,
+        dealer_hand,
+        players,
+        phase,
+        active_player,
+        game.round_number,
+        game.seed,
+        message,
+        results
+    )
+
+pub fn new_game(
+    human_name: String,
+    starting_balance: Int,
+    ai_count: Int,
+    seed: Int
+) -> Result[Game, String]:
+    let rules = standard_rules()
+
+    if ai_count < 0 or ai_count > 5:
+        return Err("AI count must be between 0 and 5")
+
+    if starting_balance < rules.minimum_bet:
+        return Err("Starting balance is below the table minimum")
+
+    var players: Array[Player] = []
+    let no_hands: Array[Hand] = []
+
+    players = collections.append(
+        players,
+        Player(
+            0,
+            human_name,
+            true,
+            starting_balance,
+            0,
+            no_hands,
+            0
+        )
+    )
+
+    var index = 0
+
+    while index < ai_count:
+        let number = index + 1
+        let name = string.concat(
+            "AI ",
+            string.from_int(number)
+        )
+
+        let ai_hands: Array[Hand] = []
+
+        players = collections.append(
+            players,
+            Player(
+                number,
+                name,
+                false,
+                starting_balance,
+                0,
+                ai_hands,
+                0
+            )
+        )
+
+        index = index + 1
+
+    let shoe = create_shoe(rules, seed)
+    let results: Array[HandResult] = []
+
+    return Ok(
+        Game(
+            rules,
+            shoe,
+            empty_dealer_hand(),
+            players,
+            Betting(),
+            0,
+            1,
+            seed,
+            "Place your bet",
+            results
+        )
+    )
+
+pub fn set_bet(
+    game: Game,
+    player_index: Int,
+    amount: Int
+) -> Result[Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err(
+            "Bets can only be changed during the betting phase"
+        )
+
+    if player_index < 0:
+        return Err("Invalid player index")
+
+    if player_index >= collections.length(game.players):
+        return Err("Invalid player index")
+
+    if amount != 0:
+        if amount < game.rules.minimum_bet:
+            return Err("Bet is below the table minimum")
+
+        if amount > game.rules.maximum_bet:
+            return Err("Bet is above the table maximum")
+
+        if not is_multiple(amount, game.rules.bet_unit):
+            return Err(
+                "Bet does not match the table betting unit"
+            )
+
+    let player = game.players[player_index]
+    let available = player.balance + player.pending_bet
+
+    if amount > available:
+        return Err("Player does not have enough chips")
+
+    let updated_player = Player(
+        player.id,
+        player.name,
+        player.is_human,
+        available - amount,
+        amount,
+        player.hands,
+        player.active_hand
+    )
+
+    let updated_players = replace_player(
+        game.players,
+        player_index,
+        updated_player
+    )
+
+    return Ok(
+        update_game(
+            game,
+            game.shoe,
+            game.dealer_hand,
+            updated_players,
+            game.phase,
+            game.active_player,
+            "Bet updated",
+            game.results
+        )
+    )
+
+fn capped_ai_bet(
+    player: Player,
+    rules: Rules,
+    round_number: Int
+) -> Int:
+    if player.balance < rules.minimum_bet:
+        return 0
+
+    let cycle_source = player.id + round_number
+    let cycle = cycle_source - cycle_source / 3 * 3
+
+    var amount = rules.minimum_bet * (cycle + 1)
+
+    if amount > rules.maximum_bet:
+        amount = rules.maximum_bet
+
+    if amount > player.balance:
+        amount =
+            player.balance / rules.bet_unit * rules.bet_unit
+
+    if amount < rules.minimum_bet:
+        return 0
+
+    return amount
+
+pub fn place_ai_bets(game: Game) -> Result[Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err(
+            "AI bets can only be placed during the betting phase"
+        )
+
+    var current = game
+    var index = 0
+
+    while index < collections.length(current.players):
+        let player = current.players[index]
+
+        if not player.is_human:
+            let amount = capped_ai_bet(
+                player,
+                current.rules,
+                current.round_number
+            )
+
+            current = set_bet(current, index, amount)?
+
+        index = index + 1
+
+    return Ok(current)
+
+fn prepare_shoe(game: Game) -> Shoe:
+    let remaining =
+        collections.length(game.shoe.cards)
+        - game.shoe.next_index
+
+    let minimum_remaining =
+        collections.length(game.players) * 20 + 20
+
+    if game.shoe.next_index >= game.shoe.cut_index:
+        let next_seed =
+            game.seed + game.round_number * 7919
+
+        return create_shoe(game.rules, next_seed)
+
+    if remaining < minimum_remaining:
+        let next_seed =
+            game.seed + game.round_number * 7919
+
+        return create_shoe(game.rules, next_seed)
+
+    return game.shoe
+
+fn player_for_round(player: Player) -> Player:
+    if player.pending_bet <= 0:
+        let no_hands: Array[Hand] = []
+
+        return Player(
+            player.id,
+            player.name,
+            player.is_human,
+            player.balance,
+            0,
+            no_hands,
+            0
+        )
+
+    var hands: Array[Hand] = []
+
+    hands = collections.append(
+        hands,
+        empty_hand_with_bet(
+            player.pending_bet,
+            false
+        )
+    )
+
+    return Player(
+        player.id,
+        player.name,
+        player.is_human,
+        player.balance,
+        0,
+        hands,
+        0
+    )
+
+fn deal_one_to_player(
+    players: Array[Player],
+    player_index: Int,
+    shoe: Shoe
+) -> Result[DealPlayersResult, String]:
+    let player = players[player_index]
+
+    if collections.length(player.hands) == 0:
+        return Ok(
+            DealPlayersResult(players, shoe)
+        )
+
+    let drawn = draw_card(shoe)?
+    let hand = player.hands[0]
+
+    let cards = collections.append(
+        hand.cards,
+        drawn.card
+    )
+
+    let updated_hand = Hand(
+        cards,
+        hand.bet,
+        hand.stood,
+        hand.surrendered,
+        hand.doubled,
+        hand.from_split,
+        hand.split_aces,
+        hand.action_count,
+        hand.finished
+    )
+
+    let updated_hands = replace_hand(
+        player.hands,
+        0,
+        updated_hand
+    )
+
+    let updated_player = Player(
+        player.id,
+        player.name,
+        player.is_human,
+        player.balance,
+        player.pending_bet,
+        updated_hands,
+        player.active_hand
+    )
+
+    return Ok(
+        DealPlayersResult(
+            replace_player(
+                players,
+                player_index,
+                updated_player
+            ),
+            drawn.shoe
+        )
+    )
+
+fn mark_natural_blackjacks(
+    players: Array[Player]
+) -> Array[Player]:
+    var updated_players = players
+    var player_index = 0
+
+    while player_index < collections.length(updated_players):
+        let player = updated_players[player_index]
+
+        if collections.length(player.hands) > 0:
+            let hand = player.hands[0]
+            let value = hand_value(hand)
+
+            if value.blackjack:
+                let finished_hand = Hand(
+                    hand.cards,
+                    hand.bet,
+                    hand.stood,
+                    hand.surrendered,
+                    hand.doubled,
+                    hand.from_split,
+                    hand.split_aces,
+                    hand.action_count,
+                    true
+                )
+
+                let updated_hands = replace_hand(
+                    player.hands,
+                    0,
+                    finished_hand
+                )
+
+                let updated_player = Player(
+                    player.id,
+                    player.name,
+                    player.is_human,
+                    player.balance,
+                    player.pending_bet,
+                    updated_hands,
+                    0
+                )
+
+                updated_players = replace_player(
+                    updated_players,
+                    player_index,
+                    updated_player
+                )
+
+        player_index = player_index + 1
+
+    return updated_players
+
+fn first_turn(players: Array[Player]) -> TurnPosition:
+    var player_index = 0
+
+    while player_index < collections.length(players):
+        let player = players[player_index]
+        var hand_index = 0
+
+        while hand_index < collections.length(player.hands):
+            if not player.hands[hand_index].finished:
+                return TurnPosition(
+                    true,
+                    player_index,
+                    hand_index
+                )
+
+            hand_index = hand_index + 1
+
+        player_index = player_index + 1
+
+    return TurnPosition(false, 0, 0)
+
+fn next_turn(
+    players: Array[Player],
+    current_player: Int,
+    current_hand: Int
+) -> TurnPosition:
+    var player_index = current_player
+    var hand_index = current_hand + 1
+
+    while player_index < collections.length(players):
+        let player = players[player_index]
+
+        while hand_index < collections.length(player.hands):
+            if not player.hands[hand_index].finished:
+                return TurnPosition(
+                    true,
+                    player_index,
+                    hand_index
+                )
+
+            hand_index = hand_index + 1
+
+        player_index = player_index + 1
+        hand_index = 0
+
+    return TurnPosition(false, 0, 0)
+
+fn turn_message(player: Player) -> String:
+    return string.concat(
+        player.name,
+        "'s turn"
+    )
+
+fn set_player_active_hand(
+    players: Array[Player],
+    player_index: Int,
+    hand_index: Int
+) -> Array[Player]:
+    let player = players[player_index]
+
+    let updated = Player(
+        player.id,
+        player.name,
+        player.is_human,
+        player.balance,
+        player.pending_bet,
+        player.hands,
+        hand_index
+    )
+
+    return replace_player(
+        players,
+        player_index,
+        updated
+    )
+
+pub fn start_round(game: Game) -> Result[Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err(
+            "Round can only start from the betting phase"
+        )
+
+    if game.players[0].pending_bet <= 0:
+        return Err(
+            "The human player must place a bet"
+        )
+
+    var players = game.players
+    var player_index = 0
+
+    while player_index < collections.length(players):
+        players[player_index] =
+            player_for_round(players[player_index])
+
+        player_index = player_index + 1
+
+    var shoe = prepare_shoe(game)
+
+    player_index = 0
+
+    while player_index < collections.length(players):
+        let dealt = deal_one_to_player(
+            players,
+            player_index,
+            shoe
+        )?
+
+        players = dealt.players
+        shoe = dealt.shoe
+
+        player_index = player_index + 1
+
+    let dealer_up = draw_card(shoe)?
+    shoe = dealer_up.shoe
+
+    var dealer_cards: Array[Card] = []
+
+    dealer_cards = collections.append(
+        dealer_cards,
+        dealer_up.card
+    )
+
+    player_index = 0
+
+    while player_index < collections.length(players):
+        let dealt = deal_one_to_player(
+            players,
+            player_index,
+            shoe
+        )?
+
+        players = dealt.players
+        shoe = dealt.shoe
+
+        player_index = player_index + 1
+
+    let dealer_hole = draw_card(shoe)?
+    shoe = dealer_hole.shoe
+
+    dealer_cards = collections.append(
+        dealer_cards,
+        dealer_hole.card
+    )
+
+    let dealer_hand = Hand(
+        dealer_cards,
+        0,
+        false,
+        false,
+        false,
+        false,
+        false,
+        0,
+        false
+    )
+
+    players = mark_natural_blackjacks(players)
+
+    let position = first_turn(players)
+    let no_results: Array[HandResult] = []
+
+    let base = Game(
+        game.rules,
+        shoe,
+        dealer_hand,
+        players,
+        PlayerTurns(),
+        0,
+        game.round_number,
+        game.seed,
+        "Player turns",
+        no_results
+    )
+
+    if hand_value(dealer_hand).blackjack:
+        let dealer_phase = update_game(
+            base,
+            shoe,
+            dealer_hand,
+            players,
+            DealerTurn(),
+            0,
+            "Dealer has blackjack",
+            no_results
+        )
+
+        return Ok(settle_game(dealer_phase))
+
+    if not position.found:
+        let dealer_phase = update_game(
+            base,
+            shoe,
+            dealer_hand,
+            players,
+            DealerTurn(),
+            0,
+            "Resolving naturals",
+            no_results
+        )
+
+        return Ok(settle_game(dealer_phase))
+
+    players = set_player_active_hand(
+        players,
+        position.player_index,
+        position.hand_index
+    )
+
+    let active = players[position.player_index]
+
+    return Ok(
+        update_game(
+            base,
+            shoe,
+            dealer_hand,
+            players,
+            PlayerTurns(),
+            position.player_index,
+            turn_message(active),
+            no_results
+        )
+    )
+
+fn has_action_code(
+    actions: Array[Action],
+    code: Int
+) -> Bool:
+    var index = 0
+
+    while index < collections.length(actions):
+        if action_code(actions[index]) == code:
+            return true
+
+        index = index + 1
+
+    return false
+
+fn can_double(
+    game: Game,
+    player: Player,
+    hand: Hand
+) -> Bool:
+    if collections.length(hand.cards) != 2:
+        return false
+
+    if hand.action_count != 0:
+        return false
+
+    if player.balance < hand.bet:
+        return false
+
+    if hand.from_split:
+        if not game.rules.allow_double_after_split:
+            return false
+
+    if hand.split_aces:
+        return false
+
+    return true
+
+fn can_split(
+    game: Game,
+    player: Player,
+    hand: Hand
+) -> Bool:
+    if collections.length(hand.cards) != 2:
+        return false
+
+    if hand.action_count != 0:
+        return false
+
+    if player.balance < hand.bet:
+        return false
+
+    if collections.length(player.hands) >= game.rules.max_split_hands:
+        return false
+
+    if hand.cards[0].rank != hand.cards[1].rank:
+        return false
+
+    if hand.cards[0].rank == 1 and hand.from_split:
+        if not game.rules.allow_resplit_aces:
+            return false
+
+    return true
+
+fn can_surrender(
+    game: Game,
+    hand: Hand
+) -> Bool:
+    if not game.rules.allow_surrender:
+        return false
+
+    if hand.from_split:
+        return false
+
+    if collections.length(hand.cards) != 2:
+        return false
+
+    if hand.action_count != 0:
+        return false
+
+    return true
+
+pub fn available_actions(game: Game) -> Array[Action]:
+    var actions: Array[Action] = []
+
+    if phase_code(game.phase) != 1:
+        return actions
+
+    if game.active_player < 0:
+        return actions
+
+    if game.active_player >= collections.length(game.players):
+        return actions
+
+    let player = game.players[game.active_player]
+
+    if player.active_hand < 0:
+        return actions
+
+    if player.active_hand >= collections.length(player.hands):
+        return actions
+
+    let hand = player.hands[player.active_hand]
+
+    if hand.finished:
+        return actions
+
+    actions = collections.append(
+        actions,
+        Hit()
+    )
+
+    actions = collections.append(
+        actions,
+        Stand()
+    )
+
+    if can_double(game, player, hand):
+        actions = collections.append(
+            actions,
+            Double()
+        )
+
+    if can_split(game, player, hand):
+        actions = collections.append(
+            actions,
+            Split()
+        )
+
+    if can_surrender(game, hand):
+        actions = collections.append(
+            actions,
+            Surrender()
+        )
+
+    return actions
+
+pub fn available_action_names(
+    game: Game
+) -> Array[String]:
+    let actions = available_actions(game)
+
+    var names: Array[String] = []
+    var index = 0
+
+    while index < collections.length(actions):
+        names = collections.append(
+            names,
+            action_name(actions[index])
+        )
+
+        index = index + 1
+
+    return names
+
+pub fn instruction(game: Game) -> String:
+    let phase = phase_code(game.phase)
+
+    if phase == 0:
+        return "Choose a legal bet, then start the round"
+
+    if phase == 1:
+        let player = game.players[game.active_player]
+
+        if player.is_human:
+            let names = available_action_names(game)
+
+            return string.concat(
+                "Your options: ",
+                collections.join(names, " | ")
+            )
+
+        return string.concat(
+            player.name,
+            " is choosing an action"
+        )
+
+    if phase == 2:
+        return "Dealer is drawing to the table rule"
+
+    return "Round complete; review results or begin the next round"
+
+fn advance_after_finished_hand(
+    game: Game,
+    players: Array[Player]
+) -> Game:
+    let current_player = game.active_player
+
+    let current_hand =
+        players[current_player].active_hand
+
+    let position = next_turn(
+        players,
+        current_player,
+        current_hand
+    )
+
+    if position.found:
+        let updated_players =
+            set_player_active_hand(
+                players,
+                position.player_index,
+                position.hand_index
+            )
+
+        let player =
+            updated_players[position.player_index]
+
+        return update_game(
+            game,
+            game.shoe,
+            game.dealer_hand,
+            updated_players,
+            PlayerTurns(),
+            position.player_index,
+            turn_message(player),
+            game.results
+        )
+
+    return update_game(
+        game,
+        game.shoe,
+        game.dealer_hand,
+        players,
+        DealerTurn(),
+        0,
+        "Dealer turn",
+        game.results
+    )
+
+fn hit_action(game: Game) -> Result[Game, String]:
+    let player = game.players[game.active_player]
+    let hand_index = player.active_hand
+    let hand = player.hands[hand_index]
+
+    let drawn = draw_card(game.shoe)?
+
+    let cards = collections.append(
+        hand.cards,
+        drawn.card
+    )
+
+    var finished = false
+
+    let temporary = Hand(
+        cards,
+        hand.bet,
+        false,
+        false,
+        hand.doubled,
+        hand.from_split,
+        hand.split_aces,
+        hand.action_count + 1,
+        false
+    )
+
+    let value = hand_value(temporary)
+
+    if value.busted or value.total == 21:
+        finished = true
+
+    let updated_hand = Hand(
+        cards,
+        hand.bet,
+        false,
+        false,
+        hand.doubled,
+        hand.from_split,
+        hand.split_aces,
+        hand.action_count + 1,
+        finished
+    )
+
+    let updated_hands = replace_hand(
+        player.hands,
+        hand_index,
+        updated_hand
+    )
+
+    let updated_player = Player(
+        player.id,
+        player.name,
+        player.is_human,
+        player.balance,
+        player.pending_bet,
+        updated_hands,
+        hand_index
+    )
+
+    let updated_players = replace_player(
+        game.players,
+        game.active_player,
+        updated_player
+    )
+
+    let updated_game = update_game(
+        game,
+        drawn.shoe,
+        game.dealer_hand,
+        updated_players,
+        game.phase,
+        game.active_player,
+        "Card dealt",
+        game.results
+    )
+
+    if finished:
+        return Ok(
+            advance_after_finished_hand(
+                updated_game,
+                updated_players
+            )
+        )
+
+    return Ok(updated_game)
+
+fn stand_action(game: Game) -> Game:
+    let player = game.players[game.active_player]
+    let hand_index = player.active_hand
+    let hand = player.hands[hand_index]
+
+    let updated_hand = Hand(
+        hand.cards,
+        hand.bet,
+        true,
+        hand.surrendered,
+        hand.doubled,
+        hand.from_split,
+        hand.split_aces,
+        hand.action_count + 1,
+        true
+    )
+
+    let updated_hands = replace_hand(
+        player.hands,
+        hand_index,
+        updated_hand
+    )
+
+    let updated_player = Player(
+        player.id,
+        player.name,
+        player.is_human,
+        player.balance,
+        player.pending_bet,
+        updated_hands,
+        hand_index
+    )
+
+    let updated_players = replace_player(
+        game.players,
+        game.active_player,
+        updated_player
+    )
+
+    let updated_game = update_game(
+        game,
+        game.shoe,
+        game.dealer_hand,
+        updated_players,
+        game.phase,
+        game.active_player,
+        "Hand stands",
+        game.results
+    )
+
+    return advance_after_finished_hand(
+        updated_game,
+        updated_players
+    )
+
+fn surrender_action(game: Game) -> Game:
+    let player = game.players[game.active_player]
+    let hand_index = player.active_hand
+    let hand = player.hands[hand_index]
+
+    let updated_hand = Hand(
+        hand.cards,
+        hand.bet,
+        false,
+        true,
+        hand.doubled,
+        hand.from_split,
+        hand.split_aces,
+        hand.action_count + 1,
+        true
+    )
+
+    let updated_hands = replace_hand(
+        player.hands,
+        hand_index,
+        updated_hand
+    )
+
+    let updated_player = Player(
+        player.id,
+        player.name,
+        player.is_human,
+        player.balance,
+        player.pending_bet,
+        updated_hands,
+        hand_index
+    )
+
+    let updated_players = replace_player(
+        game.players,
+        game.active_player,
+        updated_player
+    )
+
+    let updated_game = update_game(
+        game,
+        game.shoe,
+        game.dealer_hand,
+        updated_players,
+        game.phase,
+        game.active_player,
+        "Hand surrendered",
+        game.results
+    )
+
+    return advance_after_finished_hand(
+        updated_game,
+        updated_players
+    )
+
+fn double_action(
+    game: Game
+) -> Result[Game, String]:
+    let player = game.players[game.active_player]
+    let hand_index = player.active_hand
+    let hand = player.hands[hand_index]
+
+    let drawn = draw_card(game.shoe)?
+
+    let cards = collections.append(
+        hand.cards,
+        drawn.card
+    )
+
+    let updated_hand = Hand(
+        cards,
+        hand.bet * 2,
+        false,
+        false,
+        true,
+        hand.from_split,
+        hand.split_aces,
+        hand.action_count + 1,
+        true
+    )
+
+    let updated_hands = replace_hand(
+        player.hands,
+        hand_index,
+        updated_hand
+    )
+
+    let updated_player = Player(
+        player.id,
+        player.name,
+        player.is_human,
+        player.balance - hand.bet,
+        player.pending_bet,
+        updated_hands,
+        hand_index
+    )
+
+    let updated_players = replace_player(
+        game.players,
+        game.active_player,
+        updated_player
+    )
+
+    let updated_game = update_game(
+        game,
+        drawn.shoe,
+        game.dealer_hand,
+        updated_players,
+        game.phase,
+        game.active_player,
+        "Bet doubled; one card dealt",
+        game.results
+    )
+
+    return Ok(
+        advance_after_finished_hand(
+            updated_game,
+            updated_players
+        )
+    )
+
+fn split_action(
+    game: Game
+) -> Result[Game, String]:
+    let player = game.players[game.active_player]
+    let hand_index = player.active_hand
+    let hand = player.hands[hand_index]
+
+    let splitting_aces =
+        hand.cards[0].rank == 1
+
+    let first_draw = draw_card(game.shoe)?
+    let second_draw = draw_card(first_draw.shoe)?
+
+    var first_cards: Array[Card] = []
+
+    first_cards = collections.append(
+        first_cards,
+        hand.cards[0]
+    )
+
+    first_cards = collections.append(
+        first_cards,
+        first_draw.card
+    )
+
+    var second_cards: Array[Card] = []
+
+    second_cards = collections.append(
+        second_cards,
+        hand.cards[1]
+    )
+
+    second_cards = collections.append(
+        second_cards,
+        second_draw.card
+    )
+
+    let auto_finish =
+        splitting_aces
+        and not game.rules.allow_resplit_aces
+
+    let first_hand = Hand(
+        first_cards,
+        hand.bet,
+        false,
+        false,
+        false,
+        true,
+        splitting_aces,
+        0,
+        auto_finish
+    )
+
+    let second_hand = Hand(
+        second_cards,
+        hand.bet,
+        false,
+        false,
+        false,
+        true,
+        splitting_aces,
+        0,
+        auto_finish
+    )
+
+    var hands = replace_hand(
+        player.hands,
+        hand_index,
+        first_hand
+    )
+
+    hands = collections.insert(
+        hands,
+        hand_index + 1,
+        second_hand
+    )
+
+    let updated_player = Player(
+        player.id,
+        player.name,
+        player.is_human,
+        player.balance - hand.bet,
+        player.pending_bet,
+        hands,
+        hand_index
+    )
+
+    let updated_players = replace_player(
+        game.players,
+        game.active_player,
+        updated_player
+    )
+
+    let updated_game = update_game(
+        game,
+        second_draw.shoe,
+        game.dealer_hand,
+        updated_players,
+        game.phase,
+        game.active_player,
+        "Pair split into two hands",
+        game.results
+    )
+
+    if auto_finish:
+        return Ok(
+            advance_after_finished_hand(
+                updated_game,
+                updated_players
+            )
+        )
+
+    return Ok(updated_game)
+
+pub fn apply_action(
+    game: Game,
+    action: Action
+) -> Result[Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err(
+            "Actions are only legal during player turns"
+        )
+
+    let actions = available_actions(game)
+    let code = action_code(action)
+
+    if not has_action_code(actions, code):
+        return Err(
+            "That action is not legal for the current hand"
+        )
+
+    if code == 0:
+        return hit_action(game)
+
+    if code == 1:
+        return Ok(stand_action(game))
+
+    if code == 2:
+        return double_action(game)
+
+    if code == 3:
+        return split_action(game)
+
+    return Ok(surrender_action(game))
+
+pub fn dealer_up_card(
+    game: Game
+) -> Result[Card, String]:
+    if collections.length(game.dealer_hand.cards) == 0:
+        return Err("Dealer has no up card")
+
+    return Ok(game.dealer_hand.cards[0])
+
+pub fn dealer_should_hit(
+    hand: Hand,
+    rules: Rules
+) -> Bool:
+    let value = hand_value(hand)
+
+    if value.busted:
+        return false
+
+    if value.total < 17:
+        return true
+
+    if value.total > 17:
+        return false
+
+    return value.soft and rules.dealer_hits_soft_17
+
+fn live_comparison_hand_exists(
+    players: Array[Player]
+) -> Bool:
+    var player_index = 0
+
+    while player_index < collections.length(players):
+        let player = players[player_index]
+        var hand_index = 0
+
+        while hand_index < collections.length(player.hands):
+            let hand = player.hands[hand_index]
+            let value = hand_value(hand)
+
+            if not hand.surrendered:
+                if not value.busted:
+                    if not value.blackjack:
+                        return true
+
+            hand_index = hand_index + 1
+
+        player_index = player_index + 1
+
+    return false
+
+pub fn settle_hand(
+    hand: Hand,
+    dealer_hand: Hand,
+    rules: Rules
+) -> HandSettlement:
+    let player_value = hand_value(hand)
+    let dealer_value = hand_value(dealer_hand)
+
+    if hand.surrendered:
+        return HandSettlement(
+            Surrendered(),
+            hand.bet / 2,
+            player_value.total,
+            dealer_value.total
+        )
+
+    if dealer_value.blackjack:
+        if player_value.blackjack:
+            return HandSettlement(
+                Push(),
+                hand.bet,
+                player_value.total,
+                dealer_value.total
+            )
+
+        return HandSettlement(
+            Lose(),
+            0,
+            player_value.total,
+            dealer_value.total
+        )
+
+    if player_value.blackjack:
+        let profit =
+            hand.bet
+            * rules.blackjack_numerator
+            / rules.blackjack_denominator
+
+        return HandSettlement(
+            BlackjackWin(),
+            hand.bet + profit,
+            player_value.total,
+            dealer_value.total
+        )
+
+    if player_value.busted:
+        return HandSettlement(
+            Lose(),
+            0,
+            player_value.total,
+            dealer_value.total
+        )
+
+    if dealer_value.busted:
+        return HandSettlement(
+            Win(),
+            hand.bet * 2,
+            player_value.total,
+            dealer_value.total
+        )
+
+    if player_value.total > dealer_value.total:
+        return HandSettlement(
+            Win(),
+            hand.bet * 2,
+            player_value.total,
+            dealer_value.total
+        )
+
+    if player_value.total == dealer_value.total:
+        return HandSettlement(
+            Push(),
+            hand.bet,
+            player_value.total,
+            dealer_value.total
+        )
+
+    return HandSettlement(
+        Lose(),
+        0,
+        player_value.total,
+        dealer_value.total
+    )
+
+fn settle_game(game: Game) -> Game:
+    var players = game.players
+    var results: Array[HandResult] = []
+    var player_index = 0
+
+    while player_index < collections.length(players):
+        let player = players[player_index]
+        var balance = player.balance
+        var hand_index = 0
+
+        while hand_index < collections.length(player.hands):
+            let settlement = settle_hand(
+                player.hands[hand_index],
+                game.dealer_hand,
+                game.rules
+            )
+
+            balance = balance + settlement.payout
+
+            results = collections.append(
+                results,
+                HandResult(
+                    player_index,
+                    hand_index,
+                    settlement.outcome,
+                    settlement.payout,
+                    settlement.player_total,
+                    settlement.dealer_total
+                )
+            )
+
+            hand_index = hand_index + 1
+
+        let updated_player = Player(
+            player.id,
+            player.name,
+            player.is_human,
+            balance,
+            0,
+            player.hands,
+            player.active_hand
+        )
+
+        players = replace_player(
+            players,
+            player_index,
+            updated_player
+        )
+
+        player_index = player_index + 1
+
+    return update_game(
+        game,
+        game.shoe,
+        game.dealer_hand,
+        players,
+        Settled(),
+        0,
+        "Round settled",
+        results
+    )
+
+pub fn dealer_step(
+    game: Game
+) -> Result[Game, String]:
+    if phase_code(game.phase) != 2:
+        return Err(
+            "Dealer can only act during the dealer phase"
+        )
+
+    if not live_comparison_hand_exists(game.players):
+        return Ok(settle_game(game))
+
+    if not dealer_should_hit(
+        game.dealer_hand,
+        game.rules
+    ):
+        return Ok(settle_game(game))
+
+    let drawn = draw_card(game.shoe)?
+
+    let cards = collections.append(
+        game.dealer_hand.cards,
+        drawn.card
+    )
+
+    let dealer = Hand(
+        cards,
+        0,
+        false,
+        false,
+        false,
+        false,
+        false,
+        game.dealer_hand.action_count + 1,
+        false
+    )
+
+    let updated = update_game(
+        game,
+        drawn.shoe,
+        dealer,
+        game.players,
+        DealerTurn(),
+        0,
+        "Dealer draws",
+        game.results
+    )
+
+    if dealer_should_hit(dealer, game.rules):
+        return Ok(updated)
+
+    return Ok(settle_game(updated))
+
+pub fn play_dealer_to_end(
+    game: Game
+) -> Result[Game, String]:
+    var current = game
+    var guard = 0
+
+    while phase_code(current.phase) == 2 and guard < 20:
+        current = dealer_step(current)?
+        guard = guard + 1
+
+    if phase_code(current.phase) == 2:
+        return Err(
+            "Dealer turn exceeded the safety limit"
+        )
+
+    return Ok(current)
+
+fn pair_should_split(
+    rank: Int,
+    dealer_value: Int
+) -> Bool:
+    if rank == 1 or rank == 8:
+        return true
+
+    if rank == 10:
+        return false
+
+    if rank == 11:
+        return false
+
+    if rank == 12:
+        return false
+
+    if rank == 13:
+        return false
+
+    if rank == 5:
+        return false
+
+    if rank == 2 or rank == 3:
+        return dealer_value >= 2 and dealer_value <= 7
+
+    if rank == 4:
+        return dealer_value == 5 or dealer_value == 6
+
+    if rank == 6:
+        return dealer_value >= 2 and dealer_value <= 6
+
+    if rank == 7:
+        return dealer_value >= 2 and dealer_value <= 7
+
+    if rank == 9:
+        if dealer_value >= 2 and dealer_value <= 6:
+            return true
+
+        return dealer_value == 8 or dealer_value == 9
+
+    return false
+
+fn hard_basic_action(
+    total: Int,
+    dealer_value: Int,
+    actions: Array[Action]
+) -> Action:
+    if total >= 17:
+        return Stand()
+
+    if total >= 13 and total <= 16:
+        if dealer_value >= 2 and dealer_value <= 6:
+            return Stand()
+
+        return Hit()
+
+    if total == 12:
+        if dealer_value >= 4 and dealer_value <= 6:
+            return Stand()
+
+        return Hit()
+
+    if total == 11:
+        if dealer_value >= 2:
+            if dealer_value <= 10:
+                if has_action_code(actions, 2):
+                    return Double()
+
+        return Hit()
+
+    if total == 10:
+        if dealer_value >= 2:
+            if dealer_value <= 9:
+                if has_action_code(actions, 2):
+                    return Double()
+
+        return Hit()
+
+    if total == 9:
+        if dealer_value >= 3:
+            if dealer_value <= 6:
+                if has_action_code(actions, 2):
+                    return Double()
+
+        return Hit()
+
+    return Hit()
+
+fn soft_basic_action(
+    total: Int,
+    dealer_value: Int,
+    actions: Array[Action]
+) -> Action:
+    if total >= 19:
+        return Stand()
+
+    if total == 18:
+        if dealer_value >= 3:
+            if dealer_value <= 6:
+                if has_action_code(actions, 2):
+                    return Double()
+
+        if dealer_value == 2:
+            return Stand()
+
+        if dealer_value == 7:
+            return Stand()
+
+        if dealer_value == 8:
+            return Stand()
+
+        return Hit()
+
+    if total == 17:
+        if dealer_value >= 3:
+            if dealer_value <= 6:
+                if has_action_code(actions, 2):
+                    return Double()
+
+        return Hit()
+
+    if total == 15 or total == 16:
+        if dealer_value >= 4:
+            if dealer_value <= 6:
+                if has_action_code(actions, 2):
+                    return Double()
+
+        return Hit()
+
+    if total == 13 or total == 14:
+        if dealer_value == 5 or dealer_value == 6:
+            if has_action_code(actions, 2):
+                return Double()
+
+        return Hit()
+
+    return Hit()
+
+pub fn choose_basic_action(
+    game: Game
+) -> Result[Action, String]:
+    if phase_code(game.phase) != 1:
+        return Err(
+            "Basic strategy requires an active player hand"
+        )
+
+    let player = game.players[game.active_player]
+    let hand = player.hands[player.active_hand]
+    let actions = available_actions(game)
+
+    let up_card = dealer_up_card(game)?
+
+    let dealer_value =
+        card_blackjack_value(up_card)
+
+    if has_action_code(actions, 3):
+        if pair_should_split(
+            hand.cards[0].rank,
+            dealer_value
+        ):
+            return Ok(Split())
+
+    let value = hand_value(hand)
+
+    if has_action_code(actions, 4):
+        if value.total == 16 and dealer_value >= 9:
+            return Ok(Surrender())
+
+        if value.total == 15 and dealer_value == 10:
+            return Ok(Surrender())
+
+    if value.soft:
+        return Ok(
+            soft_basic_action(
+                value.total,
+                dealer_value,
+                actions
+            )
+        )
+
+    return Ok(
+        hard_basic_action(
+            value.total,
+            dealer_value,
+            actions
+        )
+    )
+
+pub fn active_player_is_human(
+    game: Game
+) -> Bool:
+    if phase_code(game.phase) != 1:
+        return false
+
+    return game.players[game.active_player].is_human
+
+pub fn ai_step(game: Game) -> Result[Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err(
+            "AI can only act during player turns"
+        )
+
+    if game.players[game.active_player].is_human:
+        return Err(
+            "The active player is human"
+        )
+
+    let action = choose_basic_action(game)?
+    return apply_action(game, action)
+
+pub fn run_ai_until_human_or_dealer(
+    game: Game
+) -> Result[Game, String]:
+    var current = game
+    var guard = 0
+
+    while phase_code(current.phase) == 1:
+        if active_player_is_human(current):
+            return Ok(current)
+
+        if guard >= 200:
+            return Err(
+                "AI turn loop exceeded the safety limit"
+            )
+
+        current = ai_step(current)?
+        guard = guard + 1
+
+    return Ok(current)
+
+pub fn begin_next_round(
+    game: Game
+) -> Result[Game, String]:
+    if phase_code(game.phase) != 3:
+        return Err(
+            "The current round has not been settled"
+        )
+
+    var players = game.players
+    var index = 0
+
+    while index < collections.length(players):
+        let player = players[index]
+        let no_hands: Array[Hand] = []
+
+        players[index] = Player(
+            player.id,
+            player.name,
+            player.is_human,
+            player.balance,
+            0,
+            no_hands,
+            0
+        )
+
+        index = index + 1
+
+    let no_results: Array[HandResult] = []
+
+    return Ok(
+        Game(
+            game.rules,
+            game.shoe,
+            empty_dealer_hand(),
+            players,
+            Betting(),
+            0,
+            game.round_number + 1,
+            game.seed,
+            "Place your bet",
+            no_results
+        )
+    )
+
+pub fn chips_for(amount: Int) -> ChipStack:
+    var remaining = amount
+
+    let purple = remaining / 500
+    remaining = remaining - purple * 500
+
+    let black = remaining / 100
+    remaining = remaining - black * 100
+
+    let green = remaining / 25
+    remaining = remaining - green * 25
+
+    let blue = remaining / 10
+    remaining = remaining - blue * 10
+
+    let red = remaining / 5
+    remaining = remaining - red * 5
+
+    return ChipStack(
+        amount,
+        purple,
+        black,
+        green,
+        blue,
+        red,
+        remaining
+    )

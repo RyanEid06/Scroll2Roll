@@ -1,0 +1,93 @@
+import src.blackjack
+import std.collections
+import std.string
+
+# Headless demonstration only.
+# The future visual layer should call the same blackjack API
+# instead of duplicating the game rules.
+
+fn print_results(game: blackjack.Game) -> Unit:
+    print("Round results")
+
+    var index = 0
+
+    while index < collections.length(game.results):
+        let result = game.results[index]
+        let player = game.players[result.player_index]
+
+        let label = string.concat(
+            player.name,
+            ": "
+        )
+
+        print(
+            string.concat(
+                label,
+                blackjack.outcome_name(result.outcome)
+            )
+        )
+
+        print(result.payout)
+
+        index = index + 1
+
+fn run_demo() -> Result[Int, String]:
+    var game = blackjack.new_game(
+        "Player",
+        1000,
+        3,
+        20260804
+    )?
+
+    game = blackjack.set_bet(
+        game,
+        0,
+        50
+    )?
+
+    game = blackjack.place_ai_bets(game)?
+    game = blackjack.start_round(game)?
+
+    var guard = 0
+
+    while blackjack.phase_code(game.phase) != 3:
+        if guard >= 300:
+            return Err(
+                "Demo failed to settle within the safety limit"
+            )
+
+        if blackjack.phase_code(game.phase) == 1:
+            if blackjack.active_player_is_human(game):
+                # The demo uses basic strategy for the human.
+                # A visual version will replace this with button input.
+                let action =
+                    blackjack.choose_basic_action(game)?
+
+                game = blackjack.apply_action(
+                    game,
+                    action
+                )?
+            else:
+                game = blackjack.ai_step(game)?
+
+        else:
+            if blackjack.phase_code(game.phase) == 2:
+                game = blackjack.dealer_step(game)?
+
+        guard = guard + 1
+
+    print_results(game)
+
+    print("Human balance")
+    print(game.players[0].balance)
+
+    return Ok(0)
+
+fn main() -> Int:
+    match run_demo():
+        case Ok(status):
+            return status
+
+        case Err(error):
+            print(error)
+            return 1

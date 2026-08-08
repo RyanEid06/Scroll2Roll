@@ -1,0 +1,44 @@
+# Rocket and native build output
+.rocketc/
+out/
+build/
+generated/
+dependencies/
+*.exe
+*.dll
+*.lib
+*.obj
+*.o
+*.pdb
+*.ilk
+*.exp
+*.zip
+*.tmp
+*.temp
+
+# Visual Studio and editor state
+.vs/
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
+.vscode/settings.json
+out/visualstudio/
+
+# Local configuration and generated save data
+.env
+.env.*
+!.env.example
+local/
+save-data/
+*.local.json
+
+# Cloudflare local state
+.wrangler/
+node_modules/
+
+# Operating-system noise
+Thumbs.db
+Desktop.ini
+.DS_Store
+

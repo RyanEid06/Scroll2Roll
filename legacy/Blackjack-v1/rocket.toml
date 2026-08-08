@@ -1,0 +1,11 @@
+[package]
+name = "rocket_blackjack"
+version = "0.1.0"
+entry = "src/main.rocket"
+
+[test]
+directory = "tests"
+
+[build]
+kind = "executable"
+name = "rocket-blackjack"
