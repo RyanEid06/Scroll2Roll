@@ -124,3 +124,18 @@ Shoe, Roulette wheel, Plinko path, Coop Climb ladder, Midnight Crossing world ge
 ## Native boundary
 
 The C++ adapter owns only raylib calls, primitive C ABI translation, and validated resource tokens. Window, audio, sound, texture, and callback lifetimes are exercised by focused tests. Application state, Blackjack rules, persistence, routing, and rendering composition remain in Rocket.
+
+## UI overhaul boundary
+
+The rejected 0.3.0 presentation is replaced without changing a game engine or
+duplicating a rule. `src/app/theme.rocket` owns semantic dark/light values and
+`src/app/layout.rocket` owns clamped top-level regions and breakpoints. The
+application owns presentation state, navigation, theme, reduced motion,
+scrolling, focus, animation clocks, and resource manifest handles. Each view
+continues to consume only its public game/session projection.
+
+Narrow additions to `native/rocket_raylib_adapter.*` may expose only primitive
+rendering, custom-font measurement, scissoring, mouse-wheel input, and resource
+lifetime facts required by the reviewed UI. The adapter cannot own themes,
+layout, animation policy, game meaning, or settlement. The detailed gap and
+asset ownership audit is in `UI_OVERHAUL_FOUNDATION.md`.

@@ -1,0 +1,35 @@
+import src.app.layout
+import src.app.theme
+
+fn main() -> Int:
+    if theme.minimum_target() != 44:
+        return 1
+    if theme.motion_fast_seconds() < 0.12 or theme.motion_slow_seconds() > 0.25:
+        return 2
+    if layout.mode(800) != 0 or layout.mode(1024) != 1:
+        return 3
+    if layout.mode(1280) != 1 or layout.mode(1600) != 2 or layout.mode(1920) != 3:
+        return 4
+    if layout.lobby_columns(800) != 2 or layout.lobby_columns(1024) != 3:
+        return 5
+    if layout.lobby_columns(1280) != 3 or layout.lobby_columns(1600) != 4 or layout.lobby_columns(1920) != 5:
+        return 6
+    if not layout.layout_is_usable(800, 600):
+        return 7
+    if not layout.layout_is_usable(1024, 768):
+        return 8
+    if not layout.layout_is_usable(1280, 720):
+        return 9
+    if not layout.layout_is_usable(1600, 900):
+        return 10
+    if not layout.layout_is_usable(1920, 1080):
+        return 11
+    if layout.layout_is_usable(799, 600) or layout.layout_is_usable(800, 599):
+        return 12
+    if layout.stage_width(800) != layout.content_width(800):
+        return 13
+    if layout.stage_width(1280) + layout.action_rail_width(1280) + theme.space_md() != layout.content_width(1280):
+        return 14
+    if layout.lobby_card_width(800) < 160 or layout.stage_height(800, 600) < 180:
+        return 15
+    return 0

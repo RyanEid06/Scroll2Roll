@@ -1,0 +1,97 @@
+import src.app.theme
+
+pub struct LayoutRect:
+    x: Int
+    y: Int
+    width: Int
+    height: Int
+
+pub fn rect(x: Int, y: Int, width: Int, height: Int) -> LayoutRect:
+    return LayoutRect(x, y, width, height)
+
+pub fn clamp(value: Int, minimum: Int, maximum: Int) -> Int:
+    if value < minimum:
+        return minimum
+    if value > maximum:
+        return maximum
+    return value
+
+pub fn mode(width: Int) -> Int:
+    if width < theme.breakpoint_compact():
+        return 0
+    if width < theme.breakpoint_wide():
+        return 1
+    if width < theme.breakpoint_cinema():
+        return 2
+    return 3
+
+pub fn safe_margin(width: Int) -> Int:
+    if mode(width) == 0:
+        return 16
+    if mode(width) == 1:
+        return 24
+    return 32
+
+pub fn top_bar_height(width: Int) -> Int:
+    if mode(width) == 0:
+        return 64
+    return 72
+
+pub fn navigation_width(width: Int) -> Int:
+    if mode(width) == 0:
+        return 0
+    if mode(width) == 1:
+        return 72
+    return 88
+
+pub fn content_x(width: Int) -> Int:
+    return safe_margin(width) + navigation_width(width)
+
+pub fn content_width(width: Int) -> Int:
+    let value = width - content_x(width) - safe_margin(width)
+    return clamp(value, 1, width)
+
+pub fn lobby_columns(width: Int) -> Int:
+    if width < 960:
+        return 2
+    if width < 1200:
+        return 3
+    if width < 1520:
+        return 3
+    if width < 1800:
+        return 4
+    return 5
+
+pub fn lobby_card_width(width: Int) -> Int:
+    let columns = lobby_columns(width)
+    let gaps =(columns - 1) * theme.space_md()
+    return clamp((content_width(width) - gaps) / columns, 160, 420)
+
+pub fn action_rail_width(width: Int) -> Int:
+    if mode(width) == 0:
+        return content_width(width)
+    return clamp(content_width(width) / 3, 264, 376)
+
+pub fn stage_width(width: Int) -> Int:
+    if mode(width) == 0:
+        return content_width(width)
+    return content_width(width) - action_rail_width(width) - theme.space_md()
+
+pub fn action_dock_height(width: Int, height: Int) -> Int:
+    if mode(width) == 0:
+        return clamp(height / 4, 132, 168)
+    return 0
+
+pub fn stage_height(width: Int, height: Int) -> Int:
+    let margins = safe_margin(width) * 2
+    let available = height - top_bar_height(width) - margins - action_dock_height(width, height)
+    return clamp(available, 180, height)
+
+pub fn layout_is_usable(width: Int, height: Int) -> Bool:
+    if width < 800 or height < 600:
+        return false
+    if content_width(width) <= 0 or stage_width(width) <= 0 or stage_height(width, height) <= 0:
+        return false
+    if lobby_card_width(width) < 160:
+        return false
+    return true

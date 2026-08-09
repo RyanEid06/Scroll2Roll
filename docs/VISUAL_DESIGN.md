@@ -1,21 +1,36 @@
 # Visual Design
 
-Scroll2Roll uses a premium, modern, dark, original casino treatment with accessible contrast, clear hierarchy, and restrained motion.
+The native 0.3.0 rectangle-and-default-text presentation is an explicitly
+rejected baseline. `UI_OVERHAUL.md` is the active owner mandate and
+`UI_OVERHAUL_FOUNDATION.md` records the implementation/acceptance ledger. This
+document describes the target system while views are replaced in logical
+groups; it does not claim visual acceptance before that work is complete.
 
-## Color tokens
+## Semantic color tokens
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `COLOR_BACKGROUND` | `#080B14` | Application backdrop |
-| `COLOR_PANEL` | `#111827` | Cards, panels, modal surfaces |
-| `COLOR_GOLD` | `#F5C542` | Primary action and brand accent |
-| `COLOR_EMERALD` | `#10B981` | Positive state and secondary action |
-| `COLOR_DANGER` | `#EF4444` | Destructive action and loss state |
-| `COLOR_TEXT` | `#F3F4F6` | Primary text |
-| `COLOR_MUTED` | `#9CA3AF` | Supporting text |
-| `COLOR_BORDER` | `#293241` | Dividers and outlines |
+| Role | Dark | Light |
+| --- | --- | --- |
+| canvas | `#090B14` | `#EEF2FA` |
+| shell | `#0F1324` | `#FFFFFF` |
+| surface | `#151A2D` | `#FFFFFF` |
+| elevated | `#1D2440` | `#E9EEFF` |
+| primary text | `#F7F8FF` | `#172033` |
+| secondary text | `#A2AAC4` | `#667085` |
+| subtle border | `#2A3354` | `#D7DDEA` |
+| primary | `#5B7CFF` | `#4F46E5` |
+| violet | `#8B5CF6` | `#7C3AED` |
+| cyan | `#22D3EE` | `#0891B2` |
+| success / credit | `#34D399` | `#059669` |
+| highlight | `#FBBF24` | `#D97706` |
+| destructive | `#FB7185` | `#E11D48` |
 
-Spacing, font sizes, radii, borders, button states, timing, and responsive breakpoints are centralized in `src/app/theme.rocket`. Reusable panels, buttons, cards, labels, and modals live in `src/app/components.rocket`. Procedural raylib shapes and text are replaceable presentation assets; they do not leak into engine APIs.
+Spacing, type roles, radii, borders, focus, component heights, 120/180/250 ms
+timings, and breakpoints are centralized in `src/app/theme.rocket`. Responsive
+safe regions live in `src/app/layout.rocket`. Reusable presentation components
+live in `src/app/components.rocket`. Procedural raylib shapes, loaded fonts,
+textures, and sounds do not leak into engine APIs.
 
 Keyboard focus, disabled states, hover/pressed states, readable hand totals, suit differentiation, and resolution-aware layout are required. Motion must never obscure legal actions or round state.
 

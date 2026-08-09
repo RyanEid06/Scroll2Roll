@@ -99,3 +99,21 @@ exact package presentation, console errors, and 390px Play/Download layouts
 without horizontal overflow.
 Exact evidence is recorded in `VALIDATION.md`; generated evidence stays under
 ignored `out/`.
+
+## Native UI overhaul gates
+
+The pre-overhaul functional baseline is 41/41. `ui_foundation_test.rocket` adds
+deterministic coverage for semantic timing/target constants, responsive mode
+selection, lobby columns, positive usable geometry, compact stacking, and the
+exact five required viewports. Later overhaul milestones must add focused
+tests for theme migration/round-trip, persistent safe Back behavior, both-theme
+drawing for every screen, custom-font success/fallback/cleanup, texture and
+scissor lifetimes, mouse-wheel scroll bounds, reduced motion, and non-overlap
+layout invariants.
+
+Functional drawing tests are necessary but not visual acceptance. Each visual
+milestone launches the actual native executable and records dark/light captures
+at 800x600, 1024x768, 1280x720, 1600x900, 1920x1080, and maximized. Review must
+check recognizable game grammar, stage dominance, action order, typography,
+contrast, focus/disabled states, help/history usability, clipping, overlap,
+negative geometry, reachability, and any lingering flat debug composition.

@@ -2,6 +2,40 @@
 
 This file records the complete local acceptance pass performed on Windows x64 on 2026-08-08. Generated artifacts remain ignored and are reproducible from the documented scripts.
 
+## Native UI overhaul milestone 1 - visual audit and foundation
+
+- On 2026-08-09, the accepted packaged 0.3.0 executable was inspected before
+  source changes at 800x600, 1280x720, and 1600x900. Ready states for all eleven
+  games were also inspected at 800x600. The audit confirmed clipped/unreachable
+  controls at minimum size, non-responsive fixed layouts, excessive dead space
+  at larger sizes, default bitmap typography, five unequal lobby strips, and
+  the same flat panel grammar across distinct games. Evidence remains ignored
+  under `out/visual-audit/`; exact names and findings are recorded in
+  `UI_OVERHAUL_FOUNDATION.md`.
+- Current Subframe examples and representative current Behance casino-template
+  projects were inspected along with all owner-supplied references. The
+  ThemeForest index was reviewed through its public result listing because its
+  interactive page presented a challenge screen. No gallery or reference asset
+  was downloaded, purchased, copied, or added to the product.
+- `src/app/theme.rocket` now defines the mandated purpose-designed dark/light
+  semantic palettes, spacing, radii, elevation, focus, 44-pixel target, type
+  roles, 120/180/250 ms motion, and breakpoint tokens. Compatibility aliases
+  keep accepted views building only while their reviewable replacement proceeds.
+- `src/app/layout.rocket` defines compact, standard, wide, and cinema modes,
+  safe margins, navigation widths, top bars, lobby grids, stage/action splits,
+  compact docks, and positive clamped geometry. `ui_foundation_test.rocket`
+  verifies 800x600, 1024x768, 1280x720, 1600x900, and 1920x1080.
+- `UI_OVERHAUL_FOUNDATION.md` records the rejected baseline, per-screen/game
+  asset inventory, ownership/license/fallback policy, native adapter gaps,
+  responsive contract, and visual acceptance criteria before implementation.
+- Debug and Release `scripts/validate.ps1` each passed the native build,
+  `rocketc check`, all 42 tests, and both formatting checks. All 41 accepted
+  behavior/regression tests remain green and the new foundation test passes.
+- This milestone changes no casino rule, deterministic outcome, persistence
+  format, native ABI, package, or website. The frozen Rocket repository was not
+  modified. Nothing was pushed, deployed, published, released, purchased, or
+  signed.
+
 ## 0.2.0 expansion baseline
 
 Before expansion implementation, both Debug and Release

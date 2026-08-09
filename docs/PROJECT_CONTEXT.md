@@ -277,18 +277,22 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
   site data or choosing Reset removes it; it is not an authenticated or portable
   account and does not affect the native application's separate local settings.
 
-## Visual design tokens
+## Native UI overhaul status
 
-- Background: `#080B14`
-- Panel: `#111827`
-- Primary/gold: `#F5C542`
-- Secondary/emerald: `#10B981`
-- Danger/red: `#EF4444`
-- Primary text: `#F3F4F6`
-- Muted text: `#9CA3AF`
-- Border: `#293241`
+The owner rejected the accepted 0.3.0 native presentation and mandated a full
+dark/light, illustration-led replacement of the shell and all eleven game
+interiors in `UI_OVERHAUL.md`. Milestone 1 is complete: the actual package was
+audited at multiple sizes and every game at 800x600; current reference patterns
+were researched without importing gallery content; a complete screen/game asset
+inventory and adapter-gap audit were recorded; semantic dual-theme tokens and
+responsive layout helpers were added; and a five-viewport test brought the
+suite to 42/42. Debug and Release validation both pass.
 
-Spacing, typography, component states, borders, timing, and responsive layout values are centralized in `src/app/theme.rocket`.
+The old views still render through compatibility token aliases at this precise
+milestone and remain visually rejected. No visual-completion claim is valid
+until original assets, bundled typography, resource ownership, persistence,
+shared components, the shell/lobby, and all eleven interiors pass their later
+milestones. `docs/UI_OVERHAUL_FOUNDATION.md` is the audit and acceptance ledger.
 
 ## Milestones
 
@@ -348,6 +352,11 @@ Spacing, typography, component states, borders, timing, and responsive layout va
   archive identity, internal hashes, forbidden-content scan, relocated smoke,
   source/staged validators, responsive browser checks, and clean local handoff.
   Nothing was pushed, published, deployed, released, or signed.
+- Completed: native UI overhaul milestone 1, including honest rejected-baseline
+  evidence, reference synthesis, the complete per-screen/game asset inventory,
+  primitive-adapter/test-hook audit, purpose-designed dark/light semantic
+  tokens, clamped responsive geometry for all five required viewports, one new
+  focused test, and passing 42/42 Debug and Release gates.
 
 ## Major decisions
 
@@ -372,6 +381,10 @@ Spacing, typography, component states, borders, timing, and responsive layout va
 - Keep the website profile deliberately non-authenticated and browser-local.
   Accept only decoded PNG/JPEG/WebP avatars up to 1.5 MiB, store them as data
   URLs, and block network connections through both implementation and CSP.
+- Treat the 0.3.0 native visuals as a rejected baseline while preserving its
+  accepted engines and flows. Keep theme/layout/motion policy in Rocket, grow
+  the Scroll2Roll-owned native adapter only with demonstrated primitive needs,
+  and require visual inspection in both themes in addition to functional tests.
 
 ## Files that must remain out of Git
 
@@ -379,7 +392,8 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 
 ## New-chat handoff
 
-Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`,
+Read `AGENTS.md`, `UI_OVERHAUL.md`, `docs/MASTER_PLAN.md`,
+`docs/UI_OVERHAUL_FOUNDATION.md`, `docs/EXPANSION_PLAN.md`,
 `docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
 status and preserve user changes. The accepted 0.2.0 baseline remains intact;
 Mines, Dice, HiLo, Crash, Slots, and save-v3 are complete with 41/41 tests. The
@@ -388,3 +402,6 @@ verified local 0.3.0 archive is 1,919,372 bytes with SHA-256
 source/staged website and responsive browser checks pass. Keep using frozen Rocket 2.0
 and the pinned raylib integration with custom frame control forced off. Do not
 push, publish, deploy, sign, or add an unapproved game without owner approval.
+UI overhaul milestone 1 passes 42/42 in Debug and Release; continue with assets,
+bundled typography, safe resource handling, persistence migration, and shared
+components. Do not mistake the compatibility-rendered old views for accepted UI.

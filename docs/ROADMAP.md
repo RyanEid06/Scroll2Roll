@@ -35,3 +35,14 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
 - [x] Complete Slots with source-recomputed theoretical return.
 - [x] Revalidate the eleven-game application, package, relocated smoke, and
   source/staged website with the real 0.3.0 archive.
+- [x] Audit and reject the 0.3.0 native visual baseline; define the dual-theme
+  tokens, responsive geometry, asset ownership, adapter gaps, and visual gates
+  for the complete owner-mandated UI overhaul.
+- [ ] Add reviewed original assets, licensed bundled typography, safe resource
+  ownership, theme migration, reduced motion, and the shared component system.
+- [ ] Replace startup, global shell, settings, help/modals, and the eleven-card
+  lobby; validate dark/light rendering at every target desktop size.
+- [ ] Replace all eleven game interiors in reviewable groups while preserving
+  every accepted deterministic engine and complete input flow.
+- [ ] Align the website, build and relocation-test the real asset-bearing
+  package, and complete final functional, visual, Git, and frozen-Rocket audits.
