@@ -91,6 +91,13 @@ hidden committed point; a 1.00x instant crash settles during Start. Help pauses
 the fixed-tick accumulator. After settlement the committed point is revealed
 and Next, Restart, and Lobby become available.
 
+Slots locks line bet, Turbo, auto count, restart, and lobby return after Spin.
+Wait for all five committed reels and any awarded free spins to finish. Stop
+ends finite autoplay after the currently committed paid round; it does not
+cancel or refund that round. Autoplay also stops at its 1-10 requested count or
+when the next total bet is unaffordable. Scatter and Bonus awards can overlap
+line wins; only engine-reported winning paylines are highlighted.
+
 ## Reporting a problem
 
 Record the version, the exact action sequence, and whether the problem occurs in the portable package or a development build. Never attach personal or sensitive data; Scroll2Roll does not need any.

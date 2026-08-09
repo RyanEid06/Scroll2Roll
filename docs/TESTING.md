@@ -74,13 +74,22 @@ Test setup helpers must return explicit failure or a nonzero test status when co
 - `crash_gui_flow_test.rocket`: minimum-size tenth-entry routing, help pause,
   keyboard/mouse manual and automatic complete rounds, live privacy, graph
   drawing, engine agreement, persistence, restart, lobby, and native cleanup.
+- `slots_rules_test.rocket`: exact strips/frequencies/paylines, every line
+  award and Wild substitution, overlapping wins, Scatter/free-spin/Bonus
+  behavior, stop validation, and source-recomputed exact theoretical return.
+- `slots_session_test.rocket`: deterministic committed stops and tickets,
+  atomic failures, configuration lock, free-spin completion, Bonus and zero-win
+  paths, finite/user/credit autoplay stops, 100 rounds, history, and balances.
+- `slots_gui_flow_test.rocket`: minimum-size eleventh-entry routing, help,
+  keyboard/mouse manual, Turbo, stopped and complete finite autoplay, committed
+  sequential reveal, persistence, restart, lobby, drawing, and native cleanup.
 - Four reviewed raylib tests cover API behavior, audio stress, resource lifetime, and missing assets.
 
-The current post-Crash suite passes 38/38 tests. Before those gates run,
+The current post-Slots suite passes 41/41 tests. Before those gates run,
 `scripts/validate.ps1` also rejects duplicate `.rocket` basenames under `src` so
 the frozen CodeView debugger can map every source unambiguously. Package
 relocation and source/staged website checks are separate scripts. The website
-validator now checks all three pages, exactly six catalog cards, the complete
+validator currently checks all three pages, exactly six catalog cards, the complete
 verified package identity, local-only profile storage, nickname/avatar safety
 controls, the absence of password and network APIs, same-origin security policy,
 accessible focus/reduced-motion hooks, prohibited product claims, and Cloudflare

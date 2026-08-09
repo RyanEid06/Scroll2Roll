@@ -1,0 +1,41 @@
+import src.slots.slots_engine
+import src.slots.slots_model
+
+pub struct Session:
+    game: slots_model.Game
+
+pub fn new_session(starting_balance: Int, seed: Int) -> Result[Session, String]:
+    return Ok(Session(slots_engine.new_game(starting_balance, seed)?))
+
+pub fn with_bet_per_line(session: Session, value: Int) -> Result[Session, String]:
+    return Ok(Session(slots_engine.with_bet_per_line(session.game, value)?))
+
+pub fn with_turbo(session: Session, enabled: Bool) -> Result[Session, String]:
+    return Ok(Session(slots_engine.with_turbo(session.game, enabled)?))
+
+pub fn with_auto_count(session: Session, count: Int) -> Result[Session, String]:
+    return Ok(Session(slots_engine.with_auto_count(session.game, count)?))
+
+pub fn with_spin(session: Session) -> Result[Session, String]:
+    return Ok(Session(slots_engine.start_spin(session.game)?))
+
+pub fn with_start_auto(session: Session) -> Result[Session, String]:
+    return Ok(Session(slots_engine.start_auto(session.game)?))
+
+pub fn with_finish_presentation(session: Session) -> Result[Session, String]:
+    return Ok(Session(slots_engine.finish_presentation(session.game)?))
+
+pub fn with_auto_next(session: Session) -> Result[Session, String]:
+    return Ok(Session(slots_engine.auto_next(session.game)?))
+
+pub fn with_stop_auto(session: Session) -> Result[Session, String]:
+    return Ok(Session(slots_engine.stop_auto(session.game)?))
+
+pub fn with_next_round(session: Session) -> Result[Session, String]:
+    return Ok(Session(slots_engine.next_round(session.game)?))
+
+pub fn with_restart(session: Session) -> Result[Session, String]:
+    return Ok(Session(slots_engine.restart(session.game)?))
+
+pub fn phase_code(session: Session) -> Int:
+    return slots_engine.phase_code(session.game.phase)

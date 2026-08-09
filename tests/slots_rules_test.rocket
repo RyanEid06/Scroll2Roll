@@ -1,0 +1,126 @@
+import src.slots.slots_model
+import src.slots.slots_rules
+import std.collections
+
+fn grid_for_line(line: Int, symbol: Int) -> Result[Array[Int], String]:
+    var grid: Array[Int] = []
+    var row = 0
+    while row < slots_rules.row_count():
+        var reel = 0
+        while reel < slots_rules.reel_count():
+            var value = reel
+            if row == slots_rules.payline_row(line, reel)?:
+                value = symbol
+            grid = collections.append(grid, value)
+            reel = reel + 1
+        row = row + 1
+    return Ok(grid)
+
+fn feature_grid(symbol: Int, count: Int) -> Array[Int]:
+    var grid: Array[Int] = []
+    var index = 0
+    while index < 15:
+        var value = index - index / 5 * 5
+        if index < count:
+            value = symbol
+        grid = collections.append(grid, value)
+        index = index + 1
+    return grid
+
+fn contains_line(wins: Array[slots_model.LineWin], line: Int) -> Bool:
+    var index = 0
+    while index < collections.length(wins):
+        if wins[index].line_index == line:
+            return true
+        index = index + 1
+    return false
+
+fn run() -> Result[Int, String]:
+    if slots_rules.reel_count() != 5 or slots_rules.row_count() != 3 or slots_rules.reel_length() != 20 or slots_rules.line_count() != 5 or slots_rules.symbol_count() != 8:
+        return Ok(1)
+    let expected: Array[Int] = [5, 5, 3, 2, 2, 1, 1, 1]
+    var reel = 0
+    while reel < slots_rules.reel_count():
+        var total = 0
+        var symbol = 0
+        while symbol < slots_rules.symbol_count():
+            let frequency = slots_rules.symbol_frequency(reel, symbol)?
+            if frequency != expected[symbol]:
+                return Ok(2)
+            total = total + frequency
+            symbol = symbol + 1
+        if total != slots_rules.reel_length():
+            return Ok(3)
+        reel = reel + 1
+    let expected_rows: Array[Int] = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 0, 1, 2, 1, 0, 2, 1, 0, 1, 2]
+    var line = 0
+    while line < slots_rules.line_count():
+        reel = 0
+        while reel < slots_rules.reel_count():
+            if slots_rules.payline_row(line, reel)? != expected_rows[line * 5 + reel]:
+                return Ok(4)
+            reel = reel + 1
+        line = line + 1
+    let expected_paytable: Array[Int] = [3, 9, 24, 6, 15, 36, 9, 24, 60, 12, 36, 105, 18, 60, 180, 24, 90, 300]
+    var symbol = 0
+    while symbol <= 5:
+        var count = 3
+        while count <= 5:
+            if slots_rules.line_multiplier(symbol, count)? != expected_paytable[symbol * 3 + count - 3]:
+                return Ok(5)
+            count = count + 1
+        symbol = symbol + 1
+    if slots_rules.total_bet(1)? != 5 or slots_rules.total_bet(20)? != 100 or slots_rules.valid_bet_per_line(0) or slots_rules.valid_auto_count(11):
+        return Ok(6)
+    let wild_values: Array[Int] = [5, 4, 4, 1, 2]
+    let wild = slots_rules.line_win_from_values(wild_values, 2, 1)?
+    if wild.symbol != 4 or wild.count != 3 or wild.payout != 36:
+        return Ok(7)
+    let all_wild_values: Array[Int] = [5, 5, 5, 5, 5]
+    let all_wild = slots_rules.line_win_from_values(all_wild_values, 1, 1)?
+    if all_wild.symbol != 5 or all_wild.payout != 300:
+        return Ok(8)
+    line = 0
+    while line < slots_rules.line_count():
+        let result = slots_rules.evaluate_grid(grid_for_line(line, 4)?, 0, 1, false)?
+        if not contains_line(result.line_wins, line):
+            return Ok(9)
+        line = line + 1
+    let overlap: Array[Int] = [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+    let overlapping = slots_rules.evaluate_grid(overlap, 0, 1, false)?
+    if collections.length(overlapping.line_wins) != 5 or overlapping.payout != 900:
+        return Ok(10)
+    var scatter_count = 3
+    while scatter_count <= 5:
+        let base = slots_rules.evaluate_grid(feature_grid(6, scatter_count), 0, 1, false)?
+        let free = slots_rules.evaluate_grid(feature_grid(6, scatter_count), 0, 1, true)?
+        if base.scatter_count != scatter_count or base.awarded_free_spins != slots_rules.awarded_free_spins(scatter_count) or free.awarded_free_spins != 0 or free.spin_multiplier != 2 or free.payout != base.payout * 2:
+            return Ok(11)
+        scatter_count = scatter_count + 1
+    var ticket = 0
+    while ticket < slots_rules.bonus_ticket_count():
+        let bonus = slots_rules.evaluate_grid(feature_grid(7, 3), ticket, 1, false)?
+        if bonus.bonus_count != 3 or bonus.bonus_multiplier != slots_rules.bonus_multiplier(ticket)? or bonus.payout < 5 * bonus.bonus_multiplier:
+            return Ok(12)
+        ticket = ticket + 1
+    let stops: Array[Int] = [0, 1, 2, 3, 4]
+    let outcome = slots_rules.evaluate_spin(stops, 3, 1, false)?
+    if collections.length(outcome.grid) != 15 or collections.length(outcome.stops) != 5:
+        return Ok(13)
+    let invalid_stops: Array[Int] = [0, 1, 2, 3, 20]
+    match slots_rules.evaluate_spin(invalid_stops, 0, 1, false):
+        case Ok(value):
+            return Ok(14)
+        case Err(error):
+            let expected_error = true
+    if slots_rules.theoretical_denominator() != 12800000 or slots_rules.theoretical_base_payout_numerator()? != 55281870 or slots_rules.theoretical_free_spin_numerator()? != 711720 or slots_rules.theoretical_return_basis_points()? != 9598:
+        return Ok(15)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

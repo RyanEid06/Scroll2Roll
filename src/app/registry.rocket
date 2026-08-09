@@ -1,5 +1,5 @@
 pub fn game_count() -> Int:
-    return 10
+    return 11
 
 pub fn name(index: Int) -> String:
     if index == 0:
@@ -20,7 +20,9 @@ pub fn name(index: Int) -> String:
         return "Dice"
     if index == 8:
         return "HiLo"
-    return "Crash"
+    if index == 9:
+        return "Crash"
+    return "Slots"
 
 pub fn description(index: Int) -> String:
     if index == 0:
@@ -41,7 +43,9 @@ pub fn description(index: Int) -> String:
         return "Exact under-over signals"
     if index == 8:
         return "Private-deck prediction"
-    return "Precommitted local curve"
+    if index == 9:
+        return "Precommitted local curve"
+    return "Five-reel scrollworks"
 
 pub fn available(index: Int) -> Bool:
-    return index >= 0 and index <= 9
+    return index >= 0 and index <= 10

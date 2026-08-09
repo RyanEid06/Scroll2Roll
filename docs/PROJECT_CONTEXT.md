@@ -21,8 +21,8 @@ Scroll2Roll is a polished, local, single-player, play-money casino shell. The
 accepted 0.2.0 baseline includes complete Blackjack, European Roulette, Plinko,
 Coop Climb, Midnight Crossing, and No-Limit Texas Hold'em. The owner-approved
 0.3.0 expansion in `EXPANSION_0_3_IMPLEMENTATION.md` adds Mines, Dice, HiLo,
-Crash, and Slots in that order. Mines, Dice, HiLo, Crash, and the save-v3 foundation
-are complete; Slots is the current milestone. Packaging and the website intentionally
+Crash, and Slots in that order. All five games and the save-v3 foundation are
+complete; final package/site acceptance is current. Packaging and the website intentionally
 describe the last verified 0.2.0 archive until final 0.3.0 acceptance produces
 real replacement metadata.
 
@@ -58,9 +58,9 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
 - Complete and consecutive rounds have bounded transitions and nonnegative play-money balances.
 - A small `src/blackjack/blackjack_api.rocket` facade is the only rules boundary used by the visual table.
 - The raylib application implements startup, reusable lobby routing, settings,
-  exit confirmation, keyboard/mouse controls, ten playable Blackjack, Roulette,
+  exit confirmation, keyboard/mouse controls, eleven playable Blackjack, Roulette,
   Plinko, Coop Climb, Midnight Crossing, No-Limit Hold'em, Mines, Dice, HiLo,
-  and Crash tables, zero-to-five AI settings, disabled illegal actions,
+  Crash, and Slots tables, zero-to-five AI settings, disabled illegal actions,
   outcomes, next round/hand, restart/reset, and lobby return.
 - Versioned local persistence stores display/audio preferences, AI count, first-run state, and approved play-money progress at `%LOCALAPPDATA%\Scroll2Roll\settings.s2r`, with safe missing/invalid/older-data recovery.
 - The static website and Cloudflare Pages staging flow are implemented without claiming browser play.
@@ -137,13 +137,19 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
   manual and one-round auto cash-out ordering, reveals only after settlement,
   and caps history, balance, ticks, and per-frame work. `CRASH_MATH.md` publishes
   the exact distribution, return example, curve, ordering, rounding, and caps.
+- Slots is fully playable on five fixed 20-stop reels and a 5-by-3 grid with
+  five paylines, highest-award Wild substitution, anywhere Scatters,
+  non-retriggering 2x free spins, precommitted Bonus tickets, 1-20 line bets,
+  presentation-only Turbo, and explicitly bounded 1-10-round autoplay. The
+  exact 95.9836866495% theoretical return is recomputed from production strips
+  and rules in tests and published in `SLOTS_MATH.md`.
 
 ## Architecture
 
 Dependency direction is one way:
 
 1. Per-game model values and validated rule constructors.
-2. Rendering-independent Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, Hold'em, Mines, Dice, HiLo, and Crash engines and settlement.
+2. Rendering-independent Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, Hold'em, Mines, Dice, HiLo, Crash, and Slots engines and settlement.
 3. Small presentation-facing APIs and sessions.
 4. Versioned local persistence isolated from rules.
 5. Reusable router, design tokens, components, lobby, settings, and per-game views.
@@ -242,6 +248,10 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
   adding exhaustive million-ticket distribution/return coverage, deterministic
   fixed-tick/boundary/auto/session tests, public-threshold privacy, long-frame
   caps, help pause, and complete minimum-size keyboard/mouse flows.
+- The complete post-Slots suite passes 41/41, preserving all 38 prior tests and
+  adding fixed-strip/payline/feature math with exact source-recomputed return,
+  deterministic paid/free/Bonus sessions and finite autoplay, and complete
+  minimum-size keyboard/mouse flows with committed sequential presentation.
 
 ## Deliberate limitations
 
@@ -322,8 +332,12 @@ Spacing, typography, component states, borders, timing, and responsive layout va
 - Completed: 0.3.0 milestone 4 Crash, including exact reciprocal distribution,
   private deterministic precommitment, bounded fixed ticks, strict cash-out,
   single-round auto target, full UI, focused tests, and all regressions.
-- Current: 0.3.0 milestone 5 Slots. Do not push, publish, deploy, create a
-  release, or claim trusted signing without explicit approval.
+- Completed: 0.3.0 milestone 5 Slots, including fixed source-owned reel strips,
+  exact line/feature/return math, precommitted outcomes, free spins, finite
+  stoppable autoplay, complete UI, focused tests, and all regressions.
+- Current: final local 0.3.0 package and website acceptance. Do not push,
+  publish, deploy, create a release, or claim trusted signing without explicit
+  approval.
 
 ## Major decisions
 
@@ -358,7 +372,8 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`,
 `docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
 status and preserve user changes. The accepted 0.2.0 baseline remains intact;
-Mines, Dice, HiLo, Crash, and save-v3 are complete with 38/38 tests, and Slots is next. The
+Mines, Dice, HiLo, Crash, Slots, and save-v3 are complete with 41/41 tests; final
+local 0.3.0 packaging and website acceptance is next. The
 published website metadata must remain on the verified 0.2.0
 archive until the real 0.3.0 package is produced. Keep using frozen Rocket 2.0
 and the pinned raylib integration with custom frame control forced off. Do not

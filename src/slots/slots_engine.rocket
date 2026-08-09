@@ -1,0 +1,128 @@
+import src.slots.slots_model
+import src.slots.slots_rules
+import std.collections
+import std.random
+
+pub fn phase_code(phase: slots_model.Phase) -> Int:
+    match phase:
+        case slots_model.Ready:
+            return 0
+        case slots_model.Presenting:
+            return 1
+        case slots_model.Settled:
+            return 2
+
+fn empty_spin() -> slots_model.SpinResult:
+    let values: Array[Int] = []
+    let wins: Array[slots_model.LineWin] = []
+    return slots_model.SpinResult(values, values, wins, 0, 0, 0, 1, 1, 0, 0, false)
+
+pub fn new_game(starting_balance: Int, seed: Int) -> Result[slots_model.Game, String]:
+    if starting_balance < slots_rules.line_count():
+        return Err("Starting balance is below the minimum Slot total bet")
+    let history: Array[slots_model.RoundResult] = []
+    return Ok(slots_model.Game(starting_balance, 1, false, 3, slots_model.Ready(), empty_spin(), 0, 0, 0, false, false, 0, history, 1, 1, seed, "Choose a line bet, Turbo, or finite Auto count"))
+
+fn configured(game: slots_model.Game, bet: Int, turbo: Bool, auto_count: Int, message: String) -> Result[slots_model.Game, String]:
+    if phase_code(game.phase) != 0 or game.auto_active:
+        return Err("Slot configuration is locked outside the ready state")
+    if not slots_rules.valid_bet_per_line(bet):
+        return Err("Slot bet per line must be 1-20 credits")
+    if not slots_rules.valid_auto_count(auto_count):
+        return Err("Finite Slot Auto count must be 1-10")
+    return Ok(slots_model.Game(game.balance, bet, turbo, auto_count, game.phase, game.spin, game.round_win, game.free_spins_remaining, game.free_spins_awarded, game.round_bonus_triggered, game.auto_active, game.auto_remaining, game.history, game.round_number, game.spin_number, game.seed, message))
+
+pub fn with_bet_per_line(game: slots_model.Game, value: Int) -> Result[slots_model.Game, String]:
+    return configured(game, value, game.turbo, game.auto_count, "Slot line bet changed")
+
+pub fn with_turbo(game: slots_model.Game, enabled: Bool) -> Result[slots_model.Game, String]:
+    return configured(game, game.bet_per_line, enabled, game.auto_count, "Turbo presentation changed; outcomes are unchanged")
+
+pub fn with_auto_count(game: slots_model.Game, count: Int) -> Result[slots_model.Game, String]:
+    return configured(game, game.bet_per_line, game.turbo, count, "Finite Slot Auto count changed")
+
+fn committed_result(game: slots_model.Game, free_spin: Bool) -> Result[slots_model.SpinResult, String]:
+    random.seed(game.seed + game.round_number * 49979687 + game.spin_number * 104729)
+    var stops: Array[Int] = []
+    var reel = 0
+    while reel < slots_rules.reel_count():
+        stops = collections.append(stops, random.int(0, slots_rules.reel_length()))
+        reel = reel + 1
+    let ticket = random.int(0, slots_rules.bonus_ticket_count())
+    return slots_rules.evaluate_spin(stops, ticket, game.bet_per_line, free_spin)
+
+fn commit_paid_spin(game: slots_model.Game) -> Result[slots_model.Game, String]:
+    let wager = slots_rules.total_bet(game.bet_per_line)?
+    if wager > game.balance:
+        return Err("Not enough play credits for the Slot total bet")
+    let result = committed_result(game, false)?
+    var auto_remaining = game.auto_remaining
+    if game.auto_active:
+        auto_remaining = auto_remaining - 1
+    let balance = slots_rules.credited_balance(game.balance - wager, result.payout)
+    let bonus = result.bonus_count >= 3
+    return Ok(slots_model.Game(balance, game.bet_per_line, game.turbo, game.auto_count, slots_model.Presenting(), result, result.payout, result.awarded_free_spins, result.awarded_free_spins, bonus, game.auto_active, auto_remaining, game.history, game.round_number, game.spin_number + 1, game.seed, "Five stops and the bonus ticket are committed"))
+
+pub fn start_spin(game: slots_model.Game) -> Result[slots_model.Game, String]:
+    if phase_code(game.phase) != 0 or game.auto_active:
+        return Err("Manual Slot Spin requires a ready table")
+    return commit_paid_spin(game)
+
+pub fn start_auto(game: slots_model.Game) -> Result[slots_model.Game, String]:
+    if phase_code(game.phase) != 0 or game.auto_active:
+        return Err("Finite Slot Auto requires a ready table")
+    let prepared = slots_model.Game(game.balance, game.bet_per_line, game.turbo, game.auto_count, game.phase, game.spin, 0, 0, 0, false, true, game.auto_count, game.history, game.round_number, game.spin_number, game.seed, "Finite Slot Auto started; Stop is visible")
+    return commit_paid_spin(prepared)
+
+fn bounded_history(history: Array[slots_model.RoundResult], result: slots_model.RoundResult) -> Array[slots_model.RoundResult]:
+    let inserted = collections.insert(history, 0, result)
+    if collections.length(inserted) <= 20:
+        return inserted
+    var bounded: Array[slots_model.RoundResult] = []
+    var index = 0
+    while index < 20:
+        bounded = collections.append(bounded, inserted[index])
+        index = index + 1
+    return bounded
+
+pub fn finish_presentation(game: slots_model.Game) -> Result[slots_model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("Slot presentation finish requires a committed spin")
+    if game.free_spins_remaining > 0:
+        let result = committed_result(game, true)?
+        let balance = slots_rules.credited_balance(game.balance, result.payout)
+        return Ok(slots_model.Game(balance, game.bet_per_line, game.turbo, game.auto_count, slots_model.Presenting(), result, game.round_win + result.payout, game.free_spins_remaining - 1, game.free_spins_awarded, game.round_bonus_triggered or result.bonus_count >= 3, game.auto_active, game.auto_remaining, game.history, game.round_number, game.spin_number + 1, game.seed, "Awarded free spin committed at the fixed 2x multiplier"))
+    let total = slots_rules.total_bet(game.bet_per_line)?
+    let result = slots_model.RoundResult(total, game.round_win, game.free_spins_awarded, game.round_bonus_triggered)
+    let history = bounded_history(game.history, result)
+    var auto_active = game.auto_active
+    var message = "Slot round settled; choose Next or Lobby"
+    if auto_active and game.auto_remaining <= 0:
+        auto_active = false
+        message = "Finite Slot Auto requested count completed"
+    if auto_active and game.balance < total:
+        auto_active = false
+        message = "Finite Slot Auto stopped on insufficient credits"
+    return Ok(slots_model.Game(game.balance, game.bet_per_line, game.turbo, game.auto_count, slots_model.Settled(), game.spin, game.round_win, 0, game.free_spins_awarded, game.round_bonus_triggered, auto_active, game.auto_remaining, history, game.round_number, game.spin_number, game.seed, message))
+
+pub fn auto_next(game: slots_model.Game) -> Result[slots_model.Game, String]:
+    if phase_code(game.phase) != 2 or not game.auto_active or game.auto_remaining <= 0:
+        return Err("Finite Slot Auto has no next paid spin")
+    let ready = slots_model.Game(game.balance, game.bet_per_line, game.turbo, game.auto_count, slots_model.Ready(), game.spin, 0, 0, 0, false, true, game.auto_remaining, game.history, game.round_number + 1, game.spin_number, game.seed, "Committing the next finite Auto spin")
+    return commit_paid_spin(ready)
+
+pub fn stop_auto(game: slots_model.Game) -> Result[slots_model.Game, String]:
+    if not game.auto_active:
+        return Err("Finite Slot Auto is not active")
+    return Ok(slots_model.Game(game.balance, game.bet_per_line, game.turbo, game.auto_count, game.phase, game.spin, game.round_win, game.free_spins_remaining, game.free_spins_awarded, game.round_bonus_triggered, false, 0, game.history, game.round_number, game.spin_number, game.seed, "Finite Slot Auto stopped by the player"))
+
+pub fn next_round(game: slots_model.Game) -> Result[slots_model.Game, String]:
+    if phase_code(game.phase) != 2 or game.auto_active:
+        return Err("The Slot round is not at a manual settled boundary")
+    return Ok(slots_model.Game(game.balance, game.bet_per_line, game.turbo, game.auto_count, slots_model.Ready(), game.spin, 0, 0, 0, false, false, 0, game.history, game.round_number + 1, game.spin_number, game.seed, "Ready for a new prepaid Slot spin"))
+
+pub fn restart(game: slots_model.Game) -> Result[slots_model.Game, String]:
+    if phase_code(game.phase) == 1 or game.auto_active:
+        return Err("Finish the committed Slot spin and stop Auto before restart")
+    let history: Array[slots_model.RoundResult] = []
+    return Ok(slots_model.Game(game.balance, game.bet_per_line, game.turbo, game.auto_count, slots_model.Ready(), empty_spin(), 0, 0, 0, false, false, 0, history, game.round_number + 1, game.spin_number, game.seed, "Slot table restarted at a safe boundary"))

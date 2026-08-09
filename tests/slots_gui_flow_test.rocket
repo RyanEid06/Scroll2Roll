@@ -1,0 +1,129 @@
+import src.app.application
+import src.app.slots_view
+import src.rocket_raylib
+import src.rocket_raylib_testing
+import src.slots.slots_api
+import std.collections
+import std.file
+import std.testing
+
+fn press(window: rocket_raylib.Window, key: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_key(key, true, false)
+    return application.step_for_test(state, window)
+
+fn click(window: rocket_raylib.Window, x: Int, y: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_mouse(x, y, true)
+    return application.step_for_test(state, window)
+
+fn same_values(first: Array[Int], second: Array[Int]) -> Bool:
+    if collections.length(first) != collections.length(second):
+        return false
+    var index = 0
+    while index < collections.length(first):
+        if first[index] != second[index]:
+            return false
+        index = index + 1
+    return true
+
+fn finish_round(window: rocket_raylib.Window, source: application.State) -> Result[application.State, String]:
+    var state = source
+    var guard = 0
+    while slots_api.phase_code(state.slots) == 1 and guard < 600:
+        application.draw_for_test(window, state)?
+        state = application.step_for_test(state, window)
+        guard = guard + 1
+    if slots_api.phase_code(state.slots) != 2:
+        return Err("Slot GUI round exceeded its bounded sequential animation guard")
+    return Ok(state)
+
+fn finish_auto(window: rocket_raylib.Window, source: application.State) -> Result[application.State, String]:
+    var state = source
+    var guard = 0
+    while(state.slots.game.auto_active or slots_api.phase_code(state.slots) == 1) and guard < 3000:
+        application.draw_for_test(window, state)?
+        state = application.step_for_test(state, window)
+        guard = guard + 1
+    if state.slots.game.auto_active or slots_api.phase_code(state.slots) != 2:
+        return Err("Finite Slot GUI Auto exceeded its explicit frame guard")
+    return Ok(state)
+
+fn run() -> Result[Int, String]:
+    if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
+        return Ok(1)
+    let temporary = testing.temp_directory("scroll2roll-slots-gui")?
+    let save_path = testing.fixture_path(temporary, "settings.s2r")?
+    match rocket_raylib.open_window(800, 600, "Slots scripted GUI"):
+        case Ok(window):
+            var state = application.initial_for_test(save_path)?
+            state = press(window, rocket_raylib.key_enter(), state)
+            state = click(window, 650, 135, state)
+            if state.screen != 13 or slots_api.phase_code(state.slots) != 0:
+                return Ok(2)
+            state = press(window, rocket_raylib.key_p(), state)
+            if not state.slots_help:
+                return Ok(3)
+            application.draw_for_test(window, state)?
+            state = press(window, rocket_raylib.key_p(), state)
+            state = press(window, rocket_raylib.key_up(), state)
+            state = press(window, rocket_raylib.key_d(), state)
+            state = press(window, rocket_raylib.key_m(), state)
+            if state.slots.game.bet_per_line != 2 or not state.slots.game.turbo or state.slots.game.auto_count != 4:
+                return Ok(4)
+            state = press(window, rocket_raylib.key_enter(), state)
+            if slots_api.phase_code(state.slots) != 1 or state.slots_reel_stage != 0 or collections.length(state.slots.game.spin.stops) != 5 or collections.length(state.slots.game.spin.grid) != 15:
+                return Ok(5)
+            let committed_stops = state.slots.game.spin.stops
+            state = press(window, rocket_raylib.key_up(), state)
+            state = press(window, rocket_raylib.key_b(), state)
+            if state.screen != 13 or state.slots.game.bet_per_line != 2 or not same_values(committed_stops, state.slots.game.spin.stops):
+                return Ok(6)
+            state = finish_round(window, state)?
+            if not file.exists(save_path) or collections.length(state.slots.game.history) != 1 or state.slots_reel_stage != 5:
+                return Ok(7)
+            let next = slots_view.next_rect(600)
+            state = click(window, next.x + 20, next.y + 20, state)
+            let plus = slots_view.bet_plus_rect(800)
+            state = click(window, plus.x + 20, plus.y + 20, state)
+            let spin = slots_view.spin_rect(800)
+            state = click(window, spin.x + 20, spin.y + 20, state)
+            state = finish_round(window, state)?
+            if collections.length(state.slots.game.history) != 2:
+                return Ok(8)
+            state = press(window, rocket_raylib.key_n(), state)
+            state = press(window, rocket_raylib.key_h(), state)
+            if not state.slots.game.auto_active or slots_api.phase_code(state.slots) != 1:
+                return Ok(9)
+            let auto = slots_view.auto_rect(800)
+            state = click(window, auto.x + 20, auto.y + 20, state)
+            state = finish_round(window, state)?
+            if state.slots.game.auto_active or collections.length(state.slots.game.history) != 3:
+                return Ok(10)
+            state = press(window, rocket_raylib.key_n(), state)
+            state = click(window, auto.x + 20, auto.y + 20, state)
+            state = finish_auto(window, state)?
+            if collections.length(state.slots.game.history) != 7 or state.slots.game.auto_remaining != 0:
+                return Ok(11)
+            application.draw_for_test(window, state)?
+            let restart = slots_view.restart_rect(600)
+            state = click(window, restart.x + 20, restart.y + 20, state)
+            if slots_api.phase_code(state.slots) != 0 or collections.length(state.slots.game.history) != 0:
+                return Ok(12)
+            let lobby = slots_view.lobby_rect(600)
+            state = click(window, lobby.x + 20, lobby.y + 20, state)
+            if state.screen != 1 or state.settings.play_balance != state.slots.game.balance:
+                return Ok(13)
+            let closed = rocket_raylib.close_window(window)
+            testing.cleanup_temp(temporary)?
+            if rocket_raylib_testing.buffer_live_count() != 0:
+                return Ok(14)
+            return Ok(0)
+        case Err(error):
+            return Err(error)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

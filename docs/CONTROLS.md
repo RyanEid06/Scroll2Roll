@@ -174,6 +174,25 @@ round. Animation, graph color, and audio do not advance the fixed-tick engine.
 The auto target applies to one round and never starts another wager. See
 `CRASH_MATH.md`.
 
+## Slots
+
+- `Down` / `Up`: change the ready line bet by one credit; five fixed lines make
+  the total bet five times that value.
+- `D`: toggle Turbo presentation timing before a paid round.
+- `M`: cycle the explicit finite autoplay request from 1-10 paid rounds.
+- `Enter`: prepay and Spin one paid round.
+- `H`: start the configured finite autoplay; `S`: request Stop.
+- Mouse: use line-bet, Turbo, auto-count, Spin/Auto/Stop, Help, Next, Restart,
+  and Lobby controls.
+- `P`: toggle reel, Wild, Scatter, Bonus, free-spin, return, and rounding help.
+- `N`: ready the next paid round; `R`: restart at a safe boundary.
+- `B` / `Escape`: return to the lobby only while ready or settled.
+
+Five stops and the Bonus ticket are committed before the sequential reveal.
+Free spins finish automatically at 2x and never retrigger. Turbo changes only
+reveal timing, and finite autoplay never exceeds its requested count. See
+`SLOTS_MATH.md`.
+
 ## Settings
 
 - `M`: toggle audio.

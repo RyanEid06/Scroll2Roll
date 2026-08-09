@@ -21,7 +21,7 @@ Circular imports, duplicated visual rules, machine-specific paths, and C++ appli
 - `src/rocket_raylib.rocket`: safe Rocket graphics/input/audio boundary.
 - `native/rocket_raylib_adapter.*`: primitive ABI and resource-token policy only.
 
-`src/app/registry.rocket` is the shell's routing boundary. Blackjack, European Roulette, Plinko, Coop Climb, Midnight Crossing, No-Limit Hold'em, Mines, Dice, HiLo, and Crash are registered as available. Adding a game does not require rewriting startup, lobby, settings, persistence, or common controls.
+`src/app/registry.rocket` is the shell's routing boundary. Blackjack, European Roulette, Plinko, Coop Climb, Midnight Crossing, No-Limit Hold'em, Mines, Dice, HiLo, Crash, and Slots are registered as available. Adding a game does not require rewriting startup, lobby, settings, persistence, or common controls.
 
 `src/app/blackjack_view.rocket` reads engine state and emits intents through `src/blackjack/blackjack_api.rocket`. It does not calculate legal moves, hand values, payouts, or dealer behavior.
 
@@ -104,13 +104,22 @@ boundary, optional one-round auto target, settlement, and bounded history.
 intents. `CRASH_MATH.md` publishes the exact distribution, return examples,
 tick curve, ordering, rounding, and caps.
 
+`src/slots/slots_model.rocket`, `slots_rules.rocket`, and
+`slots_engine.rocket` own five fixed 20-stop reels, the 5-by-3 grid, five
+paylines, Wild substitution, anywhere Scatters, non-retriggering free spins,
+precommitted Bonus tickets, paid-round settlement, finite autoplay, and bounded
+history. `slots_api.rocket` is the presentation boundary;
+`src/app/slots_view.rocket` reveals only committed reels and engine-proven
+paylines. `SLOTS_MATH.md` publishes every strip, award, feature, exact return
+derivation, rounding rule, and lifecycle bound.
+
 ## Money representation
 
 All play-money values are integer credits. Bets use a table unit compatible with exact 3:2 payouts. Balances must never become negative. Credits have no cash value and are not transferable.
 
 ## Determinism and testing
 
-Shoe, Roulette wheel, Plinko path, Coop Climb ladder, Midnight Crossing world generation, Hold'em deck/AI variation, Mines layout, Dice results, HiLo decks, and Crash thresholds accept explicit seeds. Tests use deterministic state construction through checked helpers and scripted GUI input. Production rendering and audio are excluded from engine decisions. Every safety loop has a finite error-producing bound.
+Shoe, Roulette wheel, Plinko path, Coop Climb ladder, Midnight Crossing world generation, Hold'em deck/AI variation, Mines layout, Dice results, HiLo decks, Crash thresholds, and Slots stops/bonus tickets accept explicit seeds. Tests use deterministic state construction through checked helpers and scripted GUI input. Production rendering and audio are excluded from engine decisions. Every safety loop has a finite error-producing bound.
 
 ## Native boundary
 

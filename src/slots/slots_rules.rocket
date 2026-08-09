@@ -1,0 +1,344 @@
+import src.slots.slots_model
+import std.collections
+
+pub fn reel_count() -> Int:
+    return 5
+
+pub fn row_count() -> Int:
+    return 3
+
+pub fn reel_length() -> Int:
+    return 20
+
+pub fn line_count() -> Int:
+    return 5
+
+pub fn symbol_count() -> Int:
+    return 8
+
+pub fn bonus_ticket_count() -> Int:
+    return 4
+
+pub fn maximum_balance() -> Int:
+    return 10000000000
+
+pub fn symbol_name(symbol: Int) -> String:
+    if symbol == 0:
+        return "Pebble"
+    if symbol == 1:
+        return "Quill"
+    if symbol == 2:
+        return "Lantern"
+    if symbol == 3:
+        return "Compass"
+    if symbol == 4:
+        return "Scroll"
+    if symbol == 5:
+        return "Wild Sigil"
+    if symbol == 6:
+        return "Scatter Moon"
+    if symbol == 7:
+        return "Bonus Gear"
+    return "Invalid"
+
+fn reel_strip(reel: Int) -> Result[Array[Int], String]:
+    if reel == 0:
+        return Ok([0, 1, 2, 0, 3, 1, 4, 0, 2, 1, 5, 0, 3, 1, 6, 2, 0, 4, 1, 7])
+    if reel == 1:
+        return Ok([1, 0, 3, 1, 2, 0, 4, 1, 0, 2, 6, 1, 3, 0, 5, 1, 4, 0, 2, 7])
+    if reel == 2:
+        return Ok([2, 1, 0, 4, 1, 0, 2, 3, 1, 0, 7, 1, 4, 0, 2, 1, 5, 0, 3, 6])
+    if reel == 3:
+        return Ok([0, 2, 1, 3, 0, 1, 4, 2, 0, 1, 6, 3, 1, 0, 5, 2, 1, 4, 0, 7])
+    if reel == 4:
+        return Ok([1, 3, 0, 2, 1, 4, 0, 1, 2, 0, 5, 1, 3, 0, 6, 2, 1, 4, 0, 7])
+    return Err("Slot reel index must be 0-4")
+
+pub fn reel_symbol(reel: Int, stop: Int) -> Result[Int, String]:
+    if stop < 0 or stop >= reel_length():
+        return Err("Slot reel stop must be 0-19")
+    let strip = reel_strip(reel)?
+    return Ok(strip[stop])
+
+pub fn symbol_frequency(reel: Int, symbol: Int) -> Result[Int, String]:
+    if symbol < 0 or symbol >= symbol_count():
+        return Err("Slot symbol index must be 0-7")
+    var count = 0
+    var stop = 0
+    while stop < reel_length():
+        if reel_symbol(reel, stop)? == symbol:
+            count = count + 1
+        stop = stop + 1
+    return Ok(count)
+
+pub fn payline_row(line: Int, reel: Int) -> Result[Int, String]:
+    if line < 0 or line >= line_count() or reel < 0 or reel >= reel_count():
+        return Err("Slot payline coordinate is outside the fixed 5x3 layout")
+    if line == 0:
+        return Ok(0)
+    if line == 1:
+        return Ok(1)
+    if line == 2:
+        return Ok(2)
+    if line == 3:
+        let rows: Array[Int] = [0, 1, 2, 1, 0]
+        return Ok(rows[reel])
+    let rows: Array[Int] = [2, 1, 0, 1, 2]
+    return Ok(rows[reel])
+
+pub fn line_multiplier(symbol: Int, count: Int) -> Result[Int, String]:
+    if symbol < 0 or symbol > 5 or count < 3 or count > 5:
+        return Err("Slot line award requires a paying symbol and 3-5 matches")
+    let offset = count - 3
+    if symbol == 0:
+        let values: Array[Int] = [3, 9, 24]
+        return Ok(values[offset])
+    if symbol == 1:
+        let values: Array[Int] = [6, 15, 36]
+        return Ok(values[offset])
+    if symbol == 2:
+        let values: Array[Int] = [9, 24, 60]
+        return Ok(values[offset])
+    if symbol == 3:
+        let values: Array[Int] = [12, 36, 105]
+        return Ok(values[offset])
+    if symbol == 4:
+        let values: Array[Int] = [18, 60, 180]
+        return Ok(values[offset])
+    let values: Array[Int] = [24, 90, 300]
+    return Ok(values[offset])
+
+pub fn scatter_multiplier(count: Int) -> Int:
+    if count == 3:
+        return 2
+    if count == 4:
+        return 10
+    if count >= 5:
+        return 40
+    return 0
+
+pub fn awarded_free_spins(count: Int) -> Int:
+    if count == 3:
+        return 2
+    if count == 4:
+        return 3
+    if count >= 5:
+        return 5
+    return 0
+
+pub fn bonus_multiplier(ticket: Int) -> Result[Int, String]:
+    if ticket == 0:
+        return Ok(1)
+    if ticket == 1:
+        return Ok(2)
+    if ticket == 2:
+        return Ok(4)
+    if ticket == 3:
+        return Ok(6)
+    return Err("Slot bonus ticket must be 0-3")
+
+pub fn free_spin_multiplier() -> Int:
+    return 2
+
+pub fn valid_bet_per_line(value: Int) -> Bool:
+    return value >= 1 and value <= 20
+
+pub fn valid_auto_count(value: Int) -> Bool:
+    return value >= 1 and value <= 10
+
+pub fn total_bet(bet_per_line: Int) -> Result[Int, String]:
+    if not valid_bet_per_line(bet_per_line):
+        return Err("Slot bet per line must be 1-20 credits")
+    return Ok(bet_per_line * line_count())
+
+fn matches(value: Int, candidate: Int) -> Bool:
+    if candidate == 5:
+        return value == 5
+    return value == candidate or value == 5
+
+pub fn line_win_from_values(values: Array[Int], bet_per_line: Int, spin_multiplier: Int) -> Result[slots_model.LineWin, String]:
+    if collections.length(values) != reel_count() or not valid_bet_per_line(bet_per_line) or spin_multiplier < 1 or spin_multiplier > free_spin_multiplier():
+        return Err("Invalid Slot line evaluation input")
+    var index = 0
+    while index < reel_count():
+        if values[index] < 0 or values[index] >= symbol_count():
+            return Err("Slot line contains an invalid symbol")
+        index = index + 1
+    var best_symbol = -1
+    var best_count = 0
+    var best_multiplier = 0
+    var candidate = 0
+    while candidate <= 5:
+        var count = 0
+        while count < reel_count() and matches(values[count], candidate):
+            count = count + 1
+        if count >= 3:
+            let multiplier = line_multiplier(candidate, count)?
+            if multiplier > best_multiplier:
+                best_symbol = candidate
+                best_count = count
+                best_multiplier = multiplier
+        candidate = candidate + 1
+    if best_symbol < 0:
+        return Ok(slots_model.LineWin(-1, -1, 0, 0, 0))
+    return Ok(slots_model.LineWin(-1, best_symbol, best_count, best_multiplier, bet_per_line * best_multiplier * spin_multiplier))
+
+pub fn grid_for_stops(stops: Array[Int]) -> Result[Array[Int], String]:
+    if collections.length(stops) != reel_count():
+        return Err("Slot outcome requires exactly five reel stops")
+    var grid: Array[Int] = []
+    var row = 0
+    while row < row_count():
+        var reel = 0
+        while reel < reel_count():
+            let stop = stops[reel]
+            if stop < 0 or stop >= reel_length():
+                return Err("Slot outcome contains an invalid reel stop")
+            var position = stop + row
+            if position >= reel_length():
+                position = position - reel_length()
+            grid = collections.append(grid, reel_symbol(reel, position)?)
+            reel = reel + 1
+        row = row + 1
+    return Ok(grid)
+
+fn count_symbol(grid: Array[Int], symbol: Int) -> Int:
+    var count = 0
+    var index = 0
+    while index < collections.length(grid):
+        if grid[index] == symbol:
+            count = count + 1
+        index = index + 1
+    return count
+
+fn evaluate_with_grid(stops: Array[Int], grid: Array[Int], ticket: Int, bet_per_line: Int, free_spin: Bool) -> Result[slots_model.SpinResult, String]:
+    let bonus_value = bonus_multiplier(ticket)?
+    let total = total_bet(bet_per_line)?
+    var spin_multiplier = 1
+    if free_spin:
+        spin_multiplier = free_spin_multiplier()
+    var line_wins: Array[slots_model.LineWin] = []
+    var payout = 0
+    var line = 0
+    while line < line_count():
+        var values: Array[Int] = []
+        var reel = 0
+        while reel < reel_count():
+            let row = payline_row(line, reel)?
+            values = collections.append(values, grid[row * reel_count() + reel])
+            reel = reel + 1
+        let win = line_win_from_values(values, bet_per_line, spin_multiplier)?
+        if win.payout > 0:
+            let indexed = slots_model.LineWin(line, win.symbol, win.count, win.multiplier, win.payout)
+            line_wins = collections.append(line_wins, indexed)
+            payout = payout + win.payout
+        line = line + 1
+    let scatters = count_symbol(grid, 6)
+    let bonuses = count_symbol(grid, 7)
+    payout = payout + total * scatter_multiplier(scatters) * spin_multiplier
+    if bonuses >= 3:
+        payout = payout + total * bonus_value * spin_multiplier
+    var free_spins = 0
+    if not free_spin:
+        free_spins = awarded_free_spins(scatters)
+    return Ok(slots_model.SpinResult(stops, grid, line_wins, scatters, bonuses, ticket, bonus_value, spin_multiplier, payout, free_spins, free_spin))
+
+pub fn evaluate_spin(stops: Array[Int], ticket: Int, bet_per_line: Int, free_spin: Bool) -> Result[slots_model.SpinResult, String]:
+    let grid = grid_for_stops(stops)?
+    return evaluate_with_grid(stops, grid, ticket, bet_per_line, free_spin)
+
+pub fn evaluate_grid(grid: Array[Int], ticket: Int, bet_per_line: Int, free_spin: Bool) -> Result[slots_model.SpinResult, String]:
+    if collections.length(grid) != reel_count() * row_count():
+        return Err("Slot test grid must contain exactly 15 symbols")
+    var index = 0
+    while index < collections.length(grid):
+        if grid[index] < 0 or grid[index] >= symbol_count():
+            return Err("Slot test grid contains an invalid symbol")
+        index = index + 1
+    let stops: Array[Int] = []
+    return evaluate_with_grid(stops, grid, ticket, bet_per_line, free_spin)
+
+fn symbol_combination_line_numerator() -> Result[Int, String]:
+    var numerator = 0
+    var a = 0
+    while a < symbol_count():
+        var b = 0
+        while b < symbol_count():
+            var c = 0
+            while c < symbol_count():
+                var d = 0
+                while d < symbol_count():
+                    var e = 0
+                    while e < symbol_count():
+                        let values: Array[Int] = [a, b, c, d, e]
+                        let win = line_win_from_values(values, 1, 1)?
+                        let weight = symbol_frequency(0, a)? * symbol_frequency(1, b)? * symbol_frequency(2, c)? * symbol_frequency(3, d)? * symbol_frequency(4, e)?
+                        numerator = numerator + weight * win.payout
+                        e = e + 1
+                    d = d + 1
+                c = c + 1
+            b = b + 1
+        a = a + 1
+    return Ok(numerator)
+
+fn feature_totals() -> Result[Array[Int], String]:
+    var scatter_payout = 0
+    var free_spins = 0
+    var bonus_triggers = 0
+    var mask = 0
+    while mask < 32:
+        var count = 0
+        var weight = 1
+        var reel = 0
+        while reel < reel_count():
+            var bit_divisor = 1
+            var bit_index = 0
+            while bit_index < reel:
+                bit_divisor = bit_divisor * 2
+                bit_index = bit_index + 1
+            let hit = mask / bit_divisor - mask /(bit_divisor * 2) * 2
+            if hit == 1:
+                count = count + 1
+                weight = weight * row_count()
+            else:
+                weight = weight *(reel_length() - row_count())
+            reel = reel + 1
+        if count >= 3:
+            scatter_payout = scatter_payout + weight * scatter_multiplier(count) * line_count()
+            free_spins = free_spins + weight * awarded_free_spins(count)
+            bonus_triggers = bonus_triggers + weight
+        mask = mask + 1
+    return Ok([scatter_payout, free_spins, bonus_triggers])
+
+pub fn theoretical_denominator() -> Int:
+    var stops = 1
+    var reel = 0
+    while reel < reel_count():
+        stops = stops * reel_length()
+        reel = reel + 1
+    return stops * bonus_ticket_count()
+
+pub fn theoretical_base_payout_numerator() -> Result[Int, String]:
+    let line_numerator = symbol_combination_line_numerator()? * line_count()
+    let features = feature_totals()?
+    var bonus_sum = 0
+    var ticket = 0
+    while ticket < bonus_ticket_count():
+        bonus_sum = bonus_sum + bonus_multiplier(ticket)?
+        ticket = ticket + 1
+    return Ok((line_numerator + features[0]) * bonus_ticket_count() + features[2] * line_count() * bonus_sum)
+
+pub fn theoretical_free_spin_numerator() -> Result[Int, String]:
+    let features = feature_totals()?
+    return Ok(features[1] * bonus_ticket_count())
+
+pub fn theoretical_return_basis_points() -> Result[Int, String]:
+    let denominator = theoretical_denominator()
+    let base = theoretical_base_payout_numerator()?
+    let free_spins = theoretical_free_spin_numerator()?
+    return Ok(base *(denominator + free_spin_multiplier() * free_spins) * 10000 /(denominator * denominator * line_count()))
+
+pub fn credited_balance(balance: Int, payout: Int) -> Int:
+    if balance >= maximum_balance() - payout:
+        return maximum_balance()
+    return balance + payout

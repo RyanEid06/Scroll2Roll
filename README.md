@@ -1,12 +1,12 @@
 # Scroll2Roll
 
-Scroll2Roll is a local, single-player, play-money Windows casino application written in Rocket 2.0. Blackjack, European Roulette, Plinko, Chicken presented as Coop Climb, Cross the Road presented as Midnight Crossing, No-Limit Texas Hold'em, Mines, Dice, HiLo, and Crash are complete behind a reusable raylib-powered casino shell.
+Scroll2Roll is a local, single-player, play-money Windows casino application written in Rocket 2.0. Blackjack, European Roulette, Plinko, Chicken presented as Coop Climb, Cross the Road presented as Midnight Crossing, No-Limit Texas Hold'em, Mines, Dice, HiLo, Crash, and Slots are complete behind a reusable raylib-powered casino shell.
 
 The native application targets Windows x64. It has no accounts, deposits, withdrawals, purchases, cryptocurrency, online multiplayer, real-money wagering, or browser-playable claim. Virtual credits have no monetary value.
 
 ## Project status
 
-The version-0.1.0 master-plan baseline remains preserved, and version 0.2.0 passed local acceptance with six complete games. The owner-approved 0.3.0 expansion is in progress: Mines, Dice, HiLo, and Crash are complete with exact integer math, deterministic settlement, full keyboard/mouse flows, privacy-safe projections, and save-v1/save-v2 migration to save-v3. The post-Crash 38-test suite preserves every prior regression. Slots is the remaining game milestone. The untouched original Blackjack draft remains under `legacy/Blackjack-v1`.
+The version-0.1.0 master-plan baseline remains preserved, and version 0.2.0 passed local acceptance with six complete games. All five owner-approved 0.3.0 games are now complete with exact integer math, deterministic settlement, full keyboard/mouse flows, privacy-safe projections, and save-v1/save-v2 migration to save-v3. The post-Slots 41-test suite preserves every prior regression. Final local 0.3.0 package and website acceptance remains before handoff. The untouched original Blackjack draft remains under `legacy/Blackjack-v1`.
 
 Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`, and `docs/PROJECT_CONTEXT.md` before changing the project.
 

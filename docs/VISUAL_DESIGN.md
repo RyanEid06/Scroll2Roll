@@ -75,6 +75,13 @@ keeps wager, one-round auto target, Cash Out, revealed settlement, and bounded
 history distinct at 800x600. Running screens say the point is hidden and never
 show users, live bets, simulated activity, or multiplayer language.
 
+Slots uses an original brass-and-midnight mechanical cabinet with five distinct
+reel columns, three symbol rows, fixed-payline traces, and engine-proven win
+highlights. A compact rail keeps line bet, five-line total, Turbo, finite
+autoplay, Stop, free-spin status, Bonus, round result, and bounded history
+distinct at 800x600. Sequential reveal consumes only precommitted stops; Turbo
+changes timing but not layout, outcome, or settlement.
+
 The static website now applies the same tokens in a three-page experience. The
 profile page pairs an editorial welcome panel with a raised local-profile card.
 The Play page follows a dense premium dashboard direction with a compact sticky

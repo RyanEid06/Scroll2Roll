@@ -1,0 +1,49 @@
+pub enum Phase:
+    Ready
+    Presenting
+    Settled
+
+pub struct LineWin:
+    line_index: Int
+    symbol: Int
+    count: Int
+    multiplier: Int
+    payout: Int
+
+pub struct SpinResult:
+    stops: Array[Int]
+    grid: Array[Int]
+    line_wins: Array[LineWin]
+    scatter_count: Int
+    bonus_count: Int
+    bonus_ticket: Int
+    bonus_multiplier: Int
+    spin_multiplier: Int
+    payout: Int
+    awarded_free_spins: Int
+    free_spin: Bool
+
+pub struct RoundResult:
+    total_bet: Int
+    payout: Int
+    free_spins: Int
+    bonus_triggered: Bool
+
+pub struct Game:
+    balance: Int
+    bet_per_line: Int
+    turbo: Bool
+    auto_count: Int
+    phase: Phase
+    spin: SpinResult
+    round_win: Int
+    free_spins_remaining: Int
+    free_spins_awarded: Int
+    round_bonus_triggered: Bool
+    auto_active: Bool
+    auto_remaining: Int
+    history: Array[RoundResult]
+    round_number: Int
+    spin_number: Int
+    seed: Int
+    message: String

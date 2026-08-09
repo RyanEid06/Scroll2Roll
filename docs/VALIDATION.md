@@ -104,6 +104,33 @@ baseline for every game milestone in `EXPANSION_PLAN.md`.
   remains on the last real verified 0.2.0 archive as required during expansion.
 - No package, push, publication, deployment, release, or signing was performed.
 
+## 0.3.0 milestone 5 - Slots
+
+- `slots_rules_test.rocket` verifies all fixed reel stops, per-reel symbol
+  frequencies, five paylines, every three/four/five line award, highest-award
+  Wild substitution, all-Wild and overlapping lines, Scatter/free-spin/Bonus
+  rules, invalid stops, and exact return values published in `SLOTS_MATH.md`.
+  It recomputes the 12,800,000 denominator, 55,281,870 base-payout numerator,
+  711,720 awarded-free-spin numerator, and 9,598-basis-point display floor from
+  production strips and rules.
+- `slots_session_test.rocket` verifies deterministic agreement independent of
+  Turbo, committed five-stop/Bonus outcomes, atomic invalid and unaffordable
+  requests, locked configuration, complete non-retriggering 2x free spins,
+  Bonus/zero-win seeds, explicit and finite autoplay stops, 100 paid rounds,
+  20-entry history, restart, and nonnegative capped balances.
+- `slots_gui_flow_test.rocket` runs at 800x600 and verifies eleventh-entry
+  routing, help, line bet, Turbo, autoplay count, keyboard/mouse manual spins,
+  locked committed reels, sequential reveal, visible Stop, stopped and complete
+  autoplay, persistence only after complete paid rounds, restart, lobby, draw,
+  and native cleanup.
+- The complete suite passes 41/41 with every prior test preserved. Debug and
+  Release `scripts/validate.ps1` each pass native generation/build, `rocketc
+  check`, all 41 tests, and both formatting checks. Source website validation
+  remains on the last real verified 0.2.0 archive pending the final local 0.3.0
+  package and site acceptance gate.
+- No package, push, publication, deployment, release, or signing was performed
+  during the Slots milestone.
+
 ## Rocket and native application
 
 - Debug `scripts/validate.ps1`: CMake/raylib build, Rocket check, 10/10 tests, and `src`/`tests` formatting checks passed.

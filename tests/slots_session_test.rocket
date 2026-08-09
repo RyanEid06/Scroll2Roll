@@ -1,0 +1,155 @@
+import src.slots.slots_engine
+import src.slots.slots_model
+import src.slots.slots_rules
+import std.collections
+
+fn arrays_equal(first: Array[Int], second: Array[Int]) -> Bool:
+    if collections.length(first) != collections.length(second):
+        return false
+    var index = 0
+    while index < collections.length(first):
+        if first[index] != second[index]:
+            return false
+        index = index + 1
+    return true
+
+fn finish_round(source: slots_model.Game) -> Result[slots_model.Game, String]:
+    var game = source
+    var guard = 0
+    while slots_engine.phase_code(game.phase) == 1 and guard < 8:
+        game = slots_engine.finish_presentation(game)?
+        guard = guard + 1
+    if slots_engine.phase_code(game.phase) != 2:
+        return Err("Slot round exceeded its base-plus-five-free-spin bound")
+    return Ok(game)
+
+fn find_seed(feature: Int) -> Result[Int, String]:
+    var seed = 1
+    while seed < 10000:
+        let game = slots_engine.start_spin(slots_engine.new_game(1000, seed)?)?
+        if feature == 0 and game.spin.scatter_count >= 3:
+            return Ok(seed)
+        if feature == 1 and game.spin.bonus_count >= 3:
+            return Ok(seed)
+        if feature == 2 and game.spin.payout == 0 and game.spin.awarded_free_spins == 0:
+            return Ok(seed)
+        seed = seed + 1
+    return Err("Unable to find deterministic Slot feature seed")
+
+fn run_auto(source: slots_model.Game) -> Result[slots_model.Game, String]:
+    var game = source
+    var guard = 0
+    while(game.auto_active or slots_engine.phase_code(game.phase) == 1) and guard < 100:
+        if slots_engine.phase_code(game.phase) == 1:
+            game = finish_round(game)?
+        else:
+            game = slots_engine.auto_next(game)?
+        guard = guard + 1
+    if guard >= 100 or slots_engine.phase_code(game.phase) != 2:
+        return Err("Finite Slot Auto exceeded its explicit bound")
+    return Ok(game)
+
+fn run() -> Result[Int, String]:
+    match slots_engine.new_game(4, 1):
+        case Ok(game):
+            return Ok(1)
+        case Err(error):
+            let expected_error = true
+    var poor = slots_engine.new_game(5, 1)?
+    poor = slots_engine.with_bet_per_line(poor, 2)?
+    match slots_engine.start_spin(poor):
+        case Ok(game):
+            return Ok(2)
+        case Err(error):
+            let expected_error = true
+    if poor.balance != 5 or slots_engine.phase_code(poor.phase) != 0:
+        return Ok(3)
+    match slots_engine.with_bet_per_line(poor, 0):
+        case Ok(game):
+            return Ok(4)
+        case Err(error):
+            let expected_error = true
+    match slots_engine.with_auto_count(poor, 11):
+        case Ok(game):
+            return Ok(5)
+        case Err(error):
+            let expected_error = true
+    let seed = 777
+    let normal = slots_engine.start_spin(slots_engine.new_game(1000, seed)?)?
+    let turbo = slots_engine.start_spin(slots_engine.with_turbo(slots_engine.new_game(1000, seed)?, true)?)?
+    if not arrays_equal(normal.spin.stops, turbo.spin.stops) or not arrays_equal(normal.spin.grid, turbo.spin.grid) or normal.spin.bonus_ticket != turbo.spin.bonus_ticket or normal.spin.payout != turbo.spin.payout:
+        return Ok(6)
+    if collections.length(normal.spin.stops) != 5 or collections.length(normal.spin.grid) != 15 or normal.balance != 995 + normal.spin.payout:
+        return Ok(7)
+    var index = 0
+    while index < collections.length(normal.spin.stops):
+        if normal.spin.stops[index] < 0 or normal.spin.stops[index] >= slots_rules.reel_length():
+            return Ok(8)
+        index = index + 1
+    match slots_engine.with_bet_per_line(normal, 2):
+        case Ok(game):
+            return Ok(9)
+        case Err(error):
+            let expected_error = true
+    if normal.bet_per_line != 1 or normal.balance != 995 + normal.spin.payout:
+        return Ok(10)
+    let scatter_seed = find_seed(0)?
+    var scatter_game = slots_engine.start_spin(slots_engine.new_game(1000, scatter_seed)?)?
+    let awarded = scatter_game.spin.awarded_free_spins
+    if awarded < 2 or awarded > 5:
+        return Ok(11)
+    var observed_free = 0
+    while slots_engine.phase_code(scatter_game.phase) == 1:
+        scatter_game = slots_engine.finish_presentation(scatter_game)?
+        if slots_engine.phase_code(scatter_game.phase) == 1 and scatter_game.spin.free_spin:
+            if scatter_game.spin.spin_multiplier != 2 or scatter_game.spin.awarded_free_spins != 0:
+                return Ok(12)
+            observed_free = observed_free + 1
+    if observed_free != awarded or collections.length(scatter_game.history) != 1 or scatter_game.history[0].free_spins != awarded or scatter_game.history[0].payout != scatter_game.round_win:
+        return Ok(13)
+    let bonus_seed = find_seed(1)?
+    let bonus_game = slots_engine.start_spin(slots_engine.new_game(1000, bonus_seed)?)?
+    if bonus_game.spin.bonus_count < 3 or bonus_game.spin.bonus_multiplier != slots_rules.bonus_multiplier(bonus_game.spin.bonus_ticket)?:
+        return Ok(14)
+    var stopped = slots_engine.with_auto_count(slots_engine.new_game(1000, 990)?, 4)?
+    stopped = slots_engine.start_auto(stopped)?
+    if not stopped.auto_active or stopped.auto_remaining != 3:
+        return Ok(15)
+    stopped = slots_engine.stop_auto(stopped)?
+    stopped = finish_round(stopped)?
+    if stopped.auto_active or stopped.auto_remaining != 0 or collections.length(stopped.history) != 1:
+        return Ok(16)
+    var automatic = slots_engine.with_auto_count(slots_engine.new_game(5000, 1200)?, 3)?
+    automatic = run_auto(slots_engine.start_auto(automatic)?)?
+    if automatic.auto_active or automatic.auto_remaining != 0 or collections.length(automatic.history) != 3 or automatic.round_number != 3:
+        return Ok(17)
+    let losing_seed = find_seed(2)?
+    var insufficient = slots_engine.with_auto_count(slots_engine.new_game(5, losing_seed)?, 10)?
+    insufficient = finish_round(slots_engine.start_auto(insufficient)?)?
+    if insufficient.auto_active or insufficient.balance != 0 or collections.length(insufficient.history) != 1:
+        return Ok(18)
+    var current = slots_engine.new_game(1000000, 4321)?
+    var round = 0
+    while round < 100:
+        current = finish_round(slots_engine.start_spin(current)?)?
+        if current.balance < 0 or current.balance > slots_rules.maximum_balance():
+            return Ok(19)
+        if round < 99:
+            current = slots_engine.next_round(current)?
+        round = round + 1
+    if collections.length(current.history) != 20 or current.round_number != 100:
+        return Ok(20)
+    let restarted = slots_engine.restart(current)?
+    if slots_engine.phase_code(restarted.phase) != 0 or collections.length(restarted.history) != 0 or restarted.balance != current.balance:
+        return Ok(21)
+    if slots_rules.credited_balance(slots_rules.maximum_balance() - 1, 1000) != slots_rules.maximum_balance():
+        return Ok(22)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90
