@@ -1,0 +1,37 @@
+pub enum Direction:
+    Under
+    Over
+
+pub enum Phase:
+    Ready
+    Active
+    Settled
+
+pub struct RoundResult:
+    roll: Int
+    target: Int
+    direction: Direction
+    wager: Int
+    multiplier_basis_points: Int
+    payout: Int
+    won: Bool
+
+pub struct Game:
+    balance: Int
+    target: Int
+    direction: Direction
+    bet: Int
+    auto_count: Int
+    stop_wins: Int
+    stop_losses: Int
+    phase: Phase
+    last_roll: Int
+    last_payout: Int
+    last_won: Bool
+    batch_rolls: Int
+    batch_wins: Int
+    batch_losses: Int
+    history: Array[RoundResult]
+    round_number: Int
+    seed: Int
+    message: String

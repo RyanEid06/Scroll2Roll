@@ -1,0 +1,174 @@
+import src.dice.dice_model
+import src.dice.dice_rules
+import std.collections
+import std.random
+
+pub fn phase_code(phase: dice_model.Phase) -> Int:
+    match phase:
+        case dice_model.Ready:
+            return 0
+        case dice_model.Active:
+            return 1
+        case dice_model.Settled:
+            return 2
+
+pub fn new_game(starting_balance: Int, seed: Int) -> Result[dice_model.Game, String]:
+    if starting_balance < 5:
+        return Err("Starting balance is below the Dice minimum")
+    let history: Array[dice_model.RoundResult] = []
+    return Ok(dice_model.Game(starting_balance, 5000, dice_model.Under(), 10, 5, 0, 0, dice_model.Ready(), -1, 0, false, 0, 0, 0, history, 1, seed, "Configure an exact Roll Under or Roll Over"))
+
+fn configured(game: dice_model.Game, target: Int, direction: dice_model.Direction, bet: Int, auto_count: Int, stop_wins: Int, stop_losses: Int, message: String) -> Result[dice_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Dice configuration is locked until Next")
+    if not dice_rules.valid_target(target):
+        return Err("Dice target must be between 1 and 9999")
+    if not dice_rules.valid_bet(bet):
+        return Err("Dice wager must be 5-1000 credits in units of 5")
+    if not dice_rules.valid_auto_count(auto_count):
+        return Err("Dice auto-roll count must be between 1 and 20")
+    if not dice_rules.valid_stop_count(stop_wins) or not dice_rules.valid_stop_count(stop_losses):
+        return Err("Dice win/loss stop counts must be between 0 and 20")
+    return Ok(dice_model.Game(game.balance, target, direction, bet, auto_count, stop_wins, stop_losses, game.phase, game.last_roll, game.last_payout, game.last_won, game.batch_rolls, game.batch_wins, game.batch_losses, game.history, game.round_number, game.seed, message))
+
+pub fn with_target(game: dice_model.Game, target: Int) -> Result[dice_model.Game, String]:
+    return configured(game, target, game.direction, game.bet, game.auto_count, game.stop_wins, game.stop_losses, "Dice target changed")
+
+pub fn with_direction(game: dice_model.Game, direction: dice_model.Direction) -> Result[dice_model.Game, String]:
+    return configured(game, game.target, direction, game.bet, game.auto_count, game.stop_wins, game.stop_losses, "Dice direction changed")
+
+pub fn with_bet(game: dice_model.Game, bet: Int) -> Result[dice_model.Game, String]:
+    return configured(game, game.target, game.direction, bet, game.auto_count, game.stop_wins, game.stop_losses, "Dice wager changed")
+
+pub fn with_auto(game: dice_model.Game, count: Int, stop_wins: Int, stop_losses: Int) -> Result[dice_model.Game, String]:
+    return configured(game, game.target, game.direction, game.bet, count, stop_wins, stop_losses, "Finite auto-roll limits changed")
+
+fn bounded_history(history: Array[dice_model.RoundResult], result: dice_model.RoundResult) -> Array[dice_model.RoundResult]:
+    let inserted = collections.insert(history, 0, result)
+    if collections.length(inserted) <= 20:
+        return inserted
+    var bounded: Array[dice_model.RoundResult] = []
+    var index = 0
+    while index < 20:
+        bounded = collections.append(bounded, inserted[index])
+        index = index + 1
+    return bounded
+
+fn roll_value(seed: Int, round_number: Int) -> Int:
+    random.seed(seed + round_number * 104729)
+    return random.int(0, dice_rules.domain_size())
+
+fn run_count(game: dice_model.Game, requested: Int, stop_wins: Int, stop_losses: Int) -> Result[dice_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Choose Next before rolling Dice again")
+    if not dice_rules.valid_auto_count(requested):
+        return Err("Dice roll count must be between 1 and 20")
+    if not dice_rules.valid_stop_count(stop_wins) or not dice_rules.valid_stop_count(stop_losses):
+        return Err("Dice win/loss stop counts must be between 0 and 20")
+    if game.bet > game.balance:
+        return Err("Not enough play credits for the first Dice roll")
+    var balance = game.balance
+    var history = game.history
+    var rolls = 0
+    var wins = 0
+    var losses = 0
+    var last_roll = -1
+    var last_payout = 0
+    var last_won = false
+    var round_number = game.round_number
+    while rolls < requested and balance >= game.bet:
+        balance = balance - game.bet
+        last_roll = roll_value(game.seed, round_number)
+        last_won = dice_rules.wins(last_roll, game.target, game.direction)?
+        last_payout = 0
+        let multiplier = dice_rules.multiplier_basis_points(game.target, game.direction)?
+        if last_won:
+            last_payout = dice_rules.payout(game.bet, multiplier)
+            balance = balance + last_payout
+            wins = wins + 1
+        if not last_won:
+            losses = losses + 1
+        let result = dice_model.RoundResult(last_roll, game.target, game.direction, game.bet, multiplier, last_payout, last_won)
+        history = bounded_history(history, result)
+        rolls = rolls + 1
+        round_number = round_number + 1
+        if stop_wins > 0 and wins >= stop_wins:
+            break
+        if stop_losses > 0 and losses >= stop_losses:
+            break
+    var message = "Dice result locked and settled"
+    if rolls < requested and balance < game.bet:
+        message = "Finite auto-roll stopped on insufficient credits"
+    if stop_wins > 0 and wins >= stop_wins:
+        message = "Finite auto-roll reached its win stop"
+    if stop_losses > 0 and losses >= stop_losses:
+        message = "Finite auto-roll reached its loss stop"
+    if rolls == requested and requested > 1:
+        message = "Finite auto-roll requested count completed"
+    return Ok(dice_model.Game(balance, game.target, game.direction, game.bet, game.auto_count, game.stop_wins, game.stop_losses, dice_model.Settled(), last_roll, last_payout, last_won, rolls, wins, losses, history, round_number, game.seed, message))
+
+pub fn roll(game: dice_model.Game) -> Result[dice_model.Game, String]:
+    return run_count(game, 1, 0, 0)
+
+pub fn auto_roll(game: dice_model.Game) -> Result[dice_model.Game, String]:
+    return run_count(game, game.auto_count, game.stop_wins, game.stop_losses)
+
+pub fn start_auto(game: dice_model.Game) -> Result[dice_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Finite Dice auto-roll requires a ready table")
+    if game.bet > game.balance:
+        return Err("Not enough play credits for the first Dice auto-roll")
+    return Ok(dice_model.Game(game.balance, game.target, game.direction, game.bet, game.auto_count, game.stop_wins, game.stop_losses, dice_model.Active(), game.last_roll, 0, false, 0, 0, 0, game.history, game.round_number, game.seed, "Finite auto-roll active; Stop is available"))
+
+pub fn auto_step(game: dice_model.Game) -> Result[dice_model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("Dice auto step requires an active finite batch")
+    if game.batch_rolls >= game.auto_count or game.balance < game.bet:
+        return Ok(dice_model.Game(game.balance, game.target, game.direction, game.bet, game.auto_count, game.stop_wins, game.stop_losses, dice_model.Settled(), game.last_roll, game.last_payout, game.last_won, game.batch_rolls, game.batch_wins, game.batch_losses, game.history, game.round_number, game.seed, "Finite auto-roll stopped before another wager"))
+    let roll = roll_value(game.seed, game.round_number)
+    let won = dice_rules.wins(roll, game.target, game.direction)?
+    let multiplier = dice_rules.multiplier_basis_points(game.target, game.direction)?
+    var payout = 0
+    var balance = game.balance - game.bet
+    var wins = game.batch_wins
+    var losses = game.batch_losses
+    if won:
+        payout = dice_rules.payout(game.bet, multiplier)
+        balance = balance + payout
+        wins = wins + 1
+    if not won:
+        losses = losses + 1
+    let result = dice_model.RoundResult(roll, game.target, game.direction, game.bet, multiplier, payout, won)
+    let history = bounded_history(game.history, result)
+    let rolls = game.batch_rolls + 1
+    var phase = dice_model.Active()
+    var message = "Finite auto-roll active; Stop is available"
+    if rolls >= game.auto_count:
+        phase = dice_model.Settled()
+        message = "Finite auto-roll requested count completed"
+    if game.stop_wins > 0 and wins >= game.stop_wins:
+        phase = dice_model.Settled()
+        message = "Finite auto-roll reached its win stop"
+    if game.stop_losses > 0 and losses >= game.stop_losses:
+        phase = dice_model.Settled()
+        message = "Finite auto-roll reached its loss stop"
+    if balance < game.bet:
+        phase = dice_model.Settled()
+        message = "Finite auto-roll stopped on insufficient credits"
+    return Ok(dice_model.Game(balance, game.target, game.direction, game.bet, game.auto_count, game.stop_wins, game.stop_losses, phase, roll, payout, won, rolls, wins, losses, history, game.round_number + 1, game.seed, message))
+
+pub fn stop_auto(game: dice_model.Game) -> Result[dice_model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("Dice auto-roll is not active")
+    return Ok(dice_model.Game(game.balance, game.target, game.direction, game.bet, game.auto_count, game.stop_wins, game.stop_losses, dice_model.Settled(), game.last_roll, game.last_payout, game.last_won, game.batch_rolls, game.batch_wins, game.batch_losses, game.history, game.round_number, game.seed, "Finite auto-roll stopped by the player"))
+
+pub fn next_round(game: dice_model.Game) -> Result[dice_model.Game, String]:
+    if phase_code(game.phase) != 2:
+        return Err("The Dice result has not settled")
+    return Ok(dice_model.Game(game.balance, game.target, game.direction, game.bet, game.auto_count, game.stop_wins, game.stop_losses, dice_model.Ready(), game.last_roll, game.last_payout, game.last_won, 0, 0, 0, game.history, game.round_number, game.seed, "Ready for a fast Dice roll"))
+
+pub fn restart(game: dice_model.Game) -> Result[dice_model.Game, String]:
+    if phase_code(game.phase) == 1:
+        return Err("Stop the active Dice auto-roll before restarting")
+    let history: Array[dice_model.RoundResult] = []
+    return Ok(dice_model.Game(game.balance, game.target, game.direction, game.bet, game.auto_count, game.stop_wins, game.stop_losses, dice_model.Ready(), -1, 0, false, 0, 0, 0, history, game.round_number, game.seed, "Dice table restarted at a safe boundary"))

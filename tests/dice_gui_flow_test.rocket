@@ -1,0 +1,107 @@
+import src.app.application
+import src.app.dice_view
+import src.dice.dice_api
+import src.rocket_raylib
+import src.rocket_raylib_testing
+import std.file
+import std.testing
+
+fn press(window: rocket_raylib.Window, key: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_key(key, true, false)
+    return application.step_for_test(state, window)
+
+fn click(window: rocket_raylib.Window, x: Int, y: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_mouse(x, y, true)
+    return application.step_for_test(state, window)
+
+fn wait_frames(window: rocket_raylib.Window, source: application.State, count: Int) -> Result[application.State, String]:
+    var state = source
+    var frame = 0
+    while frame < count:
+        application.draw_for_test(window, state)?
+        state = application.step_for_test(state, window)
+        frame = frame + 1
+    return Ok(state)
+
+fn finish_auto(window: rocket_raylib.Window, source: application.State) -> Result[application.State, String]:
+    var state = source
+    var guard = 0
+    while dice_api.phase_code(state.dice) == 1 and guard < 500:
+        application.draw_for_test(window, state)?
+        state = application.step_for_test(state, window)
+        guard = guard + 1
+    if guard >= 500:
+        return Err("Finite Dice GUI auto-roll exceeded its frame bound")
+    return Ok(state)
+
+fn run() -> Result[Int, String]:
+    if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
+        return Ok(1)
+    let temporary = testing.temp_directory("scroll2roll-dice-gui")?
+    let save_path = testing.fixture_path(temporary, "settings.s2r")?
+    match rocket_raylib.open_window(800, 600, "Dice scripted GUI"):
+        case Ok(window):
+            var state = application.initial_for_test(save_path)?
+            state = press(window, rocket_raylib.key_enter(), state)
+            state = click(window, 400, 82, state)
+            if state.screen != 10 or dice_api.phase_code(state.dice) != 0:
+                return Ok(2)
+            state = press(window, rocket_raylib.key_p(), state)
+            if not state.dice_help:
+                return Ok(3)
+            application.draw_for_test(window, state)?
+            state = press(window, rocket_raylib.key_p(), state)
+            state = press(window, rocket_raylib.key_tab(), state)
+            state = press(window, rocket_raylib.key_right(), state)
+            state = press(window, rocket_raylib.key_up(), state)
+            state = press(window, rocket_raylib.key_m(), state)
+            state = press(window, rocket_raylib.key_h(), state)
+            state = press(window, rocket_raylib.key_d(), state)
+            if state.dice.game.target != 5100 or state.dice.game.bet != 15 or state.dice.game.auto_count != 6 or state.dice.game.stop_wins != 1 or state.dice.game.stop_losses != 1:
+                return Ok(4)
+            state = press(window, rocket_raylib.key_enter(), state)
+            if dice_api.phase_code(state.dice) != 2 or state.dice.game.batch_rolls != 1 or not file.exists(save_path):
+                return Ok(5)
+            state = wait_frames(window, state, 16)?
+            state = click(window, 100, 550, state)
+            if dice_api.phase_code(state.dice) != 0:
+                return Ok(6)
+            let roll = dice_view.roll_rect(800)
+            state = click(window, roll.x + 20, roll.y + 20, state)
+            if dice_api.phase_code(state.dice) != 2:
+                return Ok(7)
+            state = wait_frames(window, state, 16)?
+            state = press(window, rocket_raylib.key_n(), state)
+            state = press(window, rocket_raylib.key_s(), state)
+            if dice_api.phase_code(state.dice) != 1:
+                return Ok(8)
+            let auto = dice_view.auto_rect(800)
+            state = click(window, auto.x + 20, auto.y + 20, state)
+            if dice_api.phase_code(state.dice) != 2 or state.dice.game.batch_rolls != 0:
+                return Ok(9)
+            state = wait_frames(window, state, 10)?
+            state = press(window, rocket_raylib.key_n(), state)
+            state = click(window, auto.x + 20, auto.y + 20, state)
+            state = finish_auto(window, state)?
+            if dice_api.phase_code(state.dice) != 2 or state.dice.game.batch_rolls < 1 or state.dice.game.batch_rolls > state.dice.game.auto_count:
+                return Ok(10)
+            state = wait_frames(window, state, 12)?
+            application.draw_for_test(window, state)?
+            state = click(window, 230, 550, state)
+            if state.screen != 1 or state.settings.play_balance != state.dice.game.balance:
+                return Ok(11)
+            let closed = rocket_raylib.close_window(window)
+            testing.cleanup_temp(temporary)?
+            if rocket_raylib_testing.buffer_live_count() != 0:
+                return Ok(12)
+            return Ok(0)
+        case Err(error):
+            return Err(error)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

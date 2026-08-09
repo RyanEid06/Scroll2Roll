@@ -1,0 +1,48 @@
+import src.dice.dice_engine
+import src.dice.dice_model
+
+pub struct Session:
+    game: dice_model.Game
+
+pub fn new_session(starting_balance: Int, seed: Int) -> Result[Session, String]:
+    return Ok(Session(dice_engine.new_game(starting_balance, seed)?))
+
+pub fn with_target(session: Session, target: Int) -> Result[Session, String]:
+    return Ok(Session(dice_engine.with_target(session.game, target)?))
+
+pub fn with_direction_code(session: Session, code: Int) -> Result[Session, String]:
+    if code == 0:
+        return Ok(Session(dice_engine.with_direction(session.game, dice_model.Under())?))
+    if code == 1:
+        return Ok(Session(dice_engine.with_direction(session.game, dice_model.Over())?))
+    return Err("Dice direction code must be 0 or 1")
+
+pub fn with_bet(session: Session, bet: Int) -> Result[Session, String]:
+    return Ok(Session(dice_engine.with_bet(session.game, bet)?))
+
+pub fn with_auto(session: Session, count: Int, stop_wins: Int, stop_losses: Int) -> Result[Session, String]:
+    return Ok(Session(dice_engine.with_auto(session.game, count, stop_wins, stop_losses)?))
+
+pub fn with_roll(session: Session) -> Result[Session, String]:
+    return Ok(Session(dice_engine.roll(session.game)?))
+
+pub fn with_auto_roll(session: Session) -> Result[Session, String]:
+    return Ok(Session(dice_engine.auto_roll(session.game)?))
+
+pub fn with_start_auto(session: Session) -> Result[Session, String]:
+    return Ok(Session(dice_engine.start_auto(session.game)?))
+
+pub fn with_auto_step(session: Session) -> Result[Session, String]:
+    return Ok(Session(dice_engine.auto_step(session.game)?))
+
+pub fn with_stop_auto(session: Session) -> Result[Session, String]:
+    return Ok(Session(dice_engine.stop_auto(session.game)?))
+
+pub fn with_next_round(session: Session) -> Result[Session, String]:
+    return Ok(Session(dice_engine.next_round(session.game)?))
+
+pub fn with_restart(session: Session) -> Result[Session, String]:
+    return Ok(Session(dice_engine.restart(session.game)?))
+
+pub fn phase_code(session: Session) -> Int:
+    return dice_engine.phase_code(session.game.phase)

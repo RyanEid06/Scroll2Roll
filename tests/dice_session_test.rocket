@@ -1,0 +1,94 @@
+import src.dice.dice_api
+import src.dice.dice_engine
+import src.dice.dice_model
+import std.collections
+
+fn run() -> Result[Int, String]:
+    match dice_engine.new_game(4, 1):
+        case Ok(game):
+            return Ok(1)
+        case Err(error):
+            let expected = true
+    var game = dice_engine.new_game(1000, 4242)?
+    match dice_engine.with_target(game, 0):
+        case Ok(value):
+            return Ok(2)
+        case Err(error):
+            let expected = true
+    match dice_engine.with_auto(game, 21, 0, 0):
+        case Ok(value):
+            return Ok(3)
+        case Err(error):
+            let expected = true
+    game = dice_engine.with_target(game, 5000)?
+    game = dice_engine.with_bet(game, 25)?
+    let first = dice_engine.roll(game)?
+    let duplicate = dice_engine.roll(dice_engine.with_bet(dice_engine.with_target(dice_engine.new_game(1000, 4242)?, 5000)?, 25)?)?
+    if first.last_roll != duplicate.last_roll or first.last_won != duplicate.last_won or first.balance != duplicate.balance:
+        return Ok(4)
+    if first.last_roll < 0 or first.last_roll >= 10000 or first.batch_rolls != 1 or collections.length(first.history) != 1:
+        return Ok(5)
+    match dice_engine.with_bet(first, 50):
+        case Ok(value):
+            return Ok(6)
+        case Err(error):
+            let expected = true
+    game = dice_engine.next_round(first)?
+    game = dice_engine.with_auto(game, 20, 1, 0)?
+    let win_stopped = dice_engine.auto_roll(game)?
+    if win_stopped.batch_rolls > 20 or win_stopped.batch_wins != 1:
+        return Ok(7)
+    game = dice_engine.next_round(win_stopped)?
+    game = dice_engine.with_auto(game, 20, 0, 1)?
+    let loss_stopped = dice_engine.auto_roll(game)?
+    if loss_stopped.batch_rolls > 20 or loss_stopped.batch_losses != 1:
+        return Ok(8)
+    game = dice_engine.next_round(loss_stopped)?
+    var interactive = dice_engine.start_auto(game)?
+    interactive = dice_engine.auto_step(interactive)?
+    if dice_engine.phase_code(interactive.phase) == 1:
+        match dice_engine.restart(interactive):
+            case Ok(value):
+                return Ok(16)
+            case Err(error):
+                let expected = true
+        interactive = dice_engine.stop_auto(interactive)?
+        if interactive.message != "Finite auto-roll stopped by the player":
+            return Ok(15)
+    var poor = dice_engine.with_bet(dice_engine.new_game(12, 7)?, 5)?
+    poor = dice_engine.with_auto(poor, 20, 0, 0)?
+    let exhausted = dice_engine.auto_roll(poor)?
+    if exhausted.batch_rolls > 20 or exhausted.balance < 0:
+        return Ok(9)
+    var session = dice_api.new_session(1000, 99)?
+    match dice_api.with_direction_code(session, 2):
+        case Ok(value):
+            return Ok(10)
+        case Err(error):
+            let expected = true
+    session = dice_api.with_direction_code(session, 1)?
+    session = dice_api.with_roll(session)?
+    if dice_api.phase_code(session) != 2:
+        return Ok(11)
+    var current = dice_engine.with_bet(dice_engine.new_game(5000, 8000)?, 5)?
+    var round = 0
+    while round < 100:
+        current = dice_engine.roll(current)?
+        if current.balance < 0:
+            return Ok(12)
+        current = dice_engine.next_round(current)?
+        round = round + 1
+    if collections.length(current.history) != 20 or current.round_number != 101:
+        return Ok(13)
+    let restarted = dice_engine.restart(current)?
+    if collections.length(restarted.history) != 0 or dice_engine.phase_code(restarted.phase) != 0:
+        return Ok(14)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

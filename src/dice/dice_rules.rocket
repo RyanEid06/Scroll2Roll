@@ -1,0 +1,62 @@
+import src.dice.dice_model
+
+pub fn domain_size() -> Int:
+    return 10000
+
+pub fn minimum_target() -> Int:
+    return 1
+
+pub fn maximum_target() -> Int:
+    return 9999
+
+pub fn target_return_basis_points() -> Int:
+    return 9600
+
+pub fn maximum_auto_rolls() -> Int:
+    return 20
+
+pub fn valid_target(target: Int) -> Bool:
+    return target >= minimum_target() and target <= maximum_target()
+
+pub fn valid_bet(bet: Int) -> Bool:
+    return bet >= 5 and bet <= 1000 and bet / 5 * 5 == bet
+
+pub fn valid_auto_count(count: Int) -> Bool:
+    return count >= 1 and count <= maximum_auto_rolls()
+
+pub fn valid_stop_count(count: Int) -> Bool:
+    return count >= 0 and count <= maximum_auto_rolls()
+
+pub fn direction_code(direction: dice_model.Direction) -> Int:
+    match direction:
+        case dice_model.Under:
+            return 0
+        case dice_model.Over:
+            return 1
+
+pub fn direction_name(direction: dice_model.Direction) -> String:
+    if direction_code(direction) == 0:
+        return "Roll Under"
+    return "Roll Over"
+
+pub fn win_outcomes(target: Int, direction: dice_model.Direction) -> Result[Int, String]:
+    if not valid_target(target):
+        return Err("Dice target must be between 1 and 9999")
+    if direction_code(direction) == 0:
+        return Ok(target)
+    return Ok(domain_size() - target)
+
+pub fn multiplier_basis_points(target: Int, direction: dice_model.Direction) -> Result[Int, String]:
+    return Ok(target_return_basis_points() * domain_size() / win_outcomes(target, direction)?)
+
+pub fn wins(roll: Int, target: Int, direction: dice_model.Direction) -> Result[Bool, String]:
+    if roll < 0 or roll >= domain_size():
+        return Err("Dice roll is outside the 0-9999 domain")
+    if not valid_target(target):
+        return Err("Dice target must be between 1 and 9999")
+    if direction_code(direction) == 0:
+        return Ok(roll < target)
+    return Ok(roll >= target)
+
+pub fn payout(stake: Int, multiplier: Int) -> Int:
+    return stake * multiplier / 10000

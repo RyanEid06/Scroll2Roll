@@ -123,6 +123,22 @@ The complete unique layout is committed when the wager is prepaid. A 0.18-
 second reveal or 0.24-second settlement animation never chooses or changes the
 result. Exact combinatorial math is documented in `MINES_MATH.md`.
 
+## Dice
+
+- `Tab`: toggle Roll Under / Roll Over.
+- `Left` / `Right`: move the exact target by 1.00 percentage point.
+- `Down` / `Up`: change the wager by 5 credits.
+- `M`: cycle the finite requested auto-roll count from 1-20.
+- `H` / `D`: cycle the optional win/loss stop counts from 0-20.
+- `Enter`: lock and settle one fast manual roll.
+- `S`: start finite auto-roll; while active, stop it explicitly.
+- `P`: toggle exact probability, return, and rounding help.
+- `N`: ready the next roll; `R`: safe restart; `B` / `Escape`: lobby.
+
+Results are integers from 0-9,999. Auto-roll locks one outcome before each
+bounded animation and cannot continue past any configured stop. See
+`DICE_MATH.md`.
+
 ## Settings
 
 - `M`: toggle audio.

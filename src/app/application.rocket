@@ -2,6 +2,7 @@ import src.app.blackjack_view
 import src.app.chicken_view
 import src.app.components
 import src.app.crossing_view
+import src.app.dice_view
 import src.app.holdem_view
 import src.app.mines_view
 import src.app.plinko_view
@@ -12,6 +13,8 @@ import src.blackjack.blackjack_engine
 import src.blackjack.blackjack_model
 import src.chicken.chicken_api
 import src.crossing.crossing_api
+import src.dice.dice_api
+import src.dice.dice_rules
 import src.holdem.holdem_api
 import src.mines.mines_api
 import src.persistence
@@ -54,9 +57,12 @@ pub struct State:
     mines_help: Bool
     mines_selected: Int
     mines_animation_end: Float
+    dice: dice_api.Session
+    dice_help: Bool
+    dice_animation_end: Float
 
 fn rebuild(state: State, screen: Int, game: blackjack_model.Game, selected_bet: Int, settings: persistence.Settings, notice: String, error: String, exit_prompt: Bool, running: Bool, next_step: Float, saved_round: Int) -> State:
-    return State(screen, game, state.roulette, selected_bet, settings, state.save_path, notice, error, exit_prompt, running, next_step, saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end)
+    return State(screen, game, state.roulette, selected_bet, settings, state.save_path, notice, error, exit_prompt, running, next_step, saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end)
 
 fn new_table(settings: persistence.Settings, seed: Int) -> Result[blackjack_model.Game, String]:
     let game = blackjack_engine.new_game("Player", settings.play_balance, settings.ai_count, seed)?
@@ -75,7 +81,8 @@ fn initial(settings: persistence.Settings, save_path: String, notice: String) ->
     let crossing = crossing_api.new_session(settings.play_balance, 20260812)?
     let holdem = holdem_api.new_session(settings.play_balance, holdem_ai_count(settings), 20260813)?
     let mines = mines_api.new_session(settings.play_balance, 20260814)?
-    return Ok(State(0, game, roulette, game.rules.minimum_bet, settings, save_path, notice, "", false, true, 0.0, 0, 0, 0, false, 0.0, plinko, false, 0, 0.0, chicken, false, crossing, false, 0.0, holdem, false, 10, mines, false, 0, 0.0))
+    let dice = dice_api.new_session(settings.play_balance, 20260815)?
+    return Ok(State(0, game, roulette, game.rules.minimum_bet, settings, save_path, notice, "", false, true, 0.0, 0, 0, 0, false, 0.0, plinko, false, 0, 0.0, chicken, false, crossing, false, 0.0, holdem, false, 10, mines, false, 0, 0.0, dice, false, 0.0))
 
 fn save_settings(state: State, settings: persistence.Settings) -> State:
     match persistence.save(state.save_path, settings):
@@ -88,43 +95,49 @@ fn with_game(state: State, game: blackjack_model.Game, next_step: Float) -> Stat
     return rebuild(state, state.screen, game, state.selected_bet, state.settings, state.notice, "", state.exit_prompt, state.running, next_step, state.saved_round)
 
 fn with_roulette(state: State, session: roulette_api.Session, spin_end: Float) -> State:
-    return State(state.screen, state.game, session, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end)
+    return State(state.screen, state.game, session, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end)
 
 fn roulette_focus(state: State, kind: Int, target: Int) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, kind, target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, kind, target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end)
 
 fn roulette_help(state: State, visible: Bool) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, visible, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, visible, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end)
 
 fn with_plinko(state: State, session: plinko_api.Session, stage: Int, next_step: Float) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, session, state.plinko_help, stage, next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, session, state.plinko_help, stage, next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end)
 
 fn plinko_help(state: State, visible: Bool) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, visible, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, visible, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end)
 
 fn with_chicken(state: State, session: chicken_api.Session) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, session, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, session, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end)
 
 fn chicken_help(state: State, visible: Bool) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, visible, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, visible, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end)
 
 fn with_crossing(state: State, session: crossing_api.Session, accumulator: Float) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, session, state.crossing_help, accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, session, state.crossing_help, accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end)
 
 fn crossing_help(state: State, visible: Bool) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, visible, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, visible, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end)
 
 fn with_holdem(state: State, session: holdem_api.Session, target: Int) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, session, state.holdem_help, target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, session, state.holdem_help, target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end)
 
 fn holdem_help(state: State, visible: Bool) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, visible, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, visible, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end)
 
 fn with_mines(state: State, session: mines_api.Session, selected: Int, animation_end: Float) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, session, state.mines_help, selected, animation_end)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, session, state.mines_help, selected, animation_end, state.dice, state.dice_help, state.dice_animation_end)
 
 fn mines_help(state: State, visible: Bool) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, visible, state.mines_selected, state.mines_animation_end)
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, visible, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end)
+
+fn with_dice(state: State, session: dice_api.Session, animation_end: Float) -> State:
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, session, state.dice_help, animation_end)
+
+fn dice_help(state: State, visible: Bool) -> State:
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, visible, state.dice_animation_end)
 
 fn with_error(state: State, error: String) -> State:
     return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, error, state.exit_prompt, state.running, state.next_step, state.saved_round)
@@ -184,6 +197,14 @@ fn enter_mines(state: State, seed: Int) -> State:
         case Err(error):
             return with_error(state, error)
 
+fn enter_dice(state: State, seed: Int) -> State:
+    match dice_api.new_session(state.settings.play_balance, seed):
+        case Ok(session):
+            let entered = rebuild(state, 10, state.game, state.selected_bet, state.settings, "Dice signal chamber ready", "", false, true, state.next_step, state.saved_round)
+            return with_dice(entered, session, 0.0)
+        case Err(error):
+            return with_error(state, error)
+
 fn route_game(state: State, index: Int) -> State:
     if index == 0 and registry.available(index):
         return enter_game(state, 20260808 + index)
@@ -199,6 +220,8 @@ fn route_game(state: State, index: Int) -> State:
         return enter_holdem(state, 20260808 + index)
     if index == 6 and registry.available(index):
         return enter_mines(state, 20260808 + index)
+    if index == 7 and registry.available(index):
+        return enter_dice(state, 20260808 + index)
     return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, "That game is a future placeholder", "", state.exit_prompt, state.running, state.next_step, state.saved_round)
 
 fn change_bet(state: State, delta: Int) -> State:
@@ -276,6 +299,8 @@ fn settings_ai(state: State, delta: Int) -> State:
     return save_settings(state, persistence.with_ai_count(state.settings, state.settings.ai_count + delta))
 
 fn lobby_tile(index: Int, width: Int) -> components.Rect:
+    if index == 7:
+        return components.rect(300, 62, width - 520, 40)
     if index == 6:
         return components.rect(300, 112, width - 520, 46)
     let tile_width =(width - 128) / 3
@@ -1080,6 +1105,161 @@ fn update_mines(state: State, window: rocket_raylib.Window, clicked: Bool, mouse
             return mines_return_to_lobby(state)
     return state
 
+fn dice_configure_target(state: State, delta: Int) -> State:
+    var target = state.dice.game.target + delta
+    if target < 1:
+        target = 1
+    if target > 9999:
+        target = 9999
+    match dice_api.with_target(state.dice, target):
+        case Ok(session):
+            return with_dice(state, session, state.dice_animation_end)
+        case Err(error):
+            return with_error(state, error)
+
+fn dice_toggle_direction(state: State) -> State:
+    var code = dice_rules.direction_code(state.dice.game.direction) + 1
+    if code > 1:
+        code = 0
+    match dice_api.with_direction_code(state.dice, code):
+        case Ok(session):
+            return with_dice(state, session, state.dice_animation_end)
+        case Err(error):
+            return with_error(state, error)
+
+fn dice_configure_bet(state: State, delta: Int) -> State:
+    var bet = state.dice.game.bet + delta
+    if bet < 5:
+        bet = 5
+    if bet > 1000:
+        bet = 1000
+    match dice_api.with_bet(state.dice, bet):
+        case Ok(session):
+            return with_dice(state, session, state.dice_animation_end)
+        case Err(error):
+            return with_error(state, error)
+
+fn dice_configure_auto(state: State, kind: Int) -> State:
+    var count = state.dice.game.auto_count
+    var wins = state.dice.game.stop_wins
+    var losses = state.dice.game.stop_losses
+    if kind == 0:
+        count = count + 1
+        if count > 20:
+            count = 1
+    if kind == 1:
+        wins = wins + 1
+        if wins > 20:
+            wins = 0
+    if kind == 2:
+        losses = losses + 1
+        if losses > 20:
+            losses = 0
+    match dice_api.with_auto(state.dice, count, wins, losses):
+        case Ok(session):
+            return with_dice(state, session, state.dice_animation_end)
+        case Err(error):
+            return with_error(state, error)
+
+fn dice_save_settlement(state: State, session: dice_api.Session, animation_end: Float) -> State:
+    let settings = persistence.with_balance(state.settings, session.game.balance)
+    return save_settings(with_dice(rebuild(state, state.screen, state.game, state.selected_bet, settings, "Dice result saved", "", false, true, state.next_step, state.saved_round), session, animation_end), settings)
+
+fn dice_manual_roll(state: State, now: Float) -> State:
+    match dice_api.with_roll(state.dice):
+        case Ok(session):
+            return dice_save_settlement(state, session, now + 0.22)
+        case Err(error):
+            return with_error(state, error)
+
+fn dice_start_auto(state: State, now: Float) -> State:
+    match dice_api.with_start_auto(state.dice):
+        case Ok(session):
+            return with_dice(state, session, now)
+        case Err(error):
+            return with_error(state, error)
+
+fn dice_auto_step(state: State, now: Float) -> State:
+    match dice_api.with_auto_step(state.dice):
+        case Ok(session):
+            if dice_api.phase_code(session) == 2:
+                return dice_save_settlement(state, session, now + 0.14)
+            return with_dice(state, session, now + 0.14)
+        case Err(error):
+            return with_error(state, error)
+
+fn dice_stop_auto(state: State, now: Float) -> State:
+    match dice_api.with_stop_auto(state.dice):
+        case Ok(session):
+            return dice_save_settlement(state, session, now + 0.10)
+        case Err(error):
+            return with_error(state, error)
+
+fn dice_next(state: State) -> State:
+    match dice_api.with_next_round(state.dice):
+        case Ok(session):
+            return with_dice(state, session, 0.0)
+        case Err(error):
+            return with_error(state, error)
+
+fn dice_restart(state: State) -> State:
+    match dice_api.with_restart(state.dice):
+        case Ok(session):
+            return with_dice(state, session, 0.0)
+        case Err(error):
+            return with_error(state, error)
+
+fn dice_return_to_lobby(state: State) -> State:
+    if dice_api.phase_code(state.dice) == 1:
+        return with_error(state, "Stop the active finite Dice auto-roll before leaving")
+    let settings = persistence.with_balance(state.settings, state.dice.game.balance)
+    return save_settings(rebuild(state, 1, state.game, state.selected_bet, settings, "Dice progress saved; welcome back", "", false, true, state.next_step, state.saved_round), settings)
+
+fn update_dice(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int, now: Float) -> State:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(dice_view.help_rect(width), mouse_x, mouse_y):
+        return dice_help(state, not state.dice_help)
+    if state.dice_help:
+        return state
+    let phase = dice_api.phase_code(state.dice)
+    if phase == 1:
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(dice_view.auto_rect(width), mouse_x, mouse_y):
+            return dice_stop_auto(state, now)
+        if now >= state.dice_animation_end:
+            return dice_auto_step(state, now)
+        return state
+    if now < state.dice_animation_end:
+        return state
+    if phase == 0:
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_tab()) or clicked and components.contains(dice_view.direction_rect(width), mouse_x, mouse_y):
+            return dice_toggle_direction(state)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(dice_view.target_minus_rect(width), mouse_x, mouse_y):
+            return dice_configure_target(state, -100)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(dice_view.target_plus_rect(width), mouse_x, mouse_y):
+            return dice_configure_target(state, 100)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(dice_view.bet_minus_rect(width), mouse_x, mouse_y):
+            return dice_configure_bet(state, -5)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(dice_view.bet_plus_rect(width), mouse_x, mouse_y):
+            return dice_configure_bet(state, 5)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_m()) or clicked and components.contains(dice_view.auto_count_rect(width), mouse_x, mouse_y):
+            return dice_configure_auto(state, 0)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()) or clicked and components.contains(dice_view.win_stop_rect(width), mouse_x, mouse_y):
+            return dice_configure_auto(state, 1)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_d()) or clicked and components.contains(dice_view.loss_stop_rect(width), mouse_x, mouse_y):
+            return dice_configure_auto(state, 2)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(dice_view.roll_rect(width), mouse_x, mouse_y):
+            return dice_manual_roll(state, now)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(dice_view.auto_rect(width), mouse_x, mouse_y):
+            return dice_start_auto(state, now)
+    if phase == 2 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(dice_view.next_rect(height), mouse_x, mouse_y)):
+        return dice_next(state)
+    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(dice_view.restart_rect(height), mouse_x, mouse_y)):
+        return dice_restart(state)
+    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(dice_view.lobby_rect(height), mouse_x, mouse_y)):
+        return dice_return_to_lobby(state)
+    return state
+
 fn update(state: State, window: rocket_raylib.Window) -> State:
     let clicked = rocket_raylib.is_mouse_pressed(window, rocket_raylib.mouse_left())
     let mouse_x = rocket_raylib.mouse_x(window)
@@ -1115,6 +1295,8 @@ fn update(state: State, window: rocket_raylib.Window) -> State:
         return update_holdem(state, window, clicked, mouse_x, mouse_y)
     if state.screen == 9:
         return update_mines(state, window, clicked, mouse_x, mouse_y, now)
+    if state.screen == 10:
+        return update_dice(state, window, clicked, mouse_x, mouse_y, now)
     return update_settings(state, window, clicked, mouse_x, mouse_y)
 
 fn draw_startup(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
@@ -1140,11 +1322,11 @@ fn draw_lobby(window: rocket_raylib.Window, frame: rocket_raylib.Frame, state: S
         if registry.available(index):
             status = "Play now"
             ink = theme.gold()
-        if index == 6:
+        if index >= 6:
             rocket_raylib.draw_text(frame, registry.name(index), tile.x + 14, tile.y + 10, theme.body_size(), theme.text())?
             rocket_raylib.draw_text(frame, registry.description(index), tile.x + 100, tile.y + 13, theme.small_size(), theme.muted())?
             rocket_raylib.draw_text(frame, status, tile.x + tile.width - 72, tile.y + 13, theme.small_size(), ink)?
-        if index != 6:
+        if index < 6:
             rocket_raylib.draw_text(frame, registry.name(index), tile.x + 22, tile.y + 26, theme.heading_size(), theme.text())?
             rocket_raylib.draw_text(frame, registry.description(index), tile.x + 22, tile.y + 84, theme.small_size(), theme.muted())?
             rocket_raylib.draw_text(frame, status, tile.x + 22, tile.y + 126, theme.body_size(), ink)?
@@ -1207,6 +1389,8 @@ fn draw(window: rocket_raylib.Window, state: State) -> Result[Bool, String]:
         holdem_view.draw(window, frame, table, state.holdem_target, can_fold, can_call_check, can_raise, can_all_in, state.holdem_help, mouse_x, mouse_y)?
     if state.screen == 9:
         mines_view.draw(window, frame, state.mines, state.mines_selected, state.mines_help, mouse_x, mouse_y)?
+    if state.screen == 10:
+        dice_view.draw(window, frame, state.dice, state.dice_help, mouse_x, mouse_y)?
     if state.error != "":
         components.modal(window, frame, "Something needs attention", state.error)?
     if state.exit_prompt:
@@ -1242,7 +1426,8 @@ fn event_sound(previous: State, current: State, sound: rocket_raylib.Sound, audi
     let crossing_changed = previous.crossing.game.message != current.crossing.game.message
     let holdem_changed = previous.holdem.game.message != current.holdem.game.message
     let mines_changed = previous.mines.game.message != current.mines.game.message
-    if audio_ready and current.settings.audio_enabled and(blackjack_changed or roulette_changed or plinko_changed or chicken_changed or crossing_changed or holdem_changed or mines_changed):
+    let dice_changed = previous.dice.game.message != current.dice.game.message
+    if audio_ready and current.settings.audio_enabled and(blackjack_changed or roulette_changed or plinko_changed or chicken_changed or crossing_changed or holdem_changed or mines_changed or dice_changed):
         let volume = rocket_raylib.set_sound_volume(sound, volume_value(current.settings.volume_percent))
         let played = rocket_raylib.play_sound(sound)
     return true

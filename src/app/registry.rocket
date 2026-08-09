@@ -1,5 +1,5 @@
 pub fn game_count() -> Int:
-    return 7
+    return 8
 
 pub fn name(index: Int) -> String:
     if index == 0:
@@ -14,7 +14,9 @@ pub fn name(index: Int) -> String:
         return "Midnight Crossing"
     if index == 5:
         return "Hold'em"
-    return "Mines"
+    if index == 6:
+        return "Mines"
+    return "Dice"
 
 pub fn description(index: Int) -> String:
     if index == 0:
@@ -29,7 +31,9 @@ pub fn description(index: Int) -> String:
         return "Real-time traffic and canals"
     if index == 5:
         return "No-limit table with 1-5 rivals"
-    return "5x5 committed gem grid"
+    if index == 6:
+        return "5x5 committed gem grid"
+    return "Exact under-over signals"
 
 pub fn available(index: Int) -> Bool:
-    return index >= 0 and index <= 6
+    return index >= 0 and index <= 7

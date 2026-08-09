@@ -1,0 +1,40 @@
+import src.dice.dice_model
+import src.dice.dice_rules
+
+fn run() -> Result[Int, String]:
+    if dice_rules.domain_size() != 10000 or dice_rules.target_return_basis_points() != 9600 or dice_rules.maximum_auto_rolls() != 20:
+        return Ok(1)
+    if dice_rules.valid_target(0) or dice_rules.valid_target(10000) or not dice_rules.valid_target(1) or not dice_rules.valid_target(9999):
+        return Ok(2)
+    if dice_rules.valid_bet(4) or dice_rules.valid_bet(11) or not dice_rules.valid_bet(5) or not dice_rules.valid_bet(1000):
+        return Ok(3)
+    if dice_rules.valid_auto_count(0) or dice_rules.valid_auto_count(21) or not dice_rules.valid_auto_count(1) or not dice_rules.valid_auto_count(20):
+        return Ok(4)
+    if dice_rules.valid_stop_count(-1) or dice_rules.valid_stop_count(21) or not dice_rules.valid_stop_count(0) or not dice_rules.valid_stop_count(20):
+        return Ok(5)
+    var target = 1
+    while target <= 9999:
+        let under = dice_rules.win_outcomes(target, dice_model.Under())?
+        let over = dice_rules.win_outcomes(target, dice_model.Over())?
+        if under != target or over != 10000 - target or under + over != 10000:
+            return Ok(6)
+        if dice_rules.multiplier_basis_points(target, dice_model.Under())? != 96000000 / under:
+            return Ok(7)
+        if dice_rules.multiplier_basis_points(target, dice_model.Over())? != 96000000 / over:
+            return Ok(8)
+        target = target + 1
+    if not dice_rules.wins(4999, 5000, dice_model.Under())? or dice_rules.wins(5000, 5000, dice_model.Under())?:
+        return Ok(9)
+    if dice_rules.wins(4999, 5000, dice_model.Over())? or not dice_rules.wins(5000, 5000, dice_model.Over())?:
+        return Ok(10)
+    if dice_rules.payout(25, 19200) != 48 or dice_rules.payout(5, 10001) != 5:
+        return Ok(11)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

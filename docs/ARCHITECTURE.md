@@ -79,6 +79,13 @@ states only after reveal. `src/app/mines_view.rocket` renders the original gem
 grid and consumes committed outcomes during bounded animations. Exact formulas
 and rounding are published in `MINES_MATH.md`.
 
+`src/dice/dice_model.rocket`, `dice_rules.rocket`, and `dice_engine.rocket`
+own the integer 0-9999 domain, exact under/over boundaries, basis-point payout,
+seeded results, manual rounds, and bounded incremental auto-roll with explicit
+user/win/loss/count/credit stops. `dice_api.rocket` is the small presentation
+facade; `dice_view.rocket` only animates committed results. `DICE_MATH.md`
+publishes the exact contract.
+
 ## Money representation
 
 All play-money values are integer credits. Bets use a table unit compatible with exact 3:2 payouts. Balances must never become negative. Credits have no cash value and are not transferable.

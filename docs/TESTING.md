@@ -49,9 +49,16 @@ Test setup helpers must return explicit failure or a nonzero test status when co
 - `mines_gui_flow_test.rocket`: minimum-size seventh-card routing, complete
   keyboard and mouse configuration/reveal/cash-out flows, bounded animation,
   help, persistence, next round, lobby return, rendering, and cleanup.
+- `dice_rules_test.rocket`: every target in both directions, exact win counts,
+  boundary comparisons, multipliers, payout rounding, and auto bounds.
+- `dice_session_test.rocket`: seeded results, atomic errors, manual and finite
+  auto rounds, every stop condition including user stop, long sessions,
+  history, and balance invariants.
+- `dice_gui_flow_test.rocket`: minimum-size routing, help, keyboard/mouse manual
+  rounds, incremental auto animation, visible Stop, persistence, and lobby.
 - Four reviewed raylib tests cover API behavior, audio stress, resource lifetime, and missing assets.
 
-The current post-Mines suite passes 29/29 tests. Before those gates run,
+The current post-Dice suite passes 32/32 tests. Before those gates run,
 `scripts/validate.ps1` also rejects duplicate `.rocket` basenames under `src` so
 the frozen CodeView debugger can map every source unambiguously. Package
 relocation and source/staged website checks are separate scripts. The website

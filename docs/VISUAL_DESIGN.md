@@ -56,6 +56,11 @@ wager, mine count, safe count, multiplier, potential payout, history, and
 settlement actions remain distinct. Unrevealed tiles share one presentation
 state regardless of their committed engine value.
 
+Dice uses an original navy signal chamber with a large gold integer readout,
+exact chance/multiplier rail, green/red result history, and compact finite-auto
+controls. At 800x600 the visible Stop action, help, outcomes, restart, and lobby
+remain separate; the readout consumes only the engine's locked integer.
+
 The static website now applies the same tokens in a three-page experience. The
 profile page pairs an editorial welcome panel with a raised local-profile card.
 The Play page follows a dense premium dashboard direction with a compact sticky

@@ -21,8 +21,8 @@ Scroll2Roll is a polished, local, single-player, play-money casino shell. The
 accepted 0.2.0 baseline includes complete Blackjack, European Roulette, Plinko,
 Coop Climb, Midnight Crossing, and No-Limit Texas Hold'em. The owner-approved
 0.3.0 expansion in `EXPANSION_0_3_IMPLEMENTATION.md` adds Mines, Dice, HiLo,
-Crash, and Slots in that order. Mines and the save-v3 foundation are complete;
-Dice is the current milestone. Packaging and the website still intentionally
+Crash, and Slots in that order. Mines, Dice, and the save-v3 foundation are
+complete; HiLo is the current milestone. Packaging and the website intentionally
 describe the last verified 0.2.0 archive until final 0.3.0 acceptance produces
 real replacement metadata.
 
@@ -115,13 +115,18 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
   reveals and cash-out after a safe gem, and bounds history and animation. All
   multipliers use exact combinations, a 96% play-money return factor, basis
   points, and floor settlement published in `MINES_MATH.md`.
+- Dice is fully playable with exact 0-9999 Roll Under/Roll Over boundaries,
+  exhaustive target math, 96% basis-point multipliers, fast manual rounds, and
+  explicitly enabled 1-20-result auto-roll. Auto commits one result per step,
+  exposes Stop between steps, and terminates on requested, win, loss, or credit
+  limits. `DICE_MATH.md` publishes the integer and rounding contract.
 
 ## Architecture
 
 Dependency direction is one way:
 
 1. Per-game model values and validated rule constructors.
-2. Rendering-independent Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, Hold'em, and Mines engines and settlement.
+2. Rendering-independent Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, Hold'em, Mines, and Dice engines and settlement.
 3. Small presentation-facing APIs and sessions.
 4. Versioned local persistence isolated from rules.
 5. Reusable router, design tokens, components, lobby, settings, and per-game views.
@@ -209,6 +214,9 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
   adding exact Mines rules/math, deterministic session/privacy/boundary, and
   minimum-size keyboard/mouse GUI coverage. Save-v1 and save-v2 migration to
   save-v3 and save-v3 round-trip/recovery pass in the persistence suite.
+- The complete post-Dice suite passes 32/32, preserving all 29 prior tests and
+  adding exhaustive Dice rules, deterministic manual/auto session boundaries,
+  every finite stop condition, and minimum-size keyboard/mouse GUI coverage.
 
 ## Deliberate limitations
 
@@ -282,7 +290,9 @@ Spacing, typography, component states, borders, timing, and responsive layout va
 - Completed: 0.3.0 milestone 1 Mines and save-v3 foundation, including exact
   combinatorial payout math, seeded hidden layout, complete native flow,
   focused tests, and all earlier regressions.
-- Current: 0.3.0 milestone 2 Dice. Do not push, publish, deploy, create a
+- Completed: 0.3.0 milestone 2 Dice, including exact integer probability,
+  finite stoppable auto-roll, native UI, focused tests, and all regressions.
+- Current: 0.3.0 milestone 3 HiLo. Do not push, publish, deploy, create a
   release, or claim trusted signing without explicit approval.
 
 ## Major decisions
@@ -318,8 +328,8 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`,
 `docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
 status and preserve user changes. The accepted 0.2.0 baseline remains intact;
-Mines and save-v3 are the completed first 0.3.0 milestone with 29/29 tests, and
-Dice is next. The published website metadata must remain on the verified 0.2.0
+Mines, Dice, and save-v3 are complete with 32/32 tests, and HiLo is next. The
+published website metadata must remain on the verified 0.2.0
 archive until the real 0.3.0 package is produced. Keep using frozen Rocket 2.0
 and the pinned raylib integration with custom frame control forced off. Do not
 push, publish, deploy, sign, or add an unapproved game without owner approval.

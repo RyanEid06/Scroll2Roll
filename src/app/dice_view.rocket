@@ -1,0 +1,151 @@
+import src.app.components
+import src.app.theme
+import src.dice.dice_api
+import src.dice.dice_rules
+import src.rocket_raylib
+import std.collections
+import std.string
+
+pub fn direction_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 142, 232, 38)
+
+pub fn target_minus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 196, 46, 38)
+
+pub fn target_plus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 144, 196, 46, 38)
+
+pub fn bet_minus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 246, 46, 38)
+
+pub fn bet_plus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 144, 246, 46, 38)
+
+pub fn auto_count_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 298, 232, 34)
+
+pub fn win_stop_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 340, 110, 34)
+
+pub fn loss_stop_rect(width: Int) -> components.Rect:
+    return components.rect(width - 210, 340, 112, 34)
+
+pub fn roll_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 386, 110, 44)
+
+pub fn auto_rect(width: Int) -> components.Rect:
+    return components.rect(width - 210, 386, 112, 44)
+
+pub fn help_rect(width: Int) -> components.Rect:
+    return components.rect(width - 118, 24, 86, 38)
+
+pub fn next_rect(height: Int) -> components.Rect:
+    return components.rect(32, height - 68, 140, 42)
+
+pub fn lobby_rect(height: Int) -> components.Rect:
+    return components.rect(182, height - 68, 120, 42)
+
+pub fn restart_rect(height: Int) -> components.Rect:
+    return components.rect(312, height - 68, 136, 42)
+
+fn percent_label(outcomes: Int) -> String:
+    let whole = outcomes / 100
+    let hundredths = outcomes - whole * 100
+    var fraction = string.from_int(hundredths)
+    if hundredths < 10:
+        fraction = string.concat("0", fraction)
+    return string.concat(string.from_int(whole), string.concat(".", string.concat(fraction, "%")))
+
+fn multiplier_label(value: Int) -> String:
+    let whole = value / 10000
+    let hundredths =(value - whole * 10000) / 100
+    var fraction = string.from_int(hundredths)
+    if hundredths < 10:
+        fraction = string.concat("0", fraction)
+    return string.concat(string.from_int(whole), string.concat(".", string.concat(fraction, "x")))
+
+fn draw_die(frame: rocket_raylib.Frame, roll: Int) -> Result[Bool, String]:
+    rocket_raylib.draw_rectangle(frame, 64, 154, 340, 230, theme.panel())?
+    rocket_raylib.draw_rectangle(frame, 70, 160, 328, 218, theme.border())?
+    rocket_raylib.draw_rectangle(frame, 76, 166, 316, 206, theme.background())?
+    var label = "----"
+    if roll >= 0:
+        label = string.from_int(roll)
+    rocket_raylib.draw_text(frame, label, 142, 238, 56, theme.gold())?
+    rocket_raylib.draw_text(frame, "LOCKED INTEGER RESULT", 112, 326, theme.small_size(), theme.muted())?
+    return Ok(true)
+
+fn draw_history(frame: rocket_raylib.Frame, session: dice_api.Session) -> Result[Bool, String]:
+    rocket_raylib.draw_text(frame, "Recent exact rolls", 48, 414, theme.small_size(), theme.muted())?
+    var index = 0
+    while index < collections.length(session.game.history) and index < 5:
+        let result = session.game.history[index]
+        var ink = theme.danger()
+        var mark = "Loss"
+        if result.won:
+            ink = theme.emerald()
+            mark = "Win"
+        let label = string.concat(string.concat(string.from_int(result.roll), "  "), string.concat(mark, string.concat("  return ", string.from_int(result.payout))))
+        rocket_raylib.draw_text(frame, label, 48, 440 + index * 24, theme.small_size(), ink)?
+        index = index + 1
+    return Ok(true)
+
+fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.overlay())?
+    let box = components.rect(width / 2 - 350, 70, 700, 480)
+    components.panel(frame, box)?
+    rocket_raylib.draw_text(frame, "DICE EXACT PROBABILITY RULES", box.x + 26, box.y + 24, theme.heading_size(), theme.gold())?
+    let lines = ["Every result is an integer from 0 through 9,999.", "Under wins roll < target; Over wins roll >= target.", "Win probability is exact winning outcomes / 10,000.", "Multiplier = floor(9600 x 10000 / winning outcomes) basis points.", "Payout floors wager x multiplier / 10000; return factor is 96%.", "Auto is explicitly finite: 1-20 rolls with optional win/loss stops.", "It also stops on insufficient credits and has no unbounded continuation.", "Tab direction | arrows target/bet | M count | H/D stops | Enter/S roll."]
+    var index = 0
+    while index < collections.length(lines):
+        rocket_raylib.draw_text(frame, lines[index], box.x + 26, box.y + 82 + index * 42, theme.body_size(), theme.text())?
+        index = index + 1
+    return Ok(true)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, session: dice_api.Session, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let game = session.game
+    let outcomes = dice_rules.win_outcomes(game.target, game.direction)?
+    let multiplier = dice_rules.multiplier_basis_points(game.target, game.direction)?
+    rocket_raylib.draw_text(frame, "DICE", 32, 26, theme.heading_size(), theme.gold())?
+    rocket_raylib.draw_text(frame, "Exact 0-9999 signal chamber", 32, 62, theme.small_size(), theme.muted())?
+    rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(game.balance)), width - 300, 76, theme.body_size(), theme.emerald())?
+    let help_button = help_rect(width)
+    components.button(window, frame, help_button, "Help [P]", true, components.contains(help_button, mouse_x, mouse_y), false)?
+    draw_die(frame, game.last_roll)?
+    draw_history(frame, session)?
+    components.panel(frame, components.rect(width - 350, 110, 272, 352))?
+    rocket_raylib.draw_text(frame, game.message, width - 330, 116, theme.small_size(), theme.muted())?
+    let phase = dice_api.phase_code(session)
+    let ready = phase == 0
+    components.button(window, frame, direction_rect(width), dice_rules.direction_name(game.direction), ready, components.contains(direction_rect(width), mouse_x, mouse_y), false)?
+    rocket_raylib.draw_text(frame, string.concat("Target ", percent_label(game.target)), width - 266, 204, theme.small_size(), theme.text())?
+    components.button(window, frame, target_minus_rect(width), "-", ready, components.contains(target_minus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, target_plus_rect(width), "+", ready, components.contains(target_plus_rect(width), mouse_x, mouse_y), false)?
+    rocket_raylib.draw_text(frame, string.concat("Wager ", string.from_int(game.bet)), width - 258, 254, theme.small_size(), theme.text())?
+    components.button(window, frame, bet_minus_rect(width), "-", ready, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, bet_plus_rect(width), "+", ready, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, auto_count_rect(width), string.concat("Auto count ", string.from_int(game.auto_count)), ready, components.contains(auto_count_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, win_stop_rect(width), string.concat("Wins ", string.from_int(game.stop_wins)), ready, components.contains(win_stop_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, loss_stop_rect(width), string.concat("Losses ", string.from_int(game.stop_losses)), ready, components.contains(loss_stop_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, roll_rect(width), "Roll [Enter]", ready and game.bet <= game.balance, components.contains(roll_rect(width), mouse_x, mouse_y), true)?
+    var auto_label = "Auto [S]"
+    var auto_enabled = ready and game.bet <= game.balance
+    if phase == 1:
+        auto_label = "Stop [S]"
+        auto_enabled = true
+    components.button(window, frame, auto_rect(width), auto_label, auto_enabled, components.contains(auto_rect(width), mouse_x, mouse_y), false)?
+    rocket_raylib.draw_text(frame, string.concat("Chance ", percent_label(outcomes)), width - 330, 438, theme.small_size(), theme.text())?
+    rocket_raylib.draw_text(frame, string.concat("Multiplier ", multiplier_label(multiplier)), width - 200, 438, theme.small_size(), theme.gold())?
+    if phase > 0:
+        rocket_raylib.draw_text(frame, string.concat(string.concat("Batch ", string.from_int(game.batch_rolls)), string.concat(" | W ", string.concat(string.from_int(game.batch_wins), string.concat(" L ", string.from_int(game.batch_losses))))), 474, 478, theme.small_size(), theme.text())?
+        if phase == 2:
+            components.button(window, frame, next_rect(height), "Next [N]", true, components.contains(next_rect(height), mouse_x, mouse_y), true)?
+    components.button(window, frame, lobby_rect(height), "Lobby [B]", phase != 1, components.contains(lobby_rect(height), mouse_x, mouse_y), false)?
+    components.button(window, frame, restart_rect(height), "Restart [R]", phase != 1, components.contains(restart_rect(height), mouse_x, mouse_y), false)?
+    if help:
+        draw_help(window, frame)?
+    return Ok(true)

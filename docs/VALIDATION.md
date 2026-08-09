@@ -39,6 +39,26 @@ baseline for every game milestone in `EXPANSION_PLAN.md`.
   0.3.0 until all five expansion games and the real 0.3.0 package exist.
 - No package, push, publication, deployment, release, or signing was performed.
 
+## 0.3.0 milestone 2 - Dice
+
+- `dice_rules_test.rocket` exhausts targets 1-9999 for Roll Under and Roll Over,
+  verifies complementary exact outcome counts, both comparison boundaries,
+  every multiplier, payout floors, and all wager/auto/stop bounds against
+  `DICE_MATH.md`.
+- `dice_session_test.rocket` verifies deterministic manual results, atomic
+  configuration and credit failures, finite count completion, win/loss/user/
+  insufficient-credit stops, incremental step bounds, 100 consecutive rounds,
+  history limits, restart, and nonnegative balances.
+- `dice_gui_flow_test.rocket` runs at 800x600 and verifies eighth-card routing,
+  help, exact keyboard configuration, keyboard and mouse manual rounds,
+  engine-locked animation, incremental auto progression, visible Stop,
+  persistence, restart/next boundaries, lobby return, and resource cleanup.
+- The complete suite passes 32/32 with every prior test preserved. Debug and
+  Release `scripts/validate.ps1` each pass native generation/build, `rocketc
+  check`, all 32 tests, and both formatting checks. Source website validation
+  remains on the last real verified 0.2.0 archive as required during expansion.
+- No package, push, publication, deployment, release, or signing was performed.
+
 ## Rocket and native application
 
 - Debug `scripts/validate.ps1`: CMake/raylib build, Rocket check, 10/10 tests, and `src`/`tests` formatting checks passed.

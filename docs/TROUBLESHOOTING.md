@@ -75,6 +75,10 @@ safe gem is revealed, duplicate reveals are rejected, and lobby return is
 disabled while a wager is active. After a mine or cash-out, choose Next or
 Lobby. Unrevealed mine positions remain hidden even after settlement.
 
+Dice locks all controls during a result and finite auto batch. Choose Stop to
+end auto-roll between committed results. It also ends automatically at 20 or
+fewer requested rolls, its configured win/loss count, or insufficient credits.
+
 ## Reporting a problem
 
 Record the version, the exact action sequence, and whether the problem occurs in the portable package or a development build. Never attach personal or sensitive data; Scroll2Roll does not need any.
