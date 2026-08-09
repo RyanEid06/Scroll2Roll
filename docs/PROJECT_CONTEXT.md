@@ -12,8 +12,8 @@ Read this file and `MASTER_PLAN.md` completely at the start of every Scroll2Roll
 - Graphics/input/audio: Rocket's reviewed raylib 6.0 integration
 - Target: Windows x64
 - IDE: Visual Studio Community 2026 with Rocket Language 2.0.3
-- Last fully accepted package version: 0.2.0; no public release is claimed
-- Current implementation version and expansion target: 0.3.0
+- Last fully accepted local package version: 0.3.0; no public release is claimed
+- Current implementation version: 0.3.0
 
 ## Product vision and completed scope
 
@@ -22,9 +22,9 @@ accepted 0.2.0 baseline includes complete Blackjack, European Roulette, Plinko,
 Coop Climb, Midnight Crossing, and No-Limit Texas Hold'em. The owner-approved
 0.3.0 expansion in `EXPANSION_0_3_IMPLEMENTATION.md` adds Mines, Dice, HiLo,
 Crash, and Slots in that order. All five games and the save-v3 foundation are
-complete; final package/site acceptance is current. Packaging and the website intentionally
-describe the last verified 0.2.0 archive until final 0.3.0 acceptance produces
-real replacement metadata.
+complete. The real 0.3.0 package, relocation smoke, eleven-game source site,
+fresh staged site, exact archive metadata, and responsive browser flows have
+passed local acceptance.
 
 All 13 implementation and validation milestones in `MASTER_PLAN.md` are complete locally. No push, release publication, Cloudflare deployment, or signing was performed.
 
@@ -66,9 +66,9 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
 - The static website and Cloudflare Pages staging flow are implemented without claiming browser play.
 - The static website is a responsive three-page experience: new visitors create
   a non-authenticated local browser profile with a validated nickname and
-  optional PNG/JPEG/WebP avatar; the Play page presents all six complete native
+  optional PNG/JPEG/WebP avatar; the Play page presents all eleven complete native
   games in original illustrated cards; and the Download page presents the exact
-  verified 0.2.0 package, integrity data, installation, requirements,
+  verified 0.3.0 package, integrity data, installation, requirements,
   unsigned-build disclosure, and troubleshooting. Profile data stays in
   `localStorage`, is never transmitted, and can be edited or reset.
 - Release packaging includes the native executable, version, notices, controls, troubleshooting, and checksums, and passes relocated headless smoke validation.
@@ -252,10 +252,19 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
   adding fixed-strip/payline/feature math with exact source-recomputed return,
   deterministic paid/free/Bonus sessions and finite autoplay, and complete
   minimum-size keyboard/mouse flows with committed sequential presentation.
+- `Scroll2Roll-0.3.0-windows-x64.zip` is 1,919,372 bytes with SHA-256
+  `FD2B4EC31734DCB6E51707C862A439966E5771CBDA136DCD4F6B09726082688B`.
+  Internal checksums, forbidden-content scanning, and relocated headless smoke
+  pass. The six-file source site and seven-file staged site pass with that exact
+  archive; responsive browser checks confirm 11 cards, local profile/reset,
+  desktop two-column and 390px one-column layouts, exact download metadata, and
+  zero console errors.
+- The separate frozen Rocket repository remains clean on `master` at `cbf7b1a`
+  after final 0.3.0 acceptance.
 
 ## Deliberate limitations
 
-- Version 0.2.0 is unsigned. Windows may show an unknown-publisher warning;
+- Version 0.3.0 is unsigned. Windows may show an unknown-publisher warning;
   trusted code signing is not claimed.
 - The game is local-only and play-money-only. Credits are not transferable and have no cash value.
 - Hold'em AI is intentionally described as deterministic recreational play,
@@ -335,9 +344,10 @@ Spacing, typography, component states, borders, timing, and responsive layout va
 - Completed: 0.3.0 milestone 5 Slots, including fixed source-owned reel strips,
   exact line/feature/return math, precommitted outcomes, free spins, finite
   stoppable autoplay, complete UI, focused tests, and all regressions.
-- Current: final local 0.3.0 package and website acceptance. Do not push,
-  publish, deploy, create a release, or claim trusted signing without explicit
-  approval.
+- Completed: final local 0.3.0 package and website acceptance, including exact
+  archive identity, internal hashes, forbidden-content scan, relocated smoke,
+  source/staged validators, responsive browser checks, and clean local handoff.
+  Nothing was pushed, published, deployed, released, or signed.
 
 ## Major decisions
 
@@ -372,9 +382,9 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`,
 `docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
 status and preserve user changes. The accepted 0.2.0 baseline remains intact;
-Mines, Dice, HiLo, Crash, Slots, and save-v3 are complete with 41/41 tests; final
-local 0.3.0 packaging and website acceptance is next. The
-published website metadata must remain on the verified 0.2.0
-archive until the real 0.3.0 package is produced. Keep using frozen Rocket 2.0
+Mines, Dice, HiLo, Crash, Slots, and save-v3 are complete with 41/41 tests. The
+verified local 0.3.0 archive is 1,919,372 bytes with SHA-256
+`FD2B4EC31734DCB6E51707C862A439966E5771CBDA136DCD4F6B09726082688B`;
+source/staged website and responsive browser checks pass. Keep using frozen Rocket 2.0
 and the pinned raylib integration with custom frame control forced off. Do not
 push, publish, deploy, sign, or add an unapproved game without owner approval.

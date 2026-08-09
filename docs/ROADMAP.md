@@ -33,5 +33,5 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
 - [x] Complete HiLo with a private checked deck and exact remaining-card math.
 - [x] Complete Crash with a private precommitment and bounded fixed-tick curve.
 - [x] Complete Slots with source-recomputed theoretical return.
-- [ ] Revalidate the eleven-game application, package, relocated smoke, and
+- [x] Revalidate the eleven-game application, package, relocated smoke, and
   source/staged website with the real 0.3.0 archive.

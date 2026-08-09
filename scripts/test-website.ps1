@@ -30,17 +30,17 @@ foreach ($required in @('Create Account', 'local-only', 'no password', 'type="fi
 }
 if ($profileHtml -match 'type\s*=\s*["'']password["'']') { throw 'The local profile must not request a password.' }
 
-foreach ($game in @('Blackjack', 'European Roulette', 'Plinko', 'Coop Climb', 'Midnight Crossing', 'No-Limit Texas Hold')) {
+foreach ($game in @('Blackjack', 'European Roulette', 'Plinko', 'Coop Climb', 'Midnight Crossing', 'No-Limit Texas Hold', 'Mines', 'Dice', 'HiLo', 'Crash', 'Slots')) {
     if ($playHtml -notmatch [regex]::Escape($game)) { throw "Play catalog is missing a completed game: $game" }
 }
 $cardCount = ([regex]::Matches($playHtml, 'class="game-card"')).Count
-if ($cardCount -ne 6) { throw "Play catalog must contain exactly six rectangular game cards; found $cardCount." }
+if ($cardCount -ne 11) { throw "Play catalog must contain exactly eleven rectangular game cards; found $cardCount." }
 foreach ($required in @('games do not run in the browser', 'Download or launch on Windows', 'Edit profile', 'Reset', 'play-money')) {
     if ($playHtml -notmatch [regex]::Escape($required)) { throw "Play page is missing required launcher language: $required" }
 }
 
-$expectedHash = '901ad7600017eb227a7ddb755b56d65490cb978797228a6c3eba60e2089cda4b'
-foreach ($required in @('Scroll2Roll-0.2.0-windows-x64.zip', '1,733,465 bytes', '1.65 MiB', $expectedHash, 'Windows x64', 'Installation', 'System requirements', 'Unsigned-build disclosure', 'unknown-publisher', 'Troubleshooting', 'SHA256SUMS.txt')) {
+$expectedHash = 'fd2b4ec31734dcb6e51707c862a439966e5771cbda136dcd4f6b09726082688b'
+foreach ($required in @('Scroll2Roll-0.3.0-windows-x64.zip', '1,919,372 bytes', '1.83 MiB', $expectedHash, 'Windows x64', 'Installation', 'System requirements', 'Unsigned-build disclosure', 'unknown-publisher', 'Troubleshooting', 'SHA256SUMS.txt')) {
     if ($downloadHtml -notmatch [regex]::Escape($required)) { throw "Download page is missing verified package content: $required" }
 }
 
@@ -58,10 +58,10 @@ foreach ($required in @("script-src 'self'", "connect-src 'none'", "object-src '
     if ($headers -notmatch [regex]::Escape($required)) { throw "Security headers are missing required policy: $required" }
 }
 
-$archive = Join-Path $Site 'downloads\Scroll2Roll-0.2.0-windows-x64.zip'
+$archive = Join-Path $Site 'downloads\Scroll2Roll-0.3.0-windows-x64.zip'
 if (Test-Path -LiteralPath $archive) {
     $archiveItem = Get-Item -LiteralPath $archive
-    if ($archiveItem.Length -ne 1733465) { throw "Staged archive size changed: $($archiveItem.Length) bytes." }
+    if ($archiveItem.Length -ne 1919372) { throw "Staged archive size changed: $($archiveItem.Length) bytes." }
     $archiveHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $archive).Hash.ToLowerInvariant()
     if ($archiveHash -ne $expectedHash) { throw "Staged archive SHA-256 changed: $archiveHash" }
 }

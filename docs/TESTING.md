@@ -89,12 +89,13 @@ The current post-Slots suite passes 41/41 tests. Before those gates run,
 `scripts/validate.ps1` also rejects duplicate `.rocket` basenames under `src` so
 the frozen CodeView debugger can map every source unambiguously. Package
 relocation and source/staged website checks are separate scripts. The website
-validator currently checks all three pages, exactly six catalog cards, the complete
+validator checks all three pages, exactly eleven catalog cards, the complete
 verified package identity, local-only profile storage, nickname/avatar safety
 controls, the absence of password and network APIs, same-origin security policy,
 accessible focus/reduced-motion hooks, prohibited product claims, and Cloudflare
-file/asset ceilings. Browser interaction checks cover empty-name validation,
-invalid MIME and corrupt-image handling, profile persistence/navigation,
-desktop card geometry, package presentation, console errors, and 390px layouts.
+file/asset ceilings. Browser interaction checks cover local profile creation,
+reset, and navigation, desktop two-column card geometry, all eleven titles,
+exact package presentation, console errors, and 390px Play/Download layouts
+without horizontal overflow.
 Exact evidence is recorded in `VALIDATION.md`; generated evidence stays under
 ignored `out/`.

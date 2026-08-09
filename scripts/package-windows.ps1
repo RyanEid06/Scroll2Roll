@@ -9,7 +9,7 @@ $repository = Split-Path $PSScriptRoot -Parent
 & (Join-Path $PSScriptRoot 'build.ps1') -Configuration Release -RocketRoot $RocketRoot -Rocketc $Rocketc
 
 $packageRoot = [System.IO.Path]::GetFullPath((Join-Path $repository 'out\package'))
-$stage = [System.IO.Path]::GetFullPath((Join-Path $packageRoot 'Scroll2Roll-0.2.0-windows-x64'))
+$stage = [System.IO.Path]::GetFullPath((Join-Path $packageRoot 'Scroll2Roll-0.3.0-windows-x64'))
 if (-not $stage.StartsWith($packageRoot + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
     throw "Unsafe package stage: $stage"
 }
@@ -31,11 +31,11 @@ $lines = Get-ChildItem -LiteralPath $stage -File | Sort-Object Name | ForEach-Ob
 }
 Set-Content -LiteralPath $checksumPath -Value $lines -Encoding ascii
 
-$archive = Join-Path $packageRoot 'Scroll2Roll-0.2.0-windows-x64.zip'
+$archive = Join-Path $packageRoot 'Scroll2Roll-0.3.0-windows-x64.zip'
 if (Test-Path -LiteralPath $archive) { Remove-Item -LiteralPath $archive -Force }
 Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $archive -CompressionLevel Optimal
 $archiveHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $archive).Hash.ToLowerInvariant()
-Set-Content -LiteralPath (Join-Path $packageRoot 'Scroll2Roll-0.2.0-windows-x64.zip.sha256') -Value "$archiveHash  Scroll2Roll-0.2.0-windows-x64.zip" -Encoding ascii
+Set-Content -LiteralPath (Join-Path $packageRoot 'Scroll2Roll-0.3.0-windows-x64.zip.sha256') -Value "$archiveHash  Scroll2Roll-0.3.0-windows-x64.zip" -Encoding ascii
 
 Write-Output "Package: $archive"
 Write-Output "SHA-256: $archiveHash"

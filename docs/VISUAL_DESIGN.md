@@ -85,7 +85,7 @@ changes timing but not layout, outcome, or settlement.
 The static website now applies the same tokens in a three-page experience. The
 profile page pairs an editorial welcome panel with a raised local-profile card.
 The Play page follows a dense premium dashboard direction with a compact sticky
-header, a high-contrast catalog hero, and six wide rectangular game cards. Each
+header, a high-contrast catalog hero, and eleven wide rectangular game cards. Each
 card contains an original inline SVG illustration assembled from simple shapes;
 no casino-provider artwork, layout, or external asset is copied. The Download
 page gives the verified package its own gold-accented panel and separates

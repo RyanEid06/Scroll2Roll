@@ -175,6 +175,11 @@ h3 { margin-bottom: 8px; line-height: 1.2; }
 .art-coop { --art-a:#263018; --art-b:#0d1420; --art-glow:rgba(245,197,66,.2); }
 .art-crossing { --art-a:#111d39; --art-b:#080e19; --art-glow:rgba(59,130,246,.24); }
 .art-holdem { --art-a:#10291f; --art-b:#0a1313; --art-glow:rgba(16,185,129,.23); }
+.art-mines { --art-a:#10273a; --art-b:#0a111e; --art-glow:rgba(16,185,129,.25); }
+.art-dice { --art-a:#112742; --art-b:#090f1c; --art-glow:rgba(125,211,252,.26); }
+.art-hilo { --art-a:#2a1d2c; --art-b:#0c111c; --art-glow:rgba(239,68,68,.18); }
+.art-crash { --art-a:#102820; --art-b:#090f18; --art-glow:rgba(16,185,129,.25); }
+.art-slots { --art-a:#302318; --art-b:#0c101a; --art-glow:rgba(245,197,66,.28); }
 .game-content { display: flex; flex-direction: column; padding: 24px; }
 .game-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .status-badge { padding: 4px 8px; color: #a7f3d0; border-color: #175843; background: #0c2b23; letter-spacing: normal; text-transform: none; }

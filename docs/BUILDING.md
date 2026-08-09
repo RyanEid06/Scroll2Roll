@@ -70,6 +70,10 @@ building.
 
 ## Packaging
 
+The current workflow produces and verifies
+`out/package/Scroll2Roll-0.3.0-windows-x64.zip`; exact contents and acceptance
+metadata are in `PACKAGING.md`.
+
 ```powershell
 .\scripts\package-windows.ps1 -RocketRoot $rocketRoot
 .\scripts\test-package.ps1

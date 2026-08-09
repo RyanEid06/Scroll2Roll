@@ -410,3 +410,44 @@ deterministic complete rounds/sessions and keyboard/mouse GUI paths for all six
 games, save-v1 migration and corrupt/unsupported recovery, missing assets,
 native resource lifetimes, and clean shutdown. Package relocation and both site
 trees passed as described above. The frozen Rocket checkout remained clean.
+
+## Final 0.3.0 local acceptance
+
+The final commands run on 2026-08-09 were:
+
+```powershell
+.\scripts\validate.ps1 -Configuration Debug -RocketRoot "<frozen-rocket>"
+.\scripts\validate.ps1 -Configuration Release -RocketRoot "<frozen-rocket>"
+.\scripts\package-windows.ps1 -RocketRoot "<frozen-rocket>"
+.\scripts\test-package.ps1
+.\scripts\test-website.ps1
+.\scripts\prepare-cloudflare-site.ps1
+.\scripts\test-website.ps1 -Site .\out\cloudflare-site
+```
+
+- Debug and Release each passed native generation/build, `rocketc check`, all
+  41 Rocket tests, source formatting, and test formatting. This includes
+  deterministic complete sessions and scripted keyboard/mouse flows for all
+  eleven games; save-v1/save-v2 migration, save-v3 round-trip, and invalid data
+  recovery; and native adapter, lifetime, audio stress, missing asset, and clean
+  shutdown coverage.
+- `out/package/Scroll2Roll-0.3.0-windows-x64.zip` is exactly 1,919,372 bytes
+  (1.83 MiB) with SHA-256
+  `FD2B4EC31734DCB6E51707C862A439966E5771CBDA136DCD4F6B09726082688B`.
+  It contains the executable, version, README, notices, controls,
+  troubleshooting, and `SHA256SUMS.txt`. The forbidden-content scan and
+  sanitized `out/relocation` headless smoke both passed.
+- The six-file source site and fresh seven-file `out/cloudflare-site` tree pass
+  the validator with exactly eleven original-art cards, the exact archive
+  identity, local-profile controls, no network APIs, security headers,
+  accessibility/reduced-motion hooks, prohibited-claim checks, and Cloudflare's
+  20,000-file and 25-MiB-per-asset ceilings.
+- In-app browser validation created and reset a local-only profile, confirmed
+  all eleven titles and native launcher language, measured two 581-by-280-pixel
+  cards per row at 1280 pixels, and verified 390-pixel one-column Play and
+  Download layouts without horizontal overflow. The Download page showed the
+  exact archive name/hash and produced no console warnings or errors.
+- Generated build, package, relocation, and staged-site artifacts remained
+  ignored. The separate frozen Rocket checkout remained clean on `master` at
+  `cbf7b1a`. No Git push, Cloudflare deployment, publication, public release,
+  or signing was performed or claimed.
