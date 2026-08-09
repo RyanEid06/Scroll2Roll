@@ -59,6 +59,29 @@ baseline for every game milestone in `EXPANSION_PLAN.md`.
   remains on the last real verified 0.2.0 archive as required during expansion.
 - No package, push, publication, deployment, release, or signing was performed.
 
+## 0.3.0 milestone 3 - HiLo
+
+- `hilo_rules_test.rocket` validates standard-deck uniqueness and deterministic
+  shuffle, recomputes lower/higher/equal counts for all 13 ranks at every
+  remaining-deck prefix, verifies impossible actions and equal losses, and
+  checks the cumulative 9,600-basis-point formula, floor payout, and documented
+  caps against `HILO_MATH.md`.
+- `hilo_session_test.rocket` verifies deterministic cards and draws, public
+  future-card privacy, insufficient credits, correct/wrong/equal settlement,
+  cash-out legality, exact multipliers, 100 consecutive bounded rounds, safe
+  restart, 20-entry history, and correct automatic settlement after all 52
+  cards are consumed.
+- `hilo_gui_flow_test.rocket` runs at 800x600 and verifies ninth-entry routing,
+  prominent tie-loss help/table text, keyboard and mouse flows, disabled active
+  lobby return, public sequence agreement with committed draws, bounded result
+  animation, cash-out, persistence, next/restart/lobby boundaries, drawing, and
+  native resource cleanup.
+- The complete suite passes 35/35 with every prior test preserved. Debug and
+  Release `scripts/validate.ps1` each pass native generation/build, `rocketc
+  check`, all 35 tests, and both formatting checks. Source website validation
+  remains on the last real verified 0.2.0 archive as required during expansion.
+- No package, push, publication, deployment, release, or signing was performed.
+
 ## Rocket and native application
 
 - Debug `scripts/validate.ps1`: CMake/raylib build, Rocket check, 10/10 tests, and `src`/`tests` formatting checks passed.

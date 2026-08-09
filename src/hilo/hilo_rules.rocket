@@ -1,0 +1,89 @@
+import src.hilo.hilo_cards
+import src.hilo.hilo_model
+import src.holdem.holdem_model
+import std.collections
+
+pub struct OutcomeCounts:
+    lower: Int
+    higher: Int
+    equal: Int
+    total: Int
+
+pub fn return_factor_basis_points() -> Int:
+    return 9600
+
+pub fn maximum_multiplier_basis_points() -> Int:
+    return 100000000000
+
+pub fn maximum_balance() -> Int:
+    return 10000000000
+
+pub fn valid_bet(bet: Int) -> Bool:
+    return bet >= 5 and bet <= 1000 and bet / 5 * 5 == bet
+
+pub fn prediction_code(prediction: hilo_model.Prediction) -> Int:
+    match prediction:
+        case hilo_model.Lower:
+            return 0
+        case hilo_model.Higher:
+            return 1
+
+pub fn outcomes(current: holdem_model.Card, deck: Array[holdem_model.Card], start: Int) -> Result[OutcomeCounts, String]:
+    if start < 0 or start > collections.length(deck):
+        return Err("HiLo remaining-deck index is out of range")
+    let current_rank = hilo_cards.rank_value(current)
+    var lower = 0
+    var higher = 0
+    var equal = 0
+    var index = start
+    while index < collections.length(deck):
+        let rank = hilo_cards.rank_value(deck[index])
+        if rank < current_rank:
+            lower = lower + 1
+        if rank > current_rank:
+            higher = higher + 1
+        if rank == current_rank:
+            equal = equal + 1
+        index = index + 1
+    return Ok(OutcomeCounts(lower, higher, equal, lower + higher + equal))
+
+pub fn winning_outcomes(counts: OutcomeCounts, prediction: hilo_model.Prediction) -> Int:
+    if prediction_code(prediction) == 0:
+        return counts.lower
+    return counts.higher
+
+pub fn legal(counts: OutcomeCounts, prediction: hilo_model.Prediction) -> Bool:
+    return counts.total > 0 and winning_outcomes(counts, prediction) > 0
+
+pub fn prediction_wins(current: holdem_model.Card, drawn: holdem_model.Card, prediction: hilo_model.Prediction) -> Bool:
+    let current_rank = hilo_cards.rank_value(current)
+    let drawn_rank = hilo_cards.rank_value(drawn)
+    if drawn_rank == current_rank:
+        return false
+    if prediction_code(prediction) == 0:
+        return drawn_rank < current_rank
+    return drawn_rank > current_rank
+
+pub fn advance_multiplier(current_basis_points: Int, counts: OutcomeCounts, prediction: hilo_model.Prediction) -> Result[Int, String]:
+    let winning = winning_outcomes(counts, prediction)
+    if current_basis_points < 1:
+        return Err("HiLo current multiplier must be positive")
+    if counts.total < 1 or winning < 1:
+        return Err("HiLo multiplier requires a mathematically possible prediction")
+    let numerator = current_basis_points * return_factor_basis_points() * counts.total
+    let denominator = winning * 10000
+    let exact_floor = numerator / denominator
+    if exact_floor > maximum_multiplier_basis_points():
+        return Ok(maximum_multiplier_basis_points())
+    return Ok(exact_floor)
+
+pub fn payout(wager: Int, multiplier_basis_points: Int) -> Int:
+    let value = wager * multiplier_basis_points / 10000
+    if value > maximum_balance():
+        return maximum_balance()
+    return value
+
+pub fn credited_balance(balance: Int, payout_value: Int) -> Int:
+    if balance >= maximum_balance() - payout_value:
+        return maximum_balance()
+    return balance + payout_value

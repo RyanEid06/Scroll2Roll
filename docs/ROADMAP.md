@@ -30,6 +30,7 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
 - [x] Introduce version 0.3.0, save-v3 migration, and complete Mines with exact
   combinatorial payout math, deterministic privacy, native UI, and regressions.
 - [x] Complete Dice with exact integer boundaries and finite stoppable auto-roll.
-- [ ] Complete HiLo, Crash, and Slots in that order.
+- [x] Complete HiLo with a private checked deck and exact remaining-card math.
+- [ ] Complete Crash and Slots in that order.
 - [ ] Revalidate the eleven-game application, package, relocated smoke, and
   source/staged website with the real 0.3.0 archive.

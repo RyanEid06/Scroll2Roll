@@ -61,6 +61,13 @@ exact chance/multiplier rail, green/red result history, and compact finite-auto
 controls. At 800x600 the visible Stop action, help, outcomes, restart, and lobby
 remain separate; the readout consumes only the engine's locked integer.
 
+HiLo uses an original midnight prediction table with one oversized drawn card,
+two clearly disabled/enabled direction actions, exact remaining outcome counts,
+a prominent danger-red `EQUAL RANK = LOSS` warning, cumulative multiplier and
+potential-return rail, and a newest-first visible sequence. At 800x600 future
+cards never appear, help remains readable, and result animations only reveal
+the card already committed by the engine.
+
 The static website now applies the same tokens in a three-page experience. The
 profile page pairs an editorial welcome panel with a raised local-profile card.
 The Play page follows a dense premium dashboard direction with a compact sticky

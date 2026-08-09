@@ -1,0 +1,176 @@
+import src.app.application
+import src.app.hilo_view
+import src.hilo.hilo_api
+import src.hilo.hilo_cards
+import src.hilo.hilo_rules
+import src.rocket_raylib
+import src.rocket_raylib_testing
+import std.collections
+import std.file
+import std.testing
+
+fn press(window: rocket_raylib.Window, key: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_key(key, true, false)
+    return application.step_for_test(state, window)
+
+fn click(window: rocket_raylib.Window, x: Int, y: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_mouse(x, y, true)
+    return application.step_for_test(state, window)
+
+fn wait_frames(window: rocket_raylib.Window, source: application.State, count: Int) -> Result[application.State, String]:
+    var state = source
+    var frame = 0
+    while frame < count:
+        application.draw_for_test(window, state)?
+        state = application.step_for_test(state, window)
+        frame = frame + 1
+    return Ok(state)
+
+fn actual_code(state: application.State) -> Int:
+    let current = hilo_cards.rank_value(state.hilo.game.current_card)
+    let next = hilo_cards.rank_value(state.hilo.game.deck[state.hilo.game.draw_index])
+    if next > current:
+        return 1
+    if next < current:
+        return 0
+    return -1
+
+fn legal_code(state: application.State) -> Result[Int, String]:
+    let counts = hilo_rules.outcomes(state.hilo.game.current_card, state.hilo.game.deck, state.hilo.game.draw_index)?
+    if counts.lower > 0:
+        return Ok(0)
+    if counts.higher > 0:
+        return Ok(1)
+    return Err("No legal HiLo GUI prediction")
+
+fn press_prediction(window: rocket_raylib.Window, code: Int, state: application.State) -> application.State:
+    if code == 0:
+        return press(window, rocket_raylib.key_l(), state)
+    return press(window, rocket_raylib.key_h(), state)
+
+fn click_prediction(window: rocket_raylib.Window, code: Int, state: application.State) -> application.State:
+    var box = hilo_view.lower_rect()
+    if code == 1:
+        box = hilo_view.higher_rect()
+    return click(window, box.x + 20, box.y + 20, state)
+
+fn click_next_when_ready(window: rocket_raylib.Window, source: application.State) -> Result[application.State, String]:
+    var state = source
+    var guard = 0
+    let box = hilo_view.next_rect(600)
+    while hilo_api.phase_code(state.hilo) == 2 and guard < 500:
+        application.draw_for_test(window, state)?
+        state = click(window, box.x + 20, box.y + 20, state)
+        guard = guard + 1
+    if hilo_api.phase_code(state.hilo) != 0:
+        return Err("HiLo Next animation guard exceeded its frame bound")
+    return Ok(state)
+
+fn click_lobby_when_ready(window: rocket_raylib.Window, source: application.State) -> Result[application.State, String]:
+    var state = source
+    var guard = 0
+    let box = hilo_view.lobby_rect(600)
+    while state.screen == 11 and guard < 500:
+        application.draw_for_test(window, state)?
+        state = click(window, box.x + 20, box.y + 20, state)
+        guard = guard + 1
+    if state.screen != 1:
+        return Err("HiLo lobby animation guard exceeded its frame bound")
+    return Ok(state)
+
+fn run() -> Result[Int, String]:
+    if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
+        return Ok(1)
+    let temporary = testing.temp_directory("scroll2roll-hilo-gui")?
+    let save_path = testing.fixture_path(temporary, "settings.s2r")?
+    match rocket_raylib.open_window(800, 600, "HiLo scripted GUI"):
+        case Ok(window):
+            var state = application.initial_for_test(save_path)?
+            state = press(window, rocket_raylib.key_enter(), state)
+            state = click(window, 500, 82, state)
+            if state.screen != 11 or hilo_api.phase_code(state.hilo) != 0:
+                return Ok(2)
+            state = press(window, rocket_raylib.key_p(), state)
+            if not state.hilo_help:
+                return Ok(3)
+            application.draw_for_test(window, state)?
+            state = press(window, rocket_raylib.key_p(), state)
+            state = press(window, rocket_raylib.key_up(), state)
+            if state.hilo.game.bet != 15:
+                return Ok(4)
+            state = press(window, rocket_raylib.key_r(), state)
+            if hilo_api.phase_code(state.hilo) != 0 or collections.length(state.hilo.game.history) != 0:
+                return Ok(5)
+            state = press(window, rocket_raylib.key_enter(), state)
+            if hilo_api.phase_code(state.hilo) != 1 or collections.length(state.hilo.game.sequence) != 1:
+                return Ok(6)
+            let private_table = hilo_api.public_table(state.hilo)?
+            if private_table.remaining_cards != 51 or collections.length(private_table.sequence) != 1:
+                return Ok(7)
+            let active_draw = state.hilo.game.draw_index
+            state = press(window, rocket_raylib.key_b(), state)
+            if state.screen != 11 or state.hilo.game.draw_index != active_draw:
+                return Ok(8)
+            var tie_guard = 0
+            while actual_code(state) == -1 and tie_guard < 8:
+                state = press_prediction(window, legal_code(state)?, state)
+                if hilo_api.phase_code(state.hilo) != 2 or not state.hilo.game.last_tie:
+                    return Ok(9)
+                state = click_next_when_ready(window, state)?
+                state = press(window, rocket_raylib.key_enter(), state)
+                tie_guard = tie_guard + 1
+            if tie_guard >= 8 or actual_code(state) == -1:
+                return Ok(10)
+            let correct = actual_code(state)
+            state = press_prediction(window, correct, state)
+            if hilo_api.phase_code(state.hilo) != 1 or state.hilo.game.correct_predictions != 1:
+                return Ok(11)
+            let after_draw = state.hilo.game.draw_index
+            let shown = hilo_api.public_table(state.hilo)?
+            let last_visible = shown.sequence[collections.length(shown.sequence) - 1]
+            if shown.current_card.rank != last_visible.rank or shown.current_card.suit != last_visible.suit:
+                return Ok(12)
+            state = press_prediction(window, correct, state)
+            if state.hilo.game.draw_index != after_draw:
+                return Ok(13)
+            state = wait_frames(window, state, 60)?
+            let cash = hilo_view.cash_out_rect(800)
+            state = click(window, cash.x + 20, cash.y + 20, state)
+            if hilo_api.phase_code(state.hilo) != 2:
+                return Ok(14)
+            if state.hilo.game.payout < 1:
+                return Ok(20)
+            if not file.exists(save_path):
+                return Ok(21)
+            state = click_next_when_ready(window, state)?
+            if hilo_api.phase_code(state.hilo) != 0:
+                return Ok(15)
+            let deal = hilo_view.start_rect(800)
+            state = click(window, deal.x + 20, deal.y + 20, state)
+            if hilo_api.phase_code(state.hilo) != 1:
+                return Ok(16)
+            state = click_prediction(window, legal_code(state)?, state)
+            if state.hilo.game.draw_index != 2:
+                return Ok(17)
+            state = wait_frames(window, state, 60)?
+            if hilo_api.phase_code(state.hilo) == 1:
+                state = press(window, rocket_raylib.key_s(), state)
+            application.draw_for_test(window, state)?
+            state = click_lobby_when_ready(window, state)?
+            if state.screen != 1 or state.settings.play_balance != state.hilo.game.balance:
+                return Ok(18)
+            let closed = rocket_raylib.close_window(window)
+            testing.cleanup_temp(temporary)?
+            if rocket_raylib_testing.buffer_live_count() != 0:
+                return Ok(19)
+            return Ok(0)
+        case Err(error):
+            return Err(error)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

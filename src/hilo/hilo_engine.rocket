@@ -1,0 +1,102 @@
+import src.hilo.hilo_cards
+import src.hilo.hilo_model
+import src.hilo.hilo_rules
+import src.holdem.holdem_model
+import std.collections
+
+pub fn phase_code(phase: hilo_model.Phase) -> Int:
+    match phase:
+        case hilo_model.Ready:
+            return 0
+        case hilo_model.Active:
+            return 1
+        case hilo_model.Settled:
+            return 2
+
+fn empty_cards() -> Array[holdem_model.Card]:
+    var cards: Array[holdem_model.Card] = []
+    return cards
+
+pub fn new_game(starting_balance: Int, seed: Int) -> Result[hilo_model.Game, String]:
+    if starting_balance < 5:
+        return Err("Starting balance is below the HiLo minimum")
+    let history: Array[hilo_model.RoundResult] = []
+    return Ok(hilo_model.Game(starting_balance, 10, hilo_model.Ready(), empty_cards(), 0, holdem_model.Card(1, 0), empty_cards(), 0, 10000, 0, 0, 0, false, history, 1, seed, "Choose a wager and deal one visible card"))
+
+pub fn with_bet(game: hilo_model.Game, bet: Int) -> Result[hilo_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("HiLo wager is locked during a round")
+    if not hilo_rules.valid_bet(bet):
+        return Err("HiLo wager must be 5-1000 credits in units of 5")
+    return Ok(hilo_model.Game(game.balance, bet, game.phase, game.deck, game.draw_index, game.current_card, game.sequence, game.wager, game.multiplier_basis_points, game.potential_payout, game.correct_predictions, game.payout, game.last_tie, game.history, game.round_number, game.seed, "HiLo wager changed"))
+
+pub fn start(game: hilo_model.Game) -> Result[hilo_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("HiLo round is already active")
+    if game.bet > game.balance:
+        return Err("Not enough play credits for that HiLo wager")
+    let deck = hilo_cards.shuffled(game.seed + game.round_number * 32452843)?
+    var sequence: Array[holdem_model.Card] = []
+    sequence = collections.append(sequence, deck[0])
+    return Ok(hilo_model.Game(game.balance - game.bet, game.bet, hilo_model.Active(), deck, 1, deck[0], sequence, game.bet, 10000, game.bet, 0, 0, false, game.history, game.round_number, game.seed, "Predict Higher or Lower; equal rank always loses"))
+
+fn bounded_history(history: Array[hilo_model.RoundResult], result: hilo_model.RoundResult) -> Array[hilo_model.RoundResult]:
+    let inserted = collections.insert(history, 0, result)
+    if collections.length(inserted) <= 20:
+        return inserted
+    var bounded: Array[hilo_model.RoundResult] = []
+    var index = 0
+    while index < 20:
+        bounded = collections.append(bounded, inserted[index])
+        index = index + 1
+    return bounded
+
+fn lost(game: hilo_model.Game, drawn: holdem_model.Card, sequence: Array[holdem_model.Card], tie: Bool) -> hilo_model.Game:
+    let result = hilo_model.RoundResult(game.wager, game.correct_predictions, 0, tie)
+    var message = "Wrong prediction; prepaid wager lost"
+    if tie:
+        message = "EQUAL RANK - tie is a loss; prepaid wager lost"
+    return hilo_model.Game(game.balance, game.bet, hilo_model.Settled(), game.deck, game.draw_index + 1, drawn, sequence, game.wager, game.multiplier_basis_points, 0, game.correct_predictions, 0, tie, bounded_history(game.history, result), game.round_number, game.seed, message)
+
+pub fn predict(game: hilo_model.Game, prediction: hilo_model.Prediction) -> Result[hilo_model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("HiLo prediction requires an active round")
+    if game.draw_index >= collections.length(game.deck):
+        return Err("HiLo deck is exhausted")
+    let counts = hilo_rules.outcomes(game.current_card, game.deck, game.draw_index)?
+    if not hilo_rules.legal(counts, prediction):
+        return Err("That HiLo prediction is mathematically impossible")
+    let drawn = game.deck[game.draw_index]
+    let sequence = collections.append(game.sequence, drawn)
+    if hilo_cards.rank_value(drawn) == hilo_cards.rank_value(game.current_card):
+        return Ok(lost(game, drawn, sequence, true))
+    if not hilo_rules.prediction_wins(game.current_card, drawn, prediction):
+        return Ok(lost(game, drawn, sequence, false))
+    let multiplier = hilo_rules.advance_multiplier(game.multiplier_basis_points, counts, prediction)?
+    let potential = hilo_rules.payout(game.wager, multiplier)
+    let correct = game.correct_predictions + 1
+    if game.draw_index + 1 >= collections.length(game.deck):
+        let result = hilo_model.RoundResult(game.wager, correct, potential, false)
+        let balance = hilo_rules.credited_balance(game.balance, potential)
+        return Ok(hilo_model.Game(balance, game.bet, hilo_model.Settled(), game.deck, game.draw_index + 1, drawn, sequence, game.wager, multiplier, potential, correct, potential, false, bounded_history(game.history, result), game.round_number, game.seed, "Deck exhausted; final HiLo payout settled"))
+    return Ok(hilo_model.Game(game.balance, game.bet, hilo_model.Active(), game.deck, game.draw_index + 1, drawn, sequence, game.wager, multiplier, potential, correct, 0, false, game.history, game.round_number, game.seed, "Correct; predict again or cash out"))
+
+pub fn cash_out(game: hilo_model.Game) -> Result[hilo_model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("HiLo Cash Out requires an active round")
+    if game.correct_predictions < 1:
+        return Err("Make at least one correct HiLo prediction before cashing out")
+    let result = hilo_model.RoundResult(game.wager, game.correct_predictions, game.potential_payout, false)
+    let balance = hilo_rules.credited_balance(game.balance, game.potential_payout)
+    return Ok(hilo_model.Game(balance, game.bet, hilo_model.Settled(), game.deck, game.draw_index, game.current_card, game.sequence, game.wager, game.multiplier_basis_points, game.potential_payout, game.correct_predictions, game.potential_payout, false, bounded_history(game.history, result), game.round_number, game.seed, "HiLo cash out settled"))
+
+pub fn next_round(game: hilo_model.Game) -> Result[hilo_model.Game, String]:
+    if phase_code(game.phase) != 2:
+        return Err("The HiLo round has not settled")
+    return Ok(hilo_model.Game(game.balance, game.bet, hilo_model.Ready(), empty_cards(), 0, holdem_model.Card(1, 0), empty_cards(), 0, 10000, 0, 0, 0, false, game.history, game.round_number + 1, game.seed, "Ready for a newly shuffled HiLo round"))
+
+pub fn restart(game: hilo_model.Game) -> Result[hilo_model.Game, String]:
+    if phase_code(game.phase) == 1:
+        return Err("Finish the active HiLo round before restarting")
+    let history: Array[hilo_model.RoundResult] = []
+    return Ok(hilo_model.Game(game.balance, game.bet, hilo_model.Ready(), empty_cards(), 0, holdem_model.Card(1, 0), empty_cards(), 0, 10000, 0, 0, 0, false, history, game.round_number + 1, game.seed, "HiLo table restarted at a safe boundary"))

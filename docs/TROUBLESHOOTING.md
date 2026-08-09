@@ -79,6 +79,12 @@ Dice locks all controls during a result and finite auto batch. Choose Stop to
 end auto-roll between committed results. It also ends automatically at 20 or
 fewer requested rolls, its configured win/loss count, or insufficient credits.
 
+HiLo disables Higher or Lower when the remaining deck contains no winning card
+for that direction. Equal cards are counted separately because every equal rank
+loses. Cash Out stays disabled until one correct prediction, and Lobby/Restart
+stay disabled during an active wager. Finish a prediction or cash out, wait for
+the short committed-card animation, then choose Next, Restart, or Lobby.
+
 ## Reporting a problem
 
 Record the version, the exact action sequence, and whether the problem occurs in the portable package or a development build. Never attach personal or sensitive data; Scroll2Roll does not need any.

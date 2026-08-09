@@ -21,8 +21,8 @@ Scroll2Roll is a polished, local, single-player, play-money casino shell. The
 accepted 0.2.0 baseline includes complete Blackjack, European Roulette, Plinko,
 Coop Climb, Midnight Crossing, and No-Limit Texas Hold'em. The owner-approved
 0.3.0 expansion in `EXPANSION_0_3_IMPLEMENTATION.md` adds Mines, Dice, HiLo,
-Crash, and Slots in that order. Mines, Dice, and the save-v3 foundation are
-complete; HiLo is the current milestone. Packaging and the website intentionally
+Crash, and Slots in that order. Mines, Dice, HiLo, and the save-v3 foundation
+are complete; Crash is the current milestone. Packaging and the website intentionally
 describe the last verified 0.2.0 archive until final 0.3.0 acceptance produces
 real replacement metadata.
 
@@ -120,13 +120,19 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
   explicitly enabled 1-20-result auto-roll. Auto commits one result per step,
   exposes Stop between steps, and terminates on requested, win, loss, or credit
   limits. `DICE_MATH.md` publishes the integer and rounding contract.
+- HiLo is fully playable from a checked shared 52-card deck with deterministic
+  Fisher-Yates shuffle, future-card privacy, exact remaining lower/higher/equal
+  counts, disabled impossible predictions, prominent equal-rank loss, prepaid
+  wagers, cumulative 96% basis-point math, cash-out, exhaustion settlement,
+  sequence/history bounds, and safe lifecycle transitions. `HILO_MATH.md`
+  publishes the exact probability, rounding, and cap contract.
 
 ## Architecture
 
 Dependency direction is one way:
 
 1. Per-game model values and validated rule constructors.
-2. Rendering-independent Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, Hold'em, Mines, and Dice engines and settlement.
+2. Rendering-independent Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, Hold'em, Mines, Dice, and HiLo engines and settlement.
 3. Small presentation-facing APIs and sessions.
 4. Versioned local persistence isolated from rules.
 5. Reusable router, design tokens, components, lobby, settings, and per-game views.
@@ -217,6 +223,10 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
 - The complete post-Dice suite passes 32/32, preserving all 29 prior tests and
   adding exhaustive Dice rules, deterministic manual/auto session boundaries,
   every finite stop condition, and minimum-size keyboard/mouse GUI coverage.
+- The complete post-HiLo suite passes 35/35, preserving all 32 prior tests and
+  adding checked-deck/exhaustion coverage, exact counts for every rank and
+  remaining prefix, privacy, deterministic/tie/cash-out sessions, and bounded
+  minimum-size keyboard/mouse GUI animation coverage.
 
 ## Deliberate limitations
 
@@ -292,7 +302,9 @@ Spacing, typography, component states, borders, timing, and responsive layout va
   focused tests, and all earlier regressions.
 - Completed: 0.3.0 milestone 2 Dice, including exact integer probability,
   finite stoppable auto-roll, native UI, focused tests, and all regressions.
-- Current: 0.3.0 milestone 3 HiLo. Do not push, publish, deploy, create a
+- Completed: 0.3.0 milestone 3 HiLo, including checked shared cards, exact
+  remaining-deck probability, privacy-safe UI, focused tests, and all regressions.
+- Current: 0.3.0 milestone 4 Crash. Do not push, publish, deploy, create a
   release, or claim trusted signing without explicit approval.
 
 ## Major decisions
@@ -328,7 +340,7 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`,
 `docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
 status and preserve user changes. The accepted 0.2.0 baseline remains intact;
-Mines, Dice, and save-v3 are complete with 32/32 tests, and HiLo is next. The
+Mines, Dice, HiLo, and save-v3 are complete with 35/35 tests, and Crash is next. The
 published website metadata must remain on the verified 0.2.0
 archive until the real 0.3.0 package is produced. Keep using frozen Rocket 2.0
 and the pinned raylib integration with custom frame control forced off. Do not

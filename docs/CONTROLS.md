@@ -139,6 +139,24 @@ Results are integers from 0-9,999. Auto-roll locks one outcome before each
 bounded animation and cannot continue past any configured stop. See
 `DICE_MATH.md`.
 
+## HiLo
+
+- `Down` / `Left` and `Up` / `Right`: change the ready wager by 5 credits.
+- `Enter`: prepay the wager, shuffle at the new-round boundary, and deal one
+  visible card.
+- `L`: predict Lower when at least one remaining card is lower.
+- `H`: predict Higher when at least one remaining card is higher.
+- Mouse: use wager, Deal, enabled Lower/Higher, Cash Out, help, Next, Restart,
+  and Lobby controls.
+- `S`: cash out after at least one correct prediction.
+- `P`: toggle exact probability, tie-loss, return, rounding, and privacy help.
+- `N`: ready a newly shuffled next round; `R`: restart at a safe boundary.
+- `B` / `Escape`: return to the lobby only while ready or settled.
+
+Equal rank is always a loss and is called out at the table and in help. Only
+drawn cards appear in the visible sequence; future cards stay private. See
+`HILO_MATH.md`.
+
 ## Settings
 
 - `M`: toggle audio.

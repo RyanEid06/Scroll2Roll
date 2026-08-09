@@ -56,9 +56,18 @@ Test setup helpers must return explicit failure or a nonzero test status when co
   history, and balance invariants.
 - `dice_gui_flow_test.rocket`: minimum-size routing, help, keyboard/mouse manual
   rounds, incremental auto animation, visible Stop, persistence, and lobby.
+- `hilo_rules_test.rocket`: checked deck uniqueness, deterministic shuffle,
+  exact lower/higher/equal counts for every rank and remaining-deck prefix,
+  impossible actions, tie behavior, cumulative multiplier, payout, and caps.
+- `hilo_session_test.rocket`: deterministic private decks and draws, correct,
+  wrong, and equal results, cash-out legality, exact settlement, full 52-card
+  exhaustion, consecutive rounds, restart boundaries, history, and balances.
+- `hilo_gui_flow_test.rocket`: minimum-size ninth-entry routing, help,
+  keyboard/mouse deal/prediction/cash-out/next/lobby flows, privacy projection,
+  animation agreement, persistence, rendering, and native cleanup.
 - Four reviewed raylib tests cover API behavior, audio stress, resource lifetime, and missing assets.
 
-The current post-Dice suite passes 32/32 tests. Before those gates run,
+The current post-HiLo suite passes 35/35 tests. Before those gates run,
 `scripts/validate.ps1` also rejects duplicate `.rocket` basenames under `src` so
 the frozen CodeView debugger can map every source unambiguously. Package
 relocation and source/staged website checks are separate scripts. The website

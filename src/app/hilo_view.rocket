@@ -1,0 +1,146 @@
+import src.app.components
+import src.app.theme
+import src.hilo.hilo_api
+import src.hilo.hilo_cards
+import src.rocket_raylib
+import std.collections
+import std.string
+
+pub fn bet_minus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 202, 46, 40)
+
+pub fn bet_plus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 144, 202, 46, 40)
+
+pub fn start_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 266, 232, 46)
+
+pub fn lower_rect() -> components.Rect:
+    return components.rect(42, 382, 158, 48)
+
+pub fn higher_rect() -> components.Rect:
+    return components.rect(220, 382, 158, 48)
+
+pub fn cash_out_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 326, 232, 46)
+
+pub fn help_rect(width: Int) -> components.Rect:
+    return components.rect(width - 118, 24, 86, 38)
+
+pub fn next_rect(height: Int) -> components.Rect:
+    return components.rect(32, height - 68, 150, 42)
+
+pub fn lobby_rect(height: Int) -> components.Rect:
+    return components.rect(192, height - 68, 120, 42)
+
+pub fn restart_rect(height: Int) -> components.Rect:
+    return components.rect(322, height - 68, 136, 42)
+
+fn multiplier_label(basis_points: Int) -> String:
+    let whole = basis_points / 10000
+    let hundredths =(basis_points - whole * 10000) / 100
+    var fraction = string.from_int(hundredths)
+    if hundredths < 10:
+        fraction = string.concat("0", fraction)
+    return string.concat(string.from_int(whole), string.concat(".", string.concat(fraction, "x")))
+
+fn draw_card(frame: rocket_raylib.Frame, table: hilo_api.PublicTable) -> Result[Bool, String]:
+    let card = components.rect(128, 142, 164, 204)
+    rocket_raylib.draw_rectangle(frame, card.x, card.y, card.width, card.height, theme.border())?
+    rocket_raylib.draw_rectangle(frame, card.x + 4, card.y + 4, card.width - 8, card.height - 8, theme.text())?
+    var ink = theme.background()
+    if hilo_cards.is_red(table.current_card):
+        ink = theme.danger()
+    rocket_raylib.draw_text(frame, hilo_cards.name(table.current_card), card.x + 44, card.y + 76, theme.title_size(), ink)?
+    return Ok(true)
+
+fn draw_sequence(frame: rocket_raylib.Frame, table: hilo_api.PublicTable) -> Result[Bool, String]:
+    rocket_raylib.draw_text(frame, "Visible sequence", 42, 452, theme.small_size(), theme.muted())?
+    var index = 0
+    var label = ""
+    while index < collections.length(table.sequence) and index < 9:
+        let source = collections.length(table.sequence) - 1 - index
+        if index > 0:
+            label = string.concat(label, "  ")
+        label = string.concat(label, hilo_cards.name(table.sequence[source]))
+        index = index + 1
+    rocket_raylib.draw_text(frame, label, 42, 478, theme.body_size(), theme.text())?
+    return Ok(true)
+
+fn draw_history(frame: rocket_raylib.Frame, table: hilo_api.PublicTable, width: Int) -> Result[Bool, String]:
+    rocket_raylib.draw_text(frame, "Recent", width - 330, 394, theme.small_size(), theme.muted())?
+    var index = 0
+    while index < collections.length(table.history) and index < 4:
+        let result = table.history[index]
+        var label = string.concat(string.from_int(result.correct_predictions), " correct - lost")
+        var ink = theme.danger()
+        if result.payout > 0:
+            label = string.concat(string.concat(string.from_int(result.correct_predictions), " correct - return "), string.from_int(result.payout))
+            ink = theme.emerald()
+        if result.tie_loss:
+            label = string.concat(string.from_int(result.correct_predictions), " correct - EQUAL loss")
+        rocket_raylib.draw_text(frame, label, width - 330, 420 + index * 25, theme.small_size(), ink)?
+        index = index + 1
+    return Ok(true)
+
+fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.overlay())?
+    let box = components.rect(width / 2 - 350, 60, 700, 500)
+    components.panel(frame, box)?
+    rocket_raylib.draw_text(frame, "HILO RULES AND EXACT RETURN", box.x + 26, box.y + 22, theme.heading_size(), theme.gold())?
+    let lines = ["A checked 52-card deck is Fisher-Yates shuffled only at round start.", "One card is visible. Every future card remains private until drawn.", "Choose only an enabled Higher or Lower action from the cards left.", "EQUAL RANK IS ALWAYS A LOSS, regardless of the prediction.", "A correct prediction advances the card and cumulative multiplier.", "Cash Out is legal after one correct prediction; a wrong pick loses.", "Step multiplier = floor(previous x 9600 x remaining / winning / 10000).", "Payout = floor(wager x multiplier / 10000); caps protect play credits.", "H/L predict | Arrows bet | Enter deal | S cashes out | P closes help."]
+    var index = 0
+    while index < collections.length(lines):
+        var ink = theme.text()
+        if index == 3:
+            ink = theme.danger()
+        rocket_raylib.draw_text(frame, lines[index], box.x + 26, box.y + 72 + index * 43, theme.body_size(), ink)?
+        index = index + 1
+    return Ok(true)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, table: hilo_api.PublicTable, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_text(frame, "HILO", 32, 26, theme.heading_size(), theme.gold())?
+    rocket_raylib.draw_text(frame, "Exact remaining-deck prediction", 32, 62, theme.small_size(), theme.muted())?
+    rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(table.balance)), width - 300, 76, theme.body_size(), theme.emerald())?
+    let help_button = help_rect(width)
+    components.button(window, frame, help_button, "Help [P]", true, components.contains(help_button, mouse_x, mouse_y), false)?
+    if table.phase != 0:
+        draw_card(frame, table)?
+    if table.phase == 0:
+        components.panel(frame, components.rect(80, 150, 260, 190))?
+        rocket_raylib.draw_text(frame, "Future cards stay private", 104, 218, theme.body_size(), theme.text())?
+        rocket_raylib.draw_text(frame, "Deal to reveal one card", 112, 260, theme.small_size(), theme.muted())?
+    rocket_raylib.draw_text(frame, "EQUAL RANK = LOSS", 112, 354, theme.body_size(), theme.danger())?
+    if table.phase == 1:
+        let lower = lower_rect()
+        let higher = higher_rect()
+        components.button(window, frame, lower, string.concat("Lower [L] ", string.from_int(table.lower_outcomes)), table.can_lower, components.contains(lower, mouse_x, mouse_y), true)?
+        components.button(window, frame, higher, string.concat("Higher [H] ", string.from_int(table.higher_outcomes)), table.can_higher, components.contains(higher, mouse_x, mouse_y), true)?
+        rocket_raylib.draw_text(frame, string.concat("Equal-loss cards: ", string.from_int(table.equal_outcomes)), 42, 438, theme.small_size(), theme.danger())?
+        draw_sequence(frame, table)?
+    components.panel(frame, components.rect(width - 350, 112, 272, 430))?
+    rocket_raylib.draw_text(frame, table.message, width - 330, 126, theme.small_size(), theme.muted())?
+    rocket_raylib.draw_text(frame, string.concat("Wager: ", string.from_int(table.bet)), width - 270, 212, theme.body_size(), theme.text())?
+    components.button(window, frame, bet_minus_rect(width), "-", table.phase == 0, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, bet_plus_rect(width), "+", table.phase == 0, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
+    if table.phase == 0:
+        components.button(window, frame, start_rect(width), "Deal [Enter]", table.bet <= table.balance, components.contains(start_rect(width), mouse_x, mouse_y), true)?
+    if table.phase == 1:
+        components.button(window, frame, cash_out_rect(width), "Cash Out [S]", table.correct_predictions > 0, components.contains(cash_out_rect(width), mouse_x, mouse_y), true)?
+    rocket_raylib.draw_text(frame, string.concat("Remaining: ", string.from_int(table.remaining_cards)), width - 330, 322, theme.small_size(), theme.text())?
+    rocket_raylib.draw_text(frame, string.concat("Correct: ", string.from_int(table.correct_predictions)), width - 210, 322, theme.small_size(), theme.text())?
+    rocket_raylib.draw_text(frame, string.concat("Multiplier: ", multiplier_label(table.multiplier_basis_points)), width - 330, 350, theme.small_size(), theme.gold())?
+    rocket_raylib.draw_text(frame, string.concat("Potential: ", string.from_int(table.potential_payout)), width - 330, 374, theme.small_size(), theme.emerald())?
+    draw_history(frame, table, width)?
+    if table.phase == 2:
+        components.button(window, frame, next_rect(height), "Next [N]", true, components.contains(next_rect(height), mouse_x, mouse_y), true)?
+    if table.phase != 1:
+        components.button(window, frame, lobby_rect(height), "Lobby [B]", true, components.contains(lobby_rect(height), mouse_x, mouse_y), false)?
+        components.button(window, frame, restart_rect(height), "Restart [R]", true, components.contains(restart_rect(height), mouse_x, mouse_y), false)?
+    if help:
+        draw_help(window, frame)?
+    return Ok(true)

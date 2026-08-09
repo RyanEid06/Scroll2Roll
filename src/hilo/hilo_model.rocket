@@ -1,0 +1,35 @@
+import src.holdem.holdem_model
+
+pub enum Prediction:
+    Lower
+    Higher
+
+pub enum Phase:
+    Ready
+    Active
+    Settled
+
+pub struct RoundResult:
+    wager: Int
+    correct_predictions: Int
+    payout: Int
+    tie_loss: Bool
+
+pub struct Game:
+    balance: Int
+    bet: Int
+    phase: Phase
+    deck: Array[holdem_model.Card]
+    draw_index: Int
+    current_card: holdem_model.Card
+    sequence: Array[holdem_model.Card]
+    wager: Int
+    multiplier_basis_points: Int
+    potential_payout: Int
+    correct_predictions: Int
+    payout: Int
+    last_tie: Bool
+    history: Array[RoundResult]
+    round_number: Int
+    seed: Int
+    message: String

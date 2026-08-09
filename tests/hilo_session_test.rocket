@@ -1,0 +1,146 @@
+import src.hilo.hilo_api
+import src.hilo.hilo_cards
+import src.hilo.hilo_engine
+import src.hilo.hilo_model
+import src.hilo.hilo_rules
+import src.holdem.holdem_model
+import std.collections
+
+fn correct_code(game: hilo_model.Game) -> Int:
+    let current = hilo_cards.rank_value(game.current_card)
+    let next = hilo_cards.rank_value(game.deck[game.draw_index])
+    if next > current:
+        return 1
+    if next < current:
+        return 0
+    return -1
+
+fn prediction_for_code(code: Int) -> hilo_model.Prediction:
+    if code == 0:
+        return hilo_model.Lower()
+    return hilo_model.Higher()
+
+fn legal_code(game: hilo_model.Game) -> Result[Int, String]:
+    let counts = hilo_rules.outcomes(game.current_card, game.deck, game.draw_index)?
+    if counts.lower > 0:
+        return Ok(0)
+    if counts.higher > 0:
+        return Ok(1)
+    return Err("No legal HiLo direction in test state")
+
+fn find_seed(want_tie: Bool) -> Result[Int, String]:
+    var seed = 1
+    while seed < 5000:
+        let game = hilo_engine.start(hilo_engine.new_game(1000, seed)?)?
+        let tied = correct_code(game) == -1
+        if tied == want_tie:
+            return Ok(seed)
+        seed = seed + 1
+    return Err("Unable to find deterministic HiLo seed")
+
+fn run() -> Result[Int, String]:
+    match hilo_engine.new_game(4, 1):
+        case Ok(game):
+            return Ok(1)
+        case Err(error):
+            let expected_error = true
+    var poor = hilo_engine.new_game(5, 5)?
+    poor = hilo_engine.with_bet(poor, 10)?
+    match hilo_engine.start(poor):
+        case Ok(game):
+            return Ok(2)
+        case Err(error):
+            let expected_error = true
+    let safe_seed = find_seed(false)?
+    var game = hilo_engine.start(hilo_engine.new_game(1000, safe_seed)?)?
+    let duplicate = hilo_engine.start(hilo_engine.new_game(1000, safe_seed)?)?
+    if game.current_card.rank != duplicate.current_card.rank or game.current_card.suit != duplicate.current_card.suit or game.deck[1].rank != duplicate.deck[1].rank or game.deck[1].suit != duplicate.deck[1].suit:
+        return Ok(3)
+    match hilo_engine.cash_out(game):
+        case Ok(value):
+            return Ok(4)
+        case Err(error):
+            let expected_error = true
+    match hilo_engine.restart(game):
+        case Ok(value):
+            return Ok(5)
+        case Err(error):
+            let expected_error = true
+    let before = game
+    let code = correct_code(game)
+    let counts = hilo_rules.outcomes(game.current_card, game.deck, game.draw_index)?
+    game = hilo_engine.predict(game, prediction_for_code(code))?
+    let expected_multiplier = hilo_rules.advance_multiplier(10000, counts, prediction_for_code(code))?
+    if hilo_engine.phase_code(game.phase) != 1 or game.correct_predictions != 1 or game.multiplier_basis_points != expected_multiplier or game.potential_payout != hilo_rules.payout(game.wager, expected_multiplier):
+        return Ok(6)
+    let cashed = hilo_engine.cash_out(game)?
+    if cashed.balance != before.balance + game.potential_payout or hilo_engine.phase_code(cashed.phase) != 2 or collections.length(cashed.history) != 1:
+        return Ok(7)
+    var wrong_game = hilo_engine.start(hilo_engine.new_game(1000, safe_seed)?)?
+    let correct = correct_code(wrong_game)
+    let wrong = prediction_for_code(1 - correct)
+    let wrong_counts = hilo_rules.outcomes(wrong_game.current_card, wrong_game.deck, wrong_game.draw_index)?
+    if hilo_rules.legal(wrong_counts, wrong):
+        wrong_game = hilo_engine.predict(wrong_game, wrong)?
+        if hilo_engine.phase_code(wrong_game.phase) != 2 or wrong_game.payout != 0 or wrong_game.last_tie:
+            return Ok(8)
+    let tie_seed = find_seed(true)?
+    var tied = hilo_engine.start(hilo_engine.new_game(1000, tie_seed)?)?
+    tied = hilo_engine.predict(tied, prediction_for_code(legal_code(tied)?))?
+    if hilo_engine.phase_code(tied.phase) != 2 or not tied.last_tie or tied.payout != 0:
+        return Ok(9)
+    var session = hilo_api.new_session(1000, safe_seed)?
+    session = hilo_api.with_start(session)?
+    let table = hilo_api.public_table(session)?
+    if table.remaining_cards != 51 or collections.length(table.sequence) != 1 or table.current_card.rank != session.game.current_card.rank or table.lower_outcomes + table.higher_outcomes + table.equal_outcomes != 51:
+        return Ok(10)
+    match hilo_api.with_prediction_code(session, 2):
+        case Ok(value):
+            return Ok(11)
+        case Err(error):
+            let expected_error = true
+    var current = hilo_engine.with_bet(hilo_engine.new_game(5000, 9000)?, 5)?
+    var round = 0
+    while round < 100:
+        current = hilo_engine.start(current)?
+        let direction = legal_code(current)?
+        let correct_direction = correct_code(current)
+        var chosen = direction
+        if correct_direction == 0:
+            let current_counts = hilo_rules.outcomes(current.current_card, current.deck, current.draw_index)?
+            if current_counts.higher > 0:
+                chosen = 1
+        if correct_direction == 1:
+            let current_counts = hilo_rules.outcomes(current.current_card, current.deck, current.draw_index)?
+            if current_counts.lower > 0:
+                chosen = 0
+        current = hilo_engine.predict(current, prediction_for_code(chosen))?
+        if hilo_engine.phase_code(current.phase) == 1:
+            current = hilo_engine.cash_out(current)?
+        if current.balance < 0 or current.balance > hilo_rules.maximum_balance():
+            return Ok(12)
+        current = hilo_engine.next_round(current)?
+        round = round + 1
+    if collections.length(current.history) != 20 or current.round_number != 101:
+        return Ok(13)
+    let restarted = hilo_engine.restart(current)?
+    if collections.length(restarted.history) != 0 or hilo_engine.phase_code(restarted.phase) != 0:
+        return Ok(14)
+    let ordered = hilo_cards.ordered()?
+    var sequence: Array[holdem_model.Card] = []
+    sequence = collections.append(sequence, ordered[0])
+    let empty_history: Array[hilo_model.RoundResult] = []
+    var exhaustive = hilo_model.Game(990, 10, hilo_model.Active(), ordered, 1, ordered[0], sequence, 10, 10000, 10, 0, 0, false, empty_history, 1, 1, "Exhaustion fixture")
+    while hilo_engine.phase_code(exhaustive.phase) == 1:
+        exhaustive = hilo_engine.predict(exhaustive, prediction_for_code(correct_code(exhaustive)))?
+    if exhaustive.draw_index != 52 or exhaustive.correct_predictions != 51 or collections.length(exhaustive.sequence) != 52 or exhaustive.payout < 1 or collections.length(exhaustive.history) != 1:
+        return Ok(15)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

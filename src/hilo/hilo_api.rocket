@@ -1,0 +1,61 @@
+import src.hilo.hilo_engine
+import src.hilo.hilo_model
+import src.hilo.hilo_rules
+import src.holdem.holdem_model
+
+pub struct Session:
+    game: hilo_model.Game
+
+pub struct PublicTable:
+    balance: Int
+    bet: Int
+    phase: Int
+    current_card: holdem_model.Card
+    remaining_cards: Int
+    lower_outcomes: Int
+    higher_outcomes: Int
+    equal_outcomes: Int
+    can_lower: Bool
+    can_higher: Bool
+    multiplier_basis_points: Int
+    potential_payout: Int
+    correct_predictions: Int
+    payout: Int
+    last_tie: Bool
+    sequence: Array[holdem_model.Card]
+    history: Array[hilo_model.RoundResult]
+    message: String
+
+pub fn new_session(starting_balance: Int, seed: Int) -> Result[Session, String]:
+    return Ok(Session(hilo_engine.new_game(starting_balance, seed)?))
+
+pub fn with_bet(session: Session, bet: Int) -> Result[Session, String]:
+    return Ok(Session(hilo_engine.with_bet(session.game, bet)?))
+
+pub fn with_start(session: Session) -> Result[Session, String]:
+    return Ok(Session(hilo_engine.start(session.game)?))
+
+pub fn with_prediction_code(session: Session, code: Int) -> Result[Session, String]:
+    if code == 0:
+        return Ok(Session(hilo_engine.predict(session.game, hilo_model.Lower())?))
+    if code == 1:
+        return Ok(Session(hilo_engine.predict(session.game, hilo_model.Higher())?))
+    return Err("HiLo prediction code must be 0 or 1")
+
+pub fn with_cash_out(session: Session) -> Result[Session, String]:
+    return Ok(Session(hilo_engine.cash_out(session.game)?))
+
+pub fn with_next_round(session: Session) -> Result[Session, String]:
+    return Ok(Session(hilo_engine.next_round(session.game)?))
+
+pub fn with_restart(session: Session) -> Result[Session, String]:
+    return Ok(Session(hilo_engine.restart(session.game)?))
+
+pub fn phase_code(session: Session) -> Int:
+    return hilo_engine.phase_code(session.game.phase)
+
+pub fn public_table(session: Session) -> Result[PublicTable, String]:
+    var counts = hilo_rules.OutcomeCounts(0, 0, 0, 0)
+    if phase_code(session) == 1:
+        counts = hilo_rules.outcomes(session.game.current_card, session.game.deck, session.game.draw_index)?
+    return Ok(PublicTable(session.game.balance, session.game.bet, phase_code(session), session.game.current_card, counts.total, counts.lower, counts.higher, counts.equal, hilo_rules.legal(counts, hilo_model.Lower()), hilo_rules.legal(counts, hilo_model.Higher()), session.game.multiplier_basis_points, session.game.potential_payout, session.game.correct_predictions, session.game.payout, session.game.last_tie, session.game.sequence, session.game.history, session.game.message))

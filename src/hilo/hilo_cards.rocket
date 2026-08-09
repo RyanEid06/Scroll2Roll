@@ -1,0 +1,40 @@
+import src.holdem.holdem_cards
+import src.holdem.holdem_model
+import std.collections
+
+pub fn is_standard(deck: Array[holdem_model.Card]) -> Bool:
+    if collections.length(deck) != 52:
+        return false
+    var first = 0
+    while first < 52:
+        let card = deck[first]
+        if card.rank < 1 or card.rank > 13 or card.suit < 0 or card.suit > 3:
+            return false
+        var second = first + 1
+        while second < 52:
+            if card.rank == deck[second].rank and card.suit == deck[second].suit:
+                return false
+            second = second + 1
+        first = first + 1
+    return true
+
+pub fn ordered() -> Result[Array[holdem_model.Card], String]:
+    let deck = holdem_cards.ordered()
+    if not is_standard(deck):
+        return Err("HiLo standard deck validation failed")
+    return Ok(deck)
+
+pub fn shuffled(seed: Int) -> Result[Array[holdem_model.Card], String]:
+    let deck = holdem_cards.shuffled(seed)
+    if not is_standard(deck):
+        return Err("HiLo shuffled deck validation failed")
+    return Ok(deck)
+
+pub fn name(card: holdem_model.Card) -> String:
+    return holdem_cards.name(card)
+
+pub fn rank_value(card: holdem_model.Card) -> Int:
+    return holdem_cards.rank_value(card)
+
+pub fn is_red(card: holdem_model.Card) -> Bool:
+    return holdem_cards.is_red(card)
