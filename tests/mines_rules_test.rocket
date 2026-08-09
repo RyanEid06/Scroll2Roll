@@ -1,0 +1,42 @@
+import src.mines.mines_rules
+
+fn run() -> Result[Int, String]:
+    if mines_rules.tile_count() != 25 or mines_rules.target_return_basis_points() != 9600:
+        return Ok(1)
+    if mines_rules.combinations(25, 0)? != 1 or mines_rules.combinations(25, 1)? != 25 or mines_rules.combinations(25, 12)? != 5200300:
+        return Ok(2)
+    match mines_rules.combinations(3, 4):
+        case Ok(value):
+            return Ok(3)
+        case Err(error):
+            let expected = true
+    if mines_rules.valid_mine_count(0) or mines_rules.valid_mine_count(25) or not mines_rules.valid_mine_count(1) or not mines_rules.valid_mine_count(24):
+        return Ok(4)
+    if mines_rules.valid_bet(4) or mines_rules.valid_bet(11) or not mines_rules.valid_bet(5) or not mines_rules.valid_bet(1000):
+        return Ok(5)
+    var mines = 1
+    while mines <= 24:
+        var reveals = 1
+        var previous = 0
+        while reveals <= 25 - mines:
+            let fraction = mines_rules.survival_fraction(mines, reveals)?
+            let multiplier = mines_rules.multiplier_basis_points(mines, reveals)?
+            let expected = 9600 * fraction[1] / fraction[0]
+            if multiplier != expected or multiplier <= previous:
+                return Ok(6)
+            previous = multiplier
+            reveals = reveals + 1
+        mines = mines + 1
+    if mines_rules.multiplier_basis_points(1, 1)? != 10000 or mines_rules.multiplier_basis_points(24, 1)? != 240000:
+        return Ok(7)
+    if mines_rules.payout(15, 16000) != 24 or mines_rules.payout(5, 10666) != 5:
+        return Ok(8)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

@@ -2,7 +2,7 @@
 
 ## The application does not start
 
-Scroll2Roll version 0.2.0 targets Windows x64. Extract the complete ZIP to a writable local folder, then run `Scroll2Roll.exe`. Do not run the executable from inside the ZIP.
+Scroll2Roll version 0.3.0 targets Windows x64. Extract the complete ZIP to a writable local folder, then run `Scroll2Roll.exe`. Do not run the executable from inside the ZIP.
 
 If Windows displays an unknown-publisher warning, that is expected for this local unsigned build. Scroll2Roll does not claim trusted code signing. Verify the files against `SHA256SUMS.txt` before running.
 
@@ -21,7 +21,7 @@ The game continues silently if Windows cannot open an audio device. Audio can be
 
 ## Settings are damaged or need resetting
 
-Version 2 stores only local, non-sensitive settings and play-money progress in `%LOCALAPPDATA%\Scroll2Roll\settings.s2r`. Valid version-1 data is migrated automatically. Delete that file while Scroll2Roll is closed to restore defaults. Missing, unsupported, or invalid data is recovered safely.
+Version 3 stores only local, non-sensitive settings and play-money progress in `%LOCALAPPDATA%\Scroll2Roll\settings.s2r`. Valid version-1 and version-2 data is migrated automatically. Delete that file while Scroll2Roll is closed to restore defaults. Missing, unsupported, or invalid data is recovered safely.
 
 ## Visual Studio cannot find rocketc.exe or rocket-lsp.exe
 
@@ -69,6 +69,11 @@ does not reopen Raise for a player who already acted. Opponent cards remain
 hidden until a non-folded showdown, and folded cards are never exposed. If the
 human cannot cover the 10-credit big blind, choose New Table to explicitly
 restore every seat to the documented 1,000-credit play-money stack.
+
+Mines locks wager and mine count after Start. Cash Out is disabled until one
+safe gem is revealed, duplicate reveals are rejected, and lobby return is
+disabled while a wager is active. After a mine or cash-out, choose Next or
+Lobby. Unrevealed mine positions remain hidden even after settlement.
 
 ## Reporting a problem
 

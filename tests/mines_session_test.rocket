@@ -1,0 +1,127 @@
+import src.mines.mines_api
+import src.mines.mines_engine
+import std.collections
+
+fn same_values(left: Array[Int], right: Array[Int]) -> Bool:
+    if collections.length(left) != collections.length(right):
+        return false
+    var index = 0
+    while index < collections.length(left):
+        if left[index] != right[index]:
+            return false
+        index = index + 1
+    return true
+
+fn find_value(values: Array[Int], wanted: Int) -> Result[Int, String]:
+    var index = 0
+    while index < collections.length(values):
+        if values[index] == wanted:
+            return Ok(index)
+        index = index + 1
+    return Err("Expected Mines tile was not found")
+
+fn run() -> Result[Int, String]:
+    match mines_engine.new_game(4, 1):
+        case Ok(game):
+            return Ok(1)
+        case Err(error):
+            let expected = true
+    var game = mines_engine.new_game(1000, 4242)?
+    match mines_engine.with_mine_count(game, 25):
+        case Ok(value):
+            return Ok(2)
+        case Err(error):
+            let expected = true
+    game = mines_engine.with_bet(game, 25)?
+    game = mines_engine.with_mine_count(game, 7)?
+    let active = mines_engine.start(game)?
+    let duplicate = mines_engine.start(mines_engine.with_mine_count(mines_engine.with_bet(mines_engine.new_game(1000, 4242)?, 25)?, 7)?)?
+    if active.balance != 975 or collections.length(active.mine_layout) != 25 or not same_values(active.mine_layout, duplicate.mine_layout):
+        return Ok(3)
+    var mine_total = 0
+    var index = 0
+    while index < 25:
+        mine_total = mine_total + active.mine_layout[index]
+        index = index + 1
+    if mine_total != 7:
+        return Ok(4)
+    match mines_engine.with_bet(active, 50):
+        case Ok(value):
+            return Ok(5)
+        case Err(error):
+            let expected = true
+    match mines_engine.cash_out(active):
+        case Ok(value):
+            return Ok(6)
+        case Err(error):
+            let expected = true
+    match mines_engine.restart(active):
+        case Ok(value):
+            return Ok(17)
+        case Err(error):
+            let expected = true
+    let safe_tile = find_value(active.mine_layout, 0)?
+    var safe = mines_engine.reveal(active, safe_tile)?
+    if safe.safe_reveals != 1 or safe.potential_payout <= 0 or safe.balance != 975:
+        return Ok(7)
+    let before_duplicate = safe
+    match mines_engine.reveal(safe, safe_tile):
+        case Ok(value):
+            return Ok(8)
+        case Err(error):
+            let expected = true
+    if safe.balance != before_duplicate.balance or safe.safe_reveals != before_duplicate.safe_reveals:
+        return Ok(9)
+    let settled = mines_engine.cash_out(safe)?
+    if mines_engine.phase_code(settled.phase) != 2 or settled.payout != safe.potential_payout or settled.balance != 975 + safe.potential_payout:
+        return Ok(10)
+    let restarted = mines_engine.restart(settled)?
+    if mines_engine.phase_code(restarted.phase) != 0 or restarted.balance != settled.balance or collections.length(restarted.history) != 0:
+        return Ok(18)
+    let mine_tile = find_value(active.mine_layout, 1)?
+    let failed = mines_engine.reveal(active, mine_tile)?
+    if mines_engine.phase_code(failed.phase) != 2 or not failed.hit_mine or failed.payout != 0 or failed.balance != 975:
+        return Ok(11)
+    var session = mines_api.new_session(1000, 4242)?
+    session = mines_api.with_mine_count(session, 7)?
+    session = mines_api.with_start(session)?
+    index = 0
+    while index < 25:
+        if mines_api.tile_state(session, index)? != 0:
+            return Ok(12)
+        index = index + 1
+    let api_safe = find_value(session.game.mine_layout, 0)?
+    session = mines_api.with_reveal(session, api_safe)?
+    if mines_api.tile_state(session, api_safe)? != 1:
+        return Ok(13)
+    var current = mines_engine.with_bet(mines_engine.new_game(5000, 9900)?, 5)?
+    var round = 0
+    while round < 25:
+        current = mines_engine.start(current)?
+        let tile = find_value(current.mine_layout, 0)?
+        current = mines_engine.reveal(current, tile)?
+        current = mines_engine.cash_out(current)?
+        if current.balance < 0:
+            return Ok(14)
+        current = mines_engine.next_round(current)?
+        round = round + 1
+    if current.round_number != 26 or collections.length(current.history) != 20:
+        return Ok(15)
+    var poor = mines_engine.with_bet(mines_engine.new_game(5, 7)?, 5)?
+    poor = mines_engine.start(poor)?
+    poor = mines_engine.reveal(poor, find_value(poor.mine_layout, 1)?)?
+    poor = mines_engine.next_round(poor)?
+    match mines_engine.start(poor):
+        case Ok(value):
+            return Ok(16)
+        case Err(error):
+            let expected = true
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

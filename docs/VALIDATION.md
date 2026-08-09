@@ -10,6 +10,35 @@ passed the native CMake/raylib build, `rocketc check`, all 10 existing Rocket
 tests, and `rocketc fmt --check` for `src` and `tests`. This is the regression
 baseline for every game milestone in `EXPANSION_PLAN.md`.
 
+## 0.3.0 expansion baseline and milestone 1 - Mines
+
+- Before 0.3.0 changes, Debug and Release `scripts/validate.ps1` each passed
+  native generation/build, `rocketc check`, all 26 accepted tests, and both
+  formatting checks on 2026-08-09.
+- Version identity is 0.3.0. Persistence writes `scroll2roll-save-3`; focused
+  tests migrate valid save-v1 and save-v2 values, verify save-v3 round-trip,
+  and verify missing, corrupt, invalid, and unsupported recovery.
+- `mines_rules_test.rocket` recomputes every multiplier for all 1-24 mine
+  counts and every legal safe-reveal depth from exact combinations. It verifies
+  the 9,600-basis-point return factor and both multiplier and payout floor
+  rounding published in `MINES_MATH.md`.
+- `mines_session_test.rocket` verifies unique seeded 25-tile layouts, exact mine
+  counts, deterministic agreement, hidden-tile API privacy, safe/mine results,
+  cash-out and duplicate-reveal legality, atomic failures, insufficient
+  credits, bounded history, and 25 consecutive nonnegative-balance rounds.
+- `mines_gui_flow_test.rocket` runs at 800x600 and covers the seventh lobby
+  entry, help, keyboard and mouse configuration/reveals/cash-outs, engine-
+  committed 0.18/0.24-second animations, persistence, next round, lobby return,
+  drawing, and native cleanup.
+- The complete suite passes 29/29, preserving every prior game and
+  infrastructure regression. Debug and Release `scripts/validate.ps1` each
+  pass native generation/build, `rocketc check`, all 29 tests, and both source
+  and test formatting checks.
+- Source website validation still passes all six files against the last real
+  verified 0.2.0 package metadata. The website is intentionally not relabeled
+  0.3.0 until all five expansion games and the real 0.3.0 package exist.
+- No package, push, publication, deployment, release, or signing was performed.
+
 ## Rocket and native application
 
 - Debug `scripts/validate.ps1`: CMake/raylib build, Rocket check, 10/10 tests, and `src`/`tests` formatting checks passed.

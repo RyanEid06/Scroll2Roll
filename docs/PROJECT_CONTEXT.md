@@ -12,17 +12,19 @@ Read this file and `MASTER_PLAN.md` completely at the start of every Scroll2Roll
 - Graphics/input/audio: Rocket's reviewed raylib 6.0 integration
 - Target: Windows x64
 - IDE: Visual Studio Community 2026 with Rocket Language 2.0.3
-- Current local acceptance version: 0.2.0; no public release is claimed
-- Expansion target: 0.2.0
+- Last fully accepted package version: 0.2.0; no public release is claimed
+- Current implementation version and expansion target: 0.3.0
 
 ## Product vision and completed scope
 
-Scroll2Roll is a polished, local, single-player, play-money casino shell. Version
-0.2.0 includes complete Blackjack, European Roulette, Plinko, Coop Climb,
-Midnight Crossing, and No-Limit Texas Hold'em games behind a reusable lobby and
-settings shell, with deterministic headless engines, native raylib presentation,
-versioned local persistence, portable Windows packaging, and a prepared static
-Cloudflare product/download website.
+Scroll2Roll is a polished, local, single-player, play-money casino shell. The
+accepted 0.2.0 baseline includes complete Blackjack, European Roulette, Plinko,
+Coop Climb, Midnight Crossing, and No-Limit Texas Hold'em. The owner-approved
+0.3.0 expansion in `EXPANSION_0_3_IMPLEMENTATION.md` adds Mines, Dice, HiLo,
+Crash, and Slots in that order. Mines and the save-v3 foundation are complete;
+Dice is the current milestone. Packaging and the website still intentionally
+describe the last verified 0.2.0 archive until final 0.3.0 acceptance produces
+real replacement metadata.
 
 All 13 implementation and validation milestones in `MASTER_PLAN.md` are complete locally. No push, release publication, Cloudflare deployment, or signing was performed.
 
@@ -41,7 +43,7 @@ milestone and release-acceptance gates before 0.2.0 is accepted.
 - No online multiplayer or gambling service.
 - No browser implementation of the Rocket casino.
 - No Rocket syntax, compiler, runtime ABI, LSP, diagnostic, package, CodeView/PDB, source-map, or Phase 19 changes.
-- No additional games beyond the five explicitly approved for 0.2.0.
+- No additional games beyond the five explicitly approved for 0.3.0.
 - No push, publication, deployment, or unsupported signing claim without owner approval.
 
 ## Rocket and raylib constraints
@@ -69,6 +71,9 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
 - Version 2 persistence writes `scroll2roll-save-2`, migrates valid
   `scroll2roll-save-1` settings and credits, and safely recovers from missing,
   invalid, or unsupported data.
+- Version 3 persistence writes `scroll2roll-save-3`, migrates valid save-v1 and
+  save-v2 settings and credits without adding game-rule state, and preserves
+  explicit missing, corrupt, and unsupported recovery.
 - European Roulette is fully playable through its rendering-independent engine
   and presentation API. It implements the single-zero 0-36 wheel; correct
   colors; straight, split, street, corner, six-line, basket, dozen, column,
@@ -104,13 +109,19 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
   explicit table reset, bounded AI, and chip conservation. Its API hides
   opponent cards until a non-folded showdown and never exposes folded cards to
   the view. `HOLDEM_DESIGN.md` publishes the full contract.
+- Mines is fully playable on a 5-by-5 board with 1-24 mines. Its engine prepays
+  the wager, commits a unique seeded layout with Fisher-Yates, exposes no
+  unrevealed mine information through the API, enforces atomic one-tile
+  reveals and cash-out after a safe gem, and bounds history and animation. All
+  multipliers use exact combinations, a 96% play-money return factor, basis
+  points, and floor settlement published in `MINES_MATH.md`.
 
 ## Architecture
 
 Dependency direction is one way:
 
 1. Per-game model values and validated rule constructors.
-2. Rendering-independent Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, and Hold'em engines and settlement.
+2. Rendering-independent Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, Hold'em, and Mines engines and settlement.
 3. Small presentation-facing APIs and sessions.
 4. Versioned local persistence isolated from rules.
 5. Reusable router, design tokens, components, lobby, settings, and per-game views.
@@ -191,6 +202,13 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
   either reported dialog, and Stop Rocket returned the IDE to design mode with
   no game process left. Debug and Release still pass all 26 tests and formatting
   checks. `scripts/validate.ps1` now prevents basename regressions.
+- The 0.3.0 pre-change baseline was rerun on 2026-08-09: Debug and Release each
+  passed native generation/build, `rocketc check`, all 26 accepted tests, and
+  both formatting checks.
+- The complete post-Mines suite passes 29/29, preserving all 26 prior tests and
+  adding exact Mines rules/math, deterministic session/privacy/boundary, and
+  minimum-size keyboard/mouse GUI coverage. Save-v1 and save-v2 migration to
+  save-v3 and save-v3 round-trip/recovery pass in the persistence suite.
 
 ## Deliberate limitations
 
@@ -261,8 +279,11 @@ Spacing, typography, component states, borders, timing, and responsive layout va
   local-only nickname/avatar persistence, expanded source/staged validation,
   and focused desktop/phone browser checks. Native application files were not
   changed.
-- Next: owner review of the local 0.2.0 handoff. Do not push, publish, deploy,
-  create a release, or claim trusted signing without explicit approval.
+- Completed: 0.3.0 milestone 1 Mines and save-v3 foundation, including exact
+  combinatorial payout math, seeded hidden layout, complete native flow,
+  focused tests, and all earlier regressions.
+- Current: 0.3.0 milestone 2 Dice. Do not push, publish, deploy, create a
+  release, or claim trusted signing without explicit approval.
 
 ## Major decisions
 
@@ -275,6 +296,8 @@ Spacing, typography, component states, borders, timing, and responsive layout va
 - Use version 0.2.0 and `scroll2roll-save-2` for the expansion, with explicit
   migration of valid `scroll2roll-save-1` data and safe recovery for corrupt or
   unsupported data.
+- Use version 0.3.0 and `scroll2roll-save-3` for the current expansion, with
+  explicit migration of both valid prior formats and no persisted live wagers.
 - Maintain one local play-credit balance across games, transferring it only at
   engine-defined safe settlement/cash-out/hand boundaries.
 - Keep every compiled Rocket source basename unique so frozen CodeView records
@@ -292,11 +315,11 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 
 ## New-chat handoff
 
-Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`, and this file
-completely. Inspect Git status and preserve user changes. The 0.1.0 Blackjack
-baseline remains preserved and the complete 0.2.0 six-game suite passes 26/26
-in Debug and Release. The package, relocation, Visual Studio/LSP, and
-source/staged website evidence is complete in `VALIDATION.md`. Keep using frozen
-Rocket 2.0 and the pinned raylib integration with custom frame control forced
-off. Do not push, publish, deploy, sign, or add an unapproved game without owner
-approval.
+Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`,
+`docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
+status and preserve user changes. The accepted 0.2.0 baseline remains intact;
+Mines and save-v3 are the completed first 0.3.0 milestone with 29/29 tests, and
+Dice is next. The published website metadata must remain on the verified 0.2.0
+archive until the real 0.3.0 package is produced. Keep using frozen Rocket 2.0
+and the pinned raylib integration with custom frame control forced off. Do not
+push, publish, deploy, sign, or add an unapproved game without owner approval.

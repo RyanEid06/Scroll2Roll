@@ -106,6 +106,23 @@ Blinds are 5/10. The table shows dealer/blind markers, private human cards,
 hidden opponent cards, community cards, contribution-tier pots, split state,
 recent actions, stacks, and disabled illegal actions. See `HOLDEM_DESIGN.md`.
 
+## Mines
+
+- `Down` / `Up` before a round: reduce or increase the wager by 5 credits.
+- `Left` / `Right` before a round: choose 1-24 mines.
+- `Enter`: start; during a round, reveal the keyboard-focused tile.
+- Arrow keys during a round: move focus across the 5-by-5 board.
+- Mouse: configure, start, and reveal any hidden tile directly.
+- `S`: cash out after at least one safe gem.
+- `P`: open or close exact probability, return, and rounding help.
+- `N`: prepare the next board after cash-out or a mine.
+- `R`: restart the table at a ready or settled safe boundary.
+- `B` / `Escape`: return to the lobby only while ready or settled.
+
+The complete unique layout is committed when the wager is prepaid. A 0.18-
+second reveal or 0.24-second settlement animation never chooses or changes the
+result. Exact combinatorial math is documented in `MINES_MATH.md`.
+
 ## Settings
 
 - `M`: toggle audio.

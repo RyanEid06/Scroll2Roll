@@ -26,3 +26,9 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
   opponents.
 - [x] Revalidate all six games, Visual Studio, packaging, relocation, and the
   static Cloudflare product/download site for 0.2.0.
+- [x] Record the owner-approved 0.3.0 five-game implementation mandate.
+- [x] Introduce version 0.3.0, save-v3 migration, and complete Mines with exact
+  combinatorial payout math, deterministic privacy, native UI, and regressions.
+- [ ] Complete Dice, HiLo, Crash, and Slots in that order.
+- [ ] Revalidate the eleven-game application, package, relocated smoke, and
+  source/staged website with the real 0.3.0 archive.

@@ -41,9 +41,17 @@ Test setup helpers must return explicit failure or a nonzero test status when co
   privacy-safe rendering, keyboard sizing/raise/all-in, mouse Deal/Check/Call,
   complete consecutive hands, settlement persistence, explicit new table,
   lobby return, and resource cleanup.
+- `mines_rules_test.rocket`: all 1-24 mine counts, exact combinations,
+  survival fractions, every safe-depth multiplier, and payout floor rounding.
+- `mines_session_test.rocket`: unique deterministic layouts, privacy, safe and
+  mine reveals, cash-out legality, duplicate/invalid atomic failures,
+  insufficient credits, history bounds, and consecutive-round balances.
+- `mines_gui_flow_test.rocket`: minimum-size seventh-card routing, complete
+  keyboard and mouse configuration/reveal/cash-out flows, bounded animation,
+  help, persistence, next round, lobby return, rendering, and cleanup.
 - Four reviewed raylib tests cover API behavior, audio stress, resource lifetime, and missing assets.
 
-The current suite passes 26/26 tests. Before those gates run,
+The current post-Mines suite passes 29/29 tests. Before those gates run,
 `scripts/validate.ps1` also rejects duplicate `.rocket` basenames under `src` so
 the frozen CodeView debugger can map every source unambiguously. Package
 relocation and source/staged website checks are separate scripts. The website

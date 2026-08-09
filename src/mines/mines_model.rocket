@@ -1,0 +1,29 @@
+pub enum Phase:
+    Ready
+    Active
+    Settled
+
+pub struct RoundResult:
+    mines: Int
+    safe_reveals: Int
+    wager: Int
+    payout: Int
+    hit_mine: Bool
+
+pub struct Game:
+    balance: Int
+    bet: Int
+    mine_count: Int
+    phase: Phase
+    mine_layout: Array[Int]
+    revealed: Array[Int]
+    safe_reveals: Int
+    wager: Int
+    multiplier_basis_points: Int
+    potential_payout: Int
+    payout: Int
+    hit_mine: Bool
+    history: Array[RoundResult]
+    round_number: Int
+    seed: Int
+    message: String

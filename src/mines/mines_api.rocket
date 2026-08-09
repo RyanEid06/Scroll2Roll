@@ -1,0 +1,41 @@
+import src.mines.mines_engine
+import src.mines.mines_model
+
+pub struct Session:
+    game: mines_model.Game
+
+pub fn new_session(starting_balance: Int, seed: Int) -> Result[Session, String]:
+    return Ok(Session(mines_engine.new_game(starting_balance, seed)?))
+
+pub fn with_bet(session: Session, bet: Int) -> Result[Session, String]:
+    return Ok(Session(mines_engine.with_bet(session.game, bet)?))
+
+pub fn with_mine_count(session: Session, mine_count: Int) -> Result[Session, String]:
+    return Ok(Session(mines_engine.with_mine_count(session.game, mine_count)?))
+
+pub fn with_start(session: Session) -> Result[Session, String]:
+    return Ok(Session(mines_engine.start(session.game)?))
+
+pub fn with_reveal(session: Session, tile: Int) -> Result[Session, String]:
+    return Ok(Session(mines_engine.reveal(session.game, tile)?))
+
+pub fn with_cash_out(session: Session) -> Result[Session, String]:
+    return Ok(Session(mines_engine.cash_out(session.game)?))
+
+pub fn with_next_round(session: Session) -> Result[Session, String]:
+    return Ok(Session(mines_engine.next_round(session.game)?))
+
+pub fn with_restart(session: Session) -> Result[Session, String]:
+    return Ok(Session(mines_engine.restart(session.game)?))
+
+pub fn phase_code(session: Session) -> Int:
+    return mines_engine.phase_code(session.game.phase)
+
+pub fn tile_state(session: Session, tile: Int) -> Result[Int, String]:
+    if tile < 0 or tile >= 25:
+        return Err("Mines tile index is out of range")
+    if session.game.revealed[tile] == 0:
+        return Ok(0)
+    if session.game.mine_layout[tile] == 1:
+        return Ok(2)
+    return Ok(1)

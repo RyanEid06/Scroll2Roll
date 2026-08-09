@@ -1,0 +1,117 @@
+import src.mines.mines_model
+import src.mines.mines_rules
+import std.collections
+import std.random
+
+pub fn phase_code(phase: mines_model.Phase) -> Int:
+    match phase:
+        case mines_model.Ready:
+            return 0
+        case mines_model.Active:
+            return 1
+        case mines_model.Settled:
+            return 2
+
+fn empty_tiles() -> Array[Int]:
+    var values: Array[Int] = []
+    var index = 0
+    while index < mines_rules.tile_count():
+        values = collections.append(values, 0)
+        index = index + 1
+    return values
+
+pub fn new_game(starting_balance: Int, seed: Int) -> Result[mines_model.Game, String]:
+    if starting_balance < 5:
+        return Err("Starting balance is below the Mines minimum")
+    let empty_history: Array[mines_model.RoundResult] = []
+    return Ok(mines_model.Game(starting_balance, 10, 3, mines_model.Ready(), empty_tiles(), empty_tiles(), 0, 0, 0, 0, 0, false, empty_history, 1, seed, "Choose wager and mine count"))
+
+fn configured(game: mines_model.Game, bet: Int, mine_count: Int, message: String) -> Result[mines_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Mines configuration is locked during a round")
+    if not mines_rules.valid_bet(bet):
+        return Err("Mines wager must be 5-1000 credits in units of 5")
+    if not mines_rules.valid_mine_count(mine_count):
+        return Err("Mines count must be between 1 and 24")
+    return Ok(mines_model.Game(game.balance, bet, mine_count, game.phase, game.mine_layout, game.revealed, game.safe_reveals, game.wager, game.multiplier_basis_points, game.potential_payout, game.payout, game.hit_mine, game.history, game.round_number, game.seed, message))
+
+pub fn with_bet(game: mines_model.Game, bet: Int) -> Result[mines_model.Game, String]:
+    return configured(game, bet, game.mine_count, "Mines wager changed")
+
+pub fn with_mine_count(game: mines_model.Game, mine_count: Int) -> Result[mines_model.Game, String]:
+    return configured(game, game.bet, mine_count, "Mine count changed")
+
+fn committed_layout(game: mines_model.Game) -> Array[Int]:
+    var positions: Array[Int] = []
+    var index = 0
+    while index < mines_rules.tile_count():
+        positions = collections.append(positions, index)
+        index = index + 1
+    random.seed(game.seed + game.round_number * 161803)
+    var remaining = mines_rules.tile_count() - 1
+    while remaining > 0:
+        let selected = random.int(0, remaining + 1)
+        let held = positions[remaining]
+        positions[remaining] = positions[selected]
+        positions[selected] = held
+        remaining = remaining - 1
+    var layout = empty_tiles()
+    index = 0
+    while index < game.mine_count:
+        layout[positions[index]] = 1
+        index = index + 1
+    return layout
+
+pub fn start(game: mines_model.Game) -> Result[mines_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Mines round is already active")
+    if game.bet > game.balance:
+        return Err("Not enough play credits for that Mines wager")
+    return Ok(mines_model.Game(game.balance - game.bet, game.bet, game.mine_count, mines_model.Active(), committed_layout(game), empty_tiles(), 0, game.bet, 0, 0, 0, false, game.history, game.round_number, game.seed, "Board committed; reveal a tile"))
+
+fn bounded_history(history: Array[mines_model.RoundResult], result: mines_model.RoundResult) -> Array[mines_model.RoundResult]:
+    let inserted = collections.insert(history, 0, result)
+    if collections.length(inserted) <= 20:
+        return inserted
+    var bounded: Array[mines_model.RoundResult] = []
+    var index = 0
+    while index < 20:
+        bounded = collections.append(bounded, inserted[index])
+        index = index + 1
+    return bounded
+
+pub fn reveal(game: mines_model.Game, tile: Int) -> Result[mines_model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("Reveal requires an active Mines round")
+    if tile < 0 or tile >= mines_rules.tile_count():
+        return Err("Mines tile index is out of range")
+    if game.revealed[tile] != 0:
+        return Err("That Mines tile is already revealed")
+    var revealed = game.revealed
+    revealed[tile] = 1
+    if game.mine_layout[tile] == 1:
+        let result = mines_model.RoundResult(game.mine_count, game.safe_reveals, game.wager, 0, true)
+        return Ok(mines_model.Game(game.balance, game.bet, game.mine_count, mines_model.Settled(), game.mine_layout, revealed, game.safe_reveals, game.wager, game.multiplier_basis_points, 0, 0, true, bounded_history(game.history, result), game.round_number, game.seed, "Mine revealed; prepaid wager lost"))
+    let safe_reveals = game.safe_reveals + 1
+    let multiplier = mines_rules.multiplier_basis_points(game.mine_count, safe_reveals)?
+    let potential = mines_rules.payout(game.wager, multiplier)
+    return Ok(mines_model.Game(game.balance, game.bet, game.mine_count, game.phase, game.mine_layout, revealed, safe_reveals, game.wager, multiplier, potential, 0, false, game.history, game.round_number, game.seed, "Gem revealed; reveal again or cash out"))
+
+pub fn cash_out(game: mines_model.Game) -> Result[mines_model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("Cash Out requires an active Mines round")
+    if game.safe_reveals < 1:
+        return Err("Reveal at least one safe Mines tile before cashing out")
+    let result = mines_model.RoundResult(game.mine_count, game.safe_reveals, game.wager, game.potential_payout, false)
+    return Ok(mines_model.Game(game.balance + game.potential_payout, game.bet, game.mine_count, mines_model.Settled(), game.mine_layout, game.revealed, game.safe_reveals, game.wager, game.multiplier_basis_points, game.potential_payout, game.potential_payout, false, bounded_history(game.history, result), game.round_number, game.seed, "Mines cash out settled"))
+
+pub fn next_round(game: mines_model.Game) -> Result[mines_model.Game, String]:
+    if phase_code(game.phase) != 2:
+        return Err("The Mines round has not settled")
+    return Ok(mines_model.Game(game.balance, game.bet, game.mine_count, mines_model.Ready(), empty_tiles(), empty_tiles(), 0, 0, 0, 0, 0, false, game.history, game.round_number + 1, game.seed, "Ready for another Mines board"))
+
+pub fn restart(game: mines_model.Game) -> Result[mines_model.Game, String]:
+    if phase_code(game.phase) == 1:
+        return Err("Finish the active Mines round before restarting")
+    let empty_history: Array[mines_model.RoundResult] = []
+    return Ok(mines_model.Game(game.balance, game.bet, game.mine_count, mines_model.Ready(), empty_tiles(), empty_tiles(), 0, 0, 0, 0, 0, false, empty_history, game.round_number + 1, game.seed, "Mines table restarted at a safe boundary"))

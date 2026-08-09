@@ -1,0 +1,41 @@
+pub fn tile_count() -> Int:
+    return 25
+
+pub fn target_return_basis_points() -> Int:
+    return 9600
+
+pub fn valid_mine_count(count: Int) -> Bool:
+    return count >= 1 and count <= 24
+
+pub fn valid_bet(bet: Int) -> Bool:
+    return bet >= 5 and bet <= 1000 and bet / 5 * 5 == bet
+
+pub fn combinations(total: Int, chosen: Int) -> Result[Int, String]:
+    if total < 0 or chosen < 0 or chosen > total:
+        return Err("Invalid Mines combination")
+    var k = chosen
+    if k > total - k:
+        k = total - k
+    var value = 1
+    var index = 1
+    while index <= k:
+        value = value *(total - k + index) / index
+        index = index + 1
+    return Ok(value)
+
+pub fn survival_fraction(mine_count: Int, safe_reveals: Int) -> Result[Array[Int], String]:
+    if not valid_mine_count(mine_count):
+        return Err("Mines count must be between 1 and 24")
+    let safe_tiles = tile_count() - mine_count
+    if safe_reveals < 0 or safe_reveals > safe_tiles:
+        return Err("Safe reveal count is outside this Mines board")
+    return Ok([combinations(safe_tiles, safe_reveals)?, combinations(tile_count(), safe_reveals)?])
+
+pub fn multiplier_basis_points(mine_count: Int, safe_reveals: Int) -> Result[Int, String]:
+    if safe_reveals < 1:
+        return Err("Reveal at least one safe tile before calculating a multiplier")
+    let fraction = survival_fraction(mine_count, safe_reveals)?
+    return Ok(target_return_basis_points() * fraction[1] / fraction[0])
+
+pub fn payout(stake: Int, multiplier: Int) -> Int:
+    return stake * multiplier / 10000

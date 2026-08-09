@@ -49,6 +49,13 @@ rail. At 800x600 up to five opponents, sizing, legal action buttons, help,
 settlement, reset, and lobby controls remain distinct. The view receives only
 the privacy-safe public table and never the shuffled deck.
 
+Mines adds an original midnight-blue 5-by-5 grid with gold procedural gems,
+charcoal hidden tiles, a restrained red mine treatment, gold keyboard focus,
+and a compact probability/control rail. At 800x600 the complete grid, balance,
+wager, mine count, safe count, multiplier, potential payout, history, and
+settlement actions remain distinct. Unrevealed tiles share one presentation
+state regardless of their committed engine value.
+
 The static website now applies the same tokens in a three-page experience. The
 profile page pairs an editorial welcome panel with a raised local-profile card.
 The Play page follows a dense premium dashboard direction with a compact sticky

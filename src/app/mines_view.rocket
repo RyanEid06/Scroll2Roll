@@ -1,0 +1,153 @@
+import src.app.components
+import src.app.theme
+import src.mines.mines_api
+import src.mines.mines_engine
+import src.mines.mines_rules
+import src.rocket_raylib
+import std.collections
+import std.string
+
+pub fn tile_rect(tile: Int) -> components.Rect:
+    let row = tile / 5
+    let column = tile - row * 5
+    return components.rect(42 + column * 72, 126 + row * 72, 62, 62)
+
+pub fn bet_minus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 206, 46, 40)
+
+pub fn bet_plus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 144, 206, 46, 40)
+
+pub fn mines_minus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 266, 46, 40)
+
+pub fn mines_plus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 144, 266, 46, 40)
+
+pub fn start_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 326, 232, 46)
+
+pub fn cash_out_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 326, 232, 46)
+
+pub fn help_rect(width: Int) -> components.Rect:
+    return components.rect(width - 118, 24, 86, 38)
+
+pub fn next_rect(height: Int) -> components.Rect:
+    return components.rect(32, height - 68, 150, 42)
+
+pub fn lobby_rect(height: Int) -> components.Rect:
+    return components.rect(192, height - 68, 120, 42)
+
+pub fn restart_rect(height: Int) -> components.Rect:
+    return components.rect(322, height - 68, 136, 42)
+
+fn multiplier_label(basis_points: Int) -> String:
+    let whole = basis_points / 10000
+    let hundredths =(basis_points - whole * 10000) / 100
+    var fraction = string.from_int(hundredths)
+    if hundredths < 10:
+        fraction = string.concat("0", fraction)
+    return string.concat(string.from_int(whole), string.concat(".", string.concat(fraction, "x")))
+
+fn draw_board(frame: rocket_raylib.Frame, session: mines_api.Session, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    var tile = 0
+    while tile < mines_rules.tile_count():
+        let box = tile_rect(tile)
+        let state = mines_api.tile_state(session, tile)?
+        var fill = theme.panel()
+        if state == 1:
+            fill = theme.emerald()
+        if state == 2:
+            fill = theme.danger()
+        if state == 0 and components.contains(box, mouse_x, mouse_y) and mines_api.phase_code(session) == 1:
+            fill = theme.border()
+        rocket_raylib.draw_rectangle(frame, box.x, box.y, box.width, box.height, theme.border())?
+        rocket_raylib.draw_rectangle(frame, box.x + 2, box.y + 2, box.width - 4, box.height - 4, fill)?
+        if state == 1:
+            rocket_raylib.draw_circle(frame, box.x + 31, box.y + 31, 13.0, theme.gold())?
+            rocket_raylib.draw_circle(frame, box.x + 31, box.y + 31, 6.0, theme.text())?
+        if state == 2:
+            rocket_raylib.draw_circle(frame, box.x + 31, box.y + 33, 14.0, theme.background())?
+            rocket_raylib.draw_rectangle(frame, box.x + 29, box.y + 9, 4, 13, theme.gold())?
+        tile = tile + 1
+    return Ok(true)
+
+fn draw_history(frame: rocket_raylib.Frame, session: mines_api.Session, width: Int) -> Result[Bool, String]:
+    rocket_raylib.draw_text(frame, "Recent", width - 330, 396, theme.small_size(), theme.muted())?
+    var index = 0
+    while index < collections.length(session.game.history) and index < 4:
+        let result = session.game.history[index]
+        var label = string.concat(string.from_int(result.safe_reveals), " safe - mine")
+        var ink = theme.danger()
+        if not result.hit_mine:
+            label = string.concat(string.concat(string.from_int(result.safe_reveals), " safe - return "), string.from_int(result.payout))
+            ink = theme.emerald()
+        rocket_raylib.draw_text(frame, label, width - 330, 424 + index * 26, theme.small_size(), ink)?
+        index = index + 1
+    return Ok(true)
+
+fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.overlay())?
+    let box = components.rect(width / 2 - 350, 70, 700, 480)
+    components.panel(frame, box)?
+    rocket_raylib.draw_text(frame, "MINES RULES AND EXACT RETURN", box.x + 26, box.y + 24, theme.heading_size(), theme.gold())?
+    let lines = ["Choose 1-24 mines and a wager, then start the 5 by 5 board.", "The complete unique mine layout is committed before any reveal.", "Unrevealed tiles never disclose whether a mine is underneath.", "Each gem increases the exact survival-based multiplier and payout.", "Cash Out is legal after one gem; a mine loses the prepaid wager.", "Multiplier = floor(9600 x C(25,r) / C(25-mines,r)) basis points.", "Payout = floor(wager x multiplier / 10000). Return factor is 96%.", "Arrows configure | Enter starts | Mouse/arrow focus reveals | S cashes out."]
+    var index = 0
+    while index < collections.length(lines):
+        rocket_raylib.draw_text(frame, lines[index], box.x + 26, box.y + 82 + index * 42, theme.body_size(), theme.text())?
+        index = index + 1
+    return Ok(true)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, session: mines_api.Session, selected_tile: Int, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let game = session.game
+    rocket_raylib.draw_text(frame, "MINES", 32, 26, theme.heading_size(), theme.gold())?
+    rocket_raylib.draw_text(frame, "Original midnight gem grid", 32, 62, theme.small_size(), theme.muted())?
+    rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(game.balance)), width - 300, 76, theme.body_size(), theme.emerald())?
+    let help_button = help_rect(width)
+    components.button(window, frame, help_button, "Help [P]", true, components.contains(help_button, mouse_x, mouse_y), false)?
+    draw_board(frame, session, mouse_x, mouse_y)?
+    if mines_api.phase_code(session) == 1:
+        let focus = tile_rect(selected_tile)
+        rocket_raylib.draw_rectangle(frame, focus.x - 3, focus.y - 3, focus.width + 6, 3, theme.gold())?
+        rocket_raylib.draw_rectangle(frame, focus.x - 3, focus.y + focus.height, focus.width + 6, 3, theme.gold())?
+        rocket_raylib.draw_rectangle(frame, focus.x - 3, focus.y - 3, 3, focus.height + 6, theme.gold())?
+        rocket_raylib.draw_rectangle(frame, focus.x + focus.width, focus.y - 3, 3, focus.height + 6, theme.gold())?
+    components.panel(frame, components.rect(width - 350, 112, 272, 430))?
+    rocket_raylib.draw_text(frame, game.message, width - 330, 126, theme.small_size(), theme.muted())?
+    rocket_raylib.draw_text(frame, string.concat("Wager: ", string.from_int(game.bet)), width - 270, 216, theme.body_size(), theme.text())?
+    components.button(window, frame, bet_minus_rect(width), "-", mines_api.phase_code(session) == 0, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, bet_plus_rect(width), "+", mines_api.phase_code(session) == 0, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
+    rocket_raylib.draw_text(frame, string.concat("Mines: ", string.from_int(game.mine_count)), width - 270, 276, theme.body_size(), theme.text())?
+    components.button(window, frame, mines_minus_rect(width), "-", mines_api.phase_code(session) == 0, components.contains(mines_minus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, mines_plus_rect(width), "+", mines_api.phase_code(session) == 0, components.contains(mines_plus_rect(width), mouse_x, mouse_y), false)?
+    if mines_api.phase_code(session) == 0:
+        components.button(window, frame, start_rect(width), "Start [Enter]", game.bet <= game.balance, components.contains(start_rect(width), mouse_x, mouse_y), true)?
+    if mines_api.phase_code(session) == 1:
+        components.button(window, frame, cash_out_rect(width), "Cash Out [S]", game.safe_reveals > 0, components.contains(cash_out_rect(width), mouse_x, mouse_y), true)?
+    rocket_raylib.draw_text(frame, string.concat("Safe: ", string.from_int(game.safe_reveals)), width - 330, 346, theme.small_size(), theme.text())?
+    var multiplier = "--"
+    if game.safe_reveals > 0:
+        multiplier = multiplier_label(game.multiplier_basis_points)
+    rocket_raylib.draw_text(frame, string.concat("Multiplier: ", multiplier), width - 230, 346, theme.small_size(), theme.gold())?
+    rocket_raylib.draw_text(frame, string.concat("Potential: ", string.from_int(game.potential_payout)), width - 330, 370, theme.small_size(), theme.emerald())?
+    draw_history(frame, session, width)?
+    if mines_api.phase_code(session) == 2:
+        let next = next_rect(height)
+        let lobby = lobby_rect(height)
+        let restart = restart_rect(height)
+        components.button(window, frame, next, "Next [N]", true, components.contains(next, mouse_x, mouse_y), true)?
+        components.button(window, frame, lobby, "Lobby [B]", true, components.contains(lobby, mouse_x, mouse_y), false)?
+        components.button(window, frame, restart, "Restart [R]", true, components.contains(restart, mouse_x, mouse_y), false)?
+    if mines_api.phase_code(session) == 0:
+        let lobby = lobby_rect(height)
+        let restart = restart_rect(height)
+        components.button(window, frame, lobby, "Lobby [B]", true, components.contains(lobby, mouse_x, mouse_y), false)?
+        components.button(window, frame, restart, "Restart [R]", true, components.contains(restart, mouse_x, mouse_y), false)?
+    if help:
+        draw_help(window, frame)?
+    return Ok(true)

@@ -6,7 +6,7 @@ The native application targets Windows x64. It has no accounts, deposits, withdr
 
 ## Project status
 
-The version-0.1.0 master-plan baseline remains preserved. Version 0.2.0 has passed local acceptance: all six games are fully playable with deterministic settlement, keyboard/mouse flows, privacy-safe Hold'em opponents, and save-v1 migration to save-v2. The 26-test suite passes in Debug and Release, including every original Blackjack regression. The untouched original Blackjack draft remains under `legacy/Blackjack-v1`.
+The version-0.1.0 master-plan baseline remains preserved, and version 0.2.0 passed local acceptance with six complete games. The owner-approved 0.3.0 expansion is in progress: Mines is complete with exact combinatorial math, deterministic settlement, private unrevealed tiles, keyboard/mouse flows, and save-v1/save-v2 migration to save-v3. The post-Mines 29-test suite preserves every prior regression. The untouched original Blackjack draft remains under `legacy/Blackjack-v1`.
 
 Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`, and `docs/PROJECT_CONTEXT.md` before changing the project.
 
