@@ -1,0 +1,115 @@
+import src.crash.crash_model
+import src.crash.crash_rules
+import std.collections
+import std.random
+
+pub fn phase_code(phase: crash_model.Phase) -> Int:
+    match phase:
+        case crash_model.Ready:
+            return 0
+        case crash_model.Running:
+            return 1
+        case crash_model.Settled:
+            return 2
+
+pub fn new_game(starting_balance: Int, seed: Int) -> Result[crash_model.Game, String]:
+    if starting_balance < 5:
+        return Err("Starting balance is below the Crash minimum")
+    let history: Array[crash_model.RoundResult] = []
+    return Ok(crash_model.Game(starting_balance, 10, 0, crash_model.Ready(), 0, 10000, 0, 0, false, false, false, 0, history, 1, seed, "Choose a wager and optional single-round auto target"))
+
+fn configured(game: crash_model.Game, bet: Int, auto_target: Int, message: String) -> Result[crash_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Crash configuration is locked during a round")
+    if not crash_rules.valid_bet(bet):
+        return Err("Crash wager must be 5-1000 credits in units of 5")
+    if not crash_rules.valid_auto_cash_out(auto_target):
+        return Err("Crash auto cash-out must be Off or 1.01x-100.00x in 0.01x units")
+    return Ok(crash_model.Game(game.balance, bet, auto_target, game.phase, game.crash_basis_points, game.multiplier_basis_points, game.wager, game.payout, game.crashed, game.cashed_out, game.automatic, game.tick_count, game.history, game.round_number, game.seed, message))
+
+pub fn with_bet(game: crash_model.Game, bet: Int) -> Result[crash_model.Game, String]:
+    return configured(game, bet, game.auto_cash_out_basis_points, "Crash wager changed")
+
+pub fn with_auto_cash_out(game: crash_model.Game, target_basis_points: Int) -> Result[crash_model.Game, String]:
+    return configured(game, game.bet, target_basis_points, "Single-round auto cash-out changed")
+
+pub fn committed_threshold(seed: Int, round_number: Int) -> Result[Int, String]:
+    random.seed(seed + round_number * 49979687)
+    let ticket = random.int(1, crash_rules.ticket_count() + 1)
+    return crash_rules.crash_from_ticket(ticket)
+
+fn bounded_history(history: Array[crash_model.RoundResult], result: crash_model.RoundResult) -> Array[crash_model.RoundResult]:
+    let inserted = collections.insert(history, 0, result)
+    if collections.length(inserted) <= 20:
+        return inserted
+    var bounded: Array[crash_model.RoundResult] = []
+    var index = 0
+    while index < 20:
+        bounded = collections.append(bounded, inserted[index])
+        index = index + 1
+    return bounded
+
+fn crash_settlement(game: crash_model.Game, tick_count: Int) -> crash_model.Game:
+    let result = crash_model.RoundResult(game.crash_basis_points, 0, game.wager, 0, false)
+    return crash_model.Game(game.balance, game.bet, game.auto_cash_out_basis_points, crash_model.Settled(), game.crash_basis_points, game.crash_basis_points, game.wager, 0, true, false, false, tick_count, bounded_history(game.history, result), game.round_number, game.seed, "Committed crash point reached; prepaid wager lost")
+
+fn cash_settlement(game: crash_model.Game, multiplier: Int, automatic: Bool, tick_count: Int) -> crash_model.Game:
+    let payout = crash_rules.payout(game.wager, multiplier)
+    let result = crash_model.RoundResult(game.crash_basis_points, multiplier, game.wager, payout, automatic)
+    var message = "Manual Crash cash-out settled at the engine multiplier"
+    if automatic:
+        message = "Single-round auto cash-out settled before the crash"
+    return crash_model.Game(crash_rules.credited_balance(game.balance, payout), game.bet, game.auto_cash_out_basis_points, crash_model.Settled(), game.crash_basis_points, multiplier, game.wager, payout, false, true, automatic, tick_count, bounded_history(game.history, result), game.round_number, game.seed, message)
+
+pub fn start(game: crash_model.Game) -> Result[crash_model.Game, String]:
+    if phase_code(game.phase) != 0:
+        return Err("Crash round is already active")
+    if game.bet > game.balance:
+        return Err("Not enough play credits for that Crash wager")
+    let threshold = committed_threshold(game.seed, game.round_number)?
+    let running = crash_model.Game(game.balance - game.bet, game.bet, game.auto_cash_out_basis_points, crash_model.Running(), threshold, 10000, game.bet, 0, false, false, false, 0, game.history, game.round_number, game.seed, "Round live at 1.00x; cash out before the hidden crash")
+    if threshold == 10000:
+        return Ok(crash_settlement(running, 0))
+    return Ok(running)
+
+fn one_tick(game: crash_model.Game) -> Result[crash_model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Ok(game)
+    let next_tick = game.tick_count + 1
+    let next_multiplier = crash_rules.multiplier_for_tick(next_tick)?
+    if game.auto_cash_out_basis_points > game.multiplier_basis_points and game.auto_cash_out_basis_points < game.crash_basis_points and game.auto_cash_out_basis_points <= next_multiplier:
+        return Ok(cash_settlement(game, game.auto_cash_out_basis_points, true, next_tick))
+    if game.crash_basis_points <= next_multiplier or next_tick >= crash_rules.maximum_round_ticks():
+        return Ok(crash_settlement(game, next_tick))
+    return Ok(crash_model.Game(game.balance, game.bet, game.auto_cash_out_basis_points, game.phase, game.crash_basis_points, next_multiplier, game.wager, game.payout, false, false, false, next_tick, game.history, game.round_number, game.seed, "Multiplier rising; Cash Out remains a local race"))
+
+pub fn tick_many(game: crash_model.Game, requested: Int) -> Result[crash_model.Game, String]:
+    if requested < 0:
+        return Err("Crash fixed-tick request cannot be negative")
+    var count = requested
+    if count > crash_rules.max_ticks_per_frame():
+        count = crash_rules.max_ticks_per_frame()
+    var result = game
+    var tick = 0
+    while tick < count and phase_code(result.phase) == 1:
+        result = one_tick(result)?
+        tick = tick + 1
+    return Ok(result)
+
+pub fn cash_out(game: crash_model.Game) -> Result[crash_model.Game, String]:
+    if phase_code(game.phase) != 1:
+        return Err("Crash Cash Out requires a running round before the boundary")
+    if game.multiplier_basis_points >= game.crash_basis_points:
+        return Err("Crash Cash Out was not before the committed crash point")
+    return Ok(cash_settlement(game, game.multiplier_basis_points, false, game.tick_count))
+
+pub fn next_round(game: crash_model.Game) -> Result[crash_model.Game, String]:
+    if phase_code(game.phase) != 2:
+        return Err("The Crash round has not settled")
+    return Ok(crash_model.Game(game.balance, game.bet, game.auto_cash_out_basis_points, crash_model.Ready(), 0, 10000, 0, 0, false, false, false, 0, game.history, game.round_number + 1, game.seed, "Ready for a newly committed Crash round"))
+
+pub fn restart(game: crash_model.Game) -> Result[crash_model.Game, String]:
+    if phase_code(game.phase) == 1:
+        return Err("Finish the running Crash round before restarting")
+    let history: Array[crash_model.RoundResult] = []
+    return Ok(crash_model.Game(game.balance, game.bet, game.auto_cash_out_basis_points, crash_model.Ready(), 0, 10000, 0, 0, false, false, false, 0, history, game.round_number + 1, game.seed, "Crash table restarted at a safe boundary"))

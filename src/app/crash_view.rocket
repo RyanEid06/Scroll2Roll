@@ -1,0 +1,153 @@
+import src.app.components
+import src.app.theme
+import src.crash.crash_api
+import src.crash.crash_rules
+import src.rocket_raylib
+import std.collections
+import std.string
+
+pub fn bet_minus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 190, 46, 40)
+
+pub fn bet_plus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 144, 190, 46, 40)
+
+pub fn auto_toggle_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 246, 112, 40)
+
+pub fn auto_minus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 208, 246, 50, 40)
+
+pub fn auto_plus_rect(width: Int) -> components.Rect:
+    return components.rect(width - 148, 246, 50, 40)
+
+pub fn start_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 304, 232, 48)
+
+pub fn cash_out_rect(width: Int) -> components.Rect:
+    return components.rect(width - 330, 304, 232, 48)
+
+pub fn help_rect(width: Int) -> components.Rect:
+    return components.rect(width - 118, 24, 86, 38)
+
+pub fn next_rect(height: Int) -> components.Rect:
+    return components.rect(32, height - 68, 150, 42)
+
+pub fn lobby_rect(height: Int) -> components.Rect:
+    return components.rect(192, height - 68, 120, 42)
+
+pub fn restart_rect(height: Int) -> components.Rect:
+    return components.rect(322, height - 68, 136, 42)
+
+fn multiplier_label(basis_points: Int) -> String:
+    let whole = basis_points / 10000
+    let hundredths =(basis_points - whole * 10000) / 100
+    var fraction = string.from_int(hundredths)
+    if hundredths < 10:
+        fraction = string.concat("0", fraction)
+    return string.concat(string.from_int(whole), string.concat(".", string.concat(fraction, "x")))
+
+fn draw_graph(frame: rocket_raylib.Frame, table: crash_api.PublicTable) -> Result[Bool, String]:
+    let x = 32
+    let y = 104
+    let width = 394
+    let height = 330
+    rocket_raylib.draw_rectangle(frame, x, y, width, height, theme.panel())?
+    rocket_raylib.draw_rectangle(frame, x, y + height - 2, width, 2, theme.border())?
+    rocket_raylib.draw_rectangle(frame, x, y, 2, height, theme.border())?
+    var ink = theme.emerald()
+    if table.multiplier_basis_points >= 20000:
+        ink = theme.gold()
+    if table.multiplier_basis_points >= 50000 or table.crashed:
+        ink = theme.danger()
+    var points = table.tick_count
+    if points > 60:
+        points = 60
+    var index = 0
+    while index <= points:
+        let source_tick = table.tick_count - points + index
+        let value = crash_rules.multiplier_for_tick(source_tick)?
+        var vertical = value - 10000
+        let visible_range = table.multiplier_basis_points - 10000
+        if visible_range > 0:
+            vertical = vertical * 270 / visible_range
+        if vertical > 270:
+            vertical = 270
+        let point_x = x + 18 + index * 350 / 60
+        let point_y = y + height - 22 - vertical
+        rocket_raylib.draw_circle(frame, point_x, point_y, 3.0, ink)?
+        index = index + 1
+    rocket_raylib.draw_text(frame, multiplier_label(table.multiplier_basis_points), x + 112, y + 126, theme.title_size(), ink)?
+    rocket_raylib.draw_text(frame, "LOCAL PRECOMMITTED CURVE", x + 80, y + 290, theme.small_size(), theme.muted())?
+    return Ok(true)
+
+fn draw_history(frame: rocket_raylib.Frame, table: crash_api.PublicTable, width: Int) -> Result[Bool, String]:
+    var title_y = 378
+    var row_y = 404
+    if table.phase == 2:
+        title_y = 404
+        row_y = 426
+    rocket_raylib.draw_text(frame, "Recent committed points", width - 330, title_y, theme.small_size(), theme.muted())?
+    var index = 0
+    while index < collections.length(table.history) and index < 5:
+        let result = table.history[index]
+        var label = string.concat("Crash ", multiplier_label(result.crash_basis_points))
+        var ink = theme.danger()
+        if result.payout > 0:
+            label = string.concat(string.concat("Out ", multiplier_label(result.cash_out_basis_points)), string.concat(" / ", string.from_int(result.payout)))
+            ink = theme.emerald()
+        rocket_raylib.draw_text(frame, label, width - 330, row_y + index * 22, theme.small_size(), ink)?
+        index = index + 1
+    return Ok(true)
+
+fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.overlay())?
+    let box = components.rect(width / 2 - 350, 60, 700, 500)
+    components.panel(frame, box)?
+    rocket_raylib.draw_text(frame, "CRASH RULES AND PRECOMMITMENT", box.x + 26, box.y + 22, theme.heading_size(), theme.gold())?
+    let lines = ["The wager is prepaid and one deterministic crash point is committed.", "The curve starts at 1.00x and advances on bounded 20 Hz engine ticks.", "Cash Out settles the exact current integer multiplier only before crash.", "The hidden point is revealed after settlement and never chosen by the view.", "Tickets 1-40000 crash at 1.00x; later tickets use a 960000 range.", "Threshold = clamp(floor(10000 x 960000 / denominator)).", "That is an exact 4% instant point and 96% reciprocal survival model.", "One optional auto target is validated for this round; help pauses ticks.", "No users/live bets exist. Arrows/Tab configure; Enter/S act; P closes."]
+    var index = 0
+    while index < collections.length(lines):
+        rocket_raylib.draw_text(frame, lines[index], box.x + 26, box.y + 72 + index * 43, theme.body_size(), theme.text())?
+        index = index + 1
+    return Ok(true)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, table: crash_api.PublicTable, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_text(frame, "CRASH", 32, 26, theme.heading_size(), theme.gold())?
+    rocket_raylib.draw_text(frame, "Local deterministic fixed-tick flight", 32, 62, theme.small_size(), theme.muted())?
+    rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(table.balance)), width - 300, 76, theme.body_size(), theme.emerald())?
+    let help_button = help_rect(width)
+    components.button(window, frame, help_button, "Help [P]", true, components.contains(help_button, mouse_x, mouse_y), false)?
+    draw_graph(frame, table)?
+    components.panel(frame, components.rect(width - 350, 112, 272, 430))?
+    rocket_raylib.draw_text(frame, table.message, width - 330, 126, theme.small_size(), theme.muted())?
+    rocket_raylib.draw_text(frame, string.concat("Wager: ", string.from_int(table.bet)), width - 270, 200, theme.body_size(), theme.text())?
+    components.button(window, frame, bet_minus_rect(width), "-", table.phase == 0, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, bet_plus_rect(width), "+", table.phase == 0, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
+    var auto_label = "Auto Off [Tab]"
+    if table.auto_cash_out_basis_points > 0:
+        auto_label = multiplier_label(table.auto_cash_out_basis_points)
+    components.button(window, frame, auto_toggle_rect(width), auto_label, table.phase == 0, components.contains(auto_toggle_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, auto_minus_rect(width), "-", table.phase == 0 and table.auto_cash_out_basis_points > 0, components.contains(auto_minus_rect(width), mouse_x, mouse_y), false)?
+    components.button(window, frame, auto_plus_rect(width), "+", table.phase == 0 and table.auto_cash_out_basis_points > 0, components.contains(auto_plus_rect(width), mouse_x, mouse_y), false)?
+    if table.phase == 0:
+        components.button(window, frame, start_rect(width), "Start [Enter]", table.bet <= table.balance, components.contains(start_rect(width), mouse_x, mouse_y), true)?
+    if table.phase == 1:
+        components.button(window, frame, cash_out_rect(width), "Cash Out [S]", true, components.contains(cash_out_rect(width), mouse_x, mouse_y), true)?
+        rocket_raylib.draw_text(frame, "Crash point: hidden", width - 330, 360, theme.small_size(), theme.muted())?
+    if table.phase == 2:
+        rocket_raylib.draw_text(frame, string.concat("Crash point: ", multiplier_label(table.revealed_crash_basis_points)), width - 330, 350, theme.body_size(), theme.danger())?
+        rocket_raylib.draw_text(frame, string.concat("Return: ", string.from_int(table.payout)), width - 330, 376, theme.body_size(), theme.emerald())?
+    draw_history(frame, table, width)?
+    if table.phase == 2:
+        components.button(window, frame, next_rect(height), "Next [N]", true, components.contains(next_rect(height), mouse_x, mouse_y), true)?
+    if table.phase != 1:
+        components.button(window, frame, lobby_rect(height), "Lobby [B]", true, components.contains(lobby_rect(height), mouse_x, mouse_y), false)?
+        components.button(window, frame, restart_rect(height), "Restart [R]", true, components.contains(restart_rect(height), mouse_x, mouse_y), false)?
+    if help:
+        draw_help(window, frame)?
+    return Ok(true)

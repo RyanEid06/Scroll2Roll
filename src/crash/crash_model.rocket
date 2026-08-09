@@ -1,0 +1,29 @@
+pub enum Phase:
+    Ready
+    Running
+    Settled
+
+pub struct RoundResult:
+    crash_basis_points: Int
+    cash_out_basis_points: Int
+    wager: Int
+    payout: Int
+    automatic: Bool
+
+pub struct Game:
+    balance: Int
+    bet: Int
+    auto_cash_out_basis_points: Int
+    phase: Phase
+    crash_basis_points: Int
+    multiplier_basis_points: Int
+    wager: Int
+    payout: Int
+    crashed: Bool
+    cashed_out: Bool
+    automatic: Bool
+    tick_count: Int
+    history: Array[RoundResult]
+    round_number: Int
+    seed: Int
+    message: String

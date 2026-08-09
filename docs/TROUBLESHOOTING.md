@@ -85,6 +85,12 @@ loses. Cash Out stays disabled until one correct prediction, and Lobby/Restart
 stay disabled during an active wager. Finish a prediction or cash out, wait for
 the short committed-card animation, then choose Next, Restart, or Lobby.
 
+Crash locks wager and auto-target controls after Start and disables lobby and
+restart during a running round. Cash Out must be accepted strictly before the
+hidden committed point; a 1.00x instant crash settles during Start. Help pauses
+the fixed-tick accumulator. After settlement the committed point is revealed
+and Next, Restart, and Lobby become available.
+
 ## Reporting a problem
 
 Record the version, the exact action sequence, and whether the problem occurs in the portable package or a development build. Never attach personal or sensitive data; Scroll2Roll does not need any.

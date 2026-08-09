@@ -1,0 +1,75 @@
+import src.crash.crash_rules
+
+fn run() -> Result[Int, String]:
+    if crash_rules.valid_bet(0) or crash_rules.valid_bet(7) or crash_rules.valid_bet(1005) or not crash_rules.valid_bet(5) or not crash_rules.valid_bet(1000):
+        return Ok(1)
+    if crash_rules.valid_auto_cash_out(10000) or crash_rules.valid_auto_cash_out(10150) or crash_rules.valid_auto_cash_out(1000100) or not crash_rules.valid_auto_cash_out(0) or not crash_rules.valid_auto_cash_out(10100) or not crash_rules.valid_auto_cash_out(1000000):
+        return Ok(2)
+    var instant = 0
+    var above_1_50 = 0
+    var above_2 = 0
+    var above_10 = 0
+    var capped = 0
+    var wins_at_1_50 = 0
+    var previous = crash_rules.maximum_crash_basis_points()
+    var ticket = 1
+    while ticket <= crash_rules.ticket_count():
+        let threshold = crash_rules.crash_from_ticket(ticket)?
+        if threshold < 10000 or threshold > crash_rules.maximum_crash_basis_points():
+            return Ok(3)
+        if ticket > 40001 and threshold > previous:
+            return Ok(4)
+        if threshold == 10000:
+            instant = instant + 1
+        if threshold >= 15000:
+            above_1_50 = above_1_50 + 1
+        if threshold >= 20000:
+            above_2 = above_2 + 1
+        if threshold >= 100000:
+            above_10 = above_10 + 1
+        if threshold == crash_rules.maximum_crash_basis_points():
+            capped = capped + 1
+        if threshold > 15000:
+            wins_at_1_50 = wins_at_1_50 + 1
+        previous = threshold
+        ticket = ticket + 1
+    if instant != 40000 or above_1_50 != 640000 or above_2 != 480000 or above_10 != 96000 or capped != 960:
+        return Ok(5)
+    if wins_at_1_50 != 639957 or wins_at_1_50 * 15000 / crash_rules.ticket_count() != 9599:
+        return Ok(12)
+    match crash_rules.crash_from_ticket(0):
+        case Ok(value):
+            return Ok(6)
+        case Err(error):
+            let expected_error = true
+    match crash_rules.crash_from_ticket(1000001):
+        case Ok(value):
+            return Ok(7)
+        case Err(error):
+            let expected_error = true
+    var tick = 0
+    var multiplier = 9999
+    while tick <= crash_rules.maximum_round_ticks():
+        let current = crash_rules.multiplier_for_tick(tick)?
+        if current < multiplier or current > crash_rules.maximum_crash_basis_points():
+            return Ok(8)
+        multiplier = current
+        tick = tick + 1
+    if crash_rules.multiplier_for_tick(0)? != 10000 or crash_rules.multiplier_for_tick(20)? != 11020:
+        return Ok(9)
+    match crash_rules.multiplier_for_tick(-1):
+        case Ok(value):
+            return Ok(10)
+        case Err(error):
+            let expected_error = true
+    if crash_rules.payout(15, 12345) != 18 or crash_rules.payout(1000, crash_rules.maximum_crash_basis_points()) != 1000000:
+        return Ok(11)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

@@ -1,0 +1,131 @@
+import src.app.application
+import src.app.crash_view
+import src.crash.crash_api
+import src.rocket_raylib
+import src.rocket_raylib_testing
+import std.file
+import std.testing
+
+fn press(window: rocket_raylib.Window, key: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_key(key, true, false)
+    return application.step_for_test(state, window)
+
+fn click(window: rocket_raylib.Window, x: Int, y: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_mouse(x, y, true)
+    return application.step_for_test(state, window)
+
+fn wait_frames(window: rocket_raylib.Window, source: application.State, count: Int) -> Result[application.State, String]:
+    var state = source
+    var frame = 0
+    while frame < count:
+        application.draw_for_test(window, state)?
+        state = application.step_for_test(state, window)
+        frame = frame + 1
+    return Ok(state)
+
+fn wait_settled(window: rocket_raylib.Window, source: application.State) -> Result[application.State, String]:
+    var state = source
+    var guard = 0
+    while crash_api.phase_code(state.crash) == 1 and guard < 6000:
+        application.draw_for_test(window, state)?
+        state = application.step_for_test(state, window)
+        guard = guard + 1
+    if crash_api.phase_code(state.crash) != 2:
+        return Err("Crash GUI round exceeded its bounded frame guard")
+    return Ok(state)
+
+fn next_with_mouse(window: rocket_raylib.Window, state: application.State) -> application.State:
+    let box = crash_view.next_rect(600)
+    return click(window, box.x + 20, box.y + 20, state)
+
+fn start_with_mouse(window: rocket_raylib.Window, state: application.State) -> application.State:
+    let box = crash_view.start_rect(800)
+    return click(window, box.x + 20, box.y + 20, state)
+
+fn run() -> Result[Int, String]:
+    if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
+        return Ok(1)
+    let temporary = testing.temp_directory("scroll2roll-crash-gui")?
+    let save_path = testing.fixture_path(temporary, "settings.s2r")?
+    match rocket_raylib.open_window(800, 600, "Crash scripted GUI"):
+        case Ok(window):
+            var state = application.initial_for_test(save_path)?
+            state = press(window, rocket_raylib.key_enter(), state)
+            state = click(window, 500, 135, state)
+            if state.screen != 12 or crash_api.phase_code(state.crash) != 0:
+                return Ok(2)
+            state = press(window, rocket_raylib.key_p(), state)
+            if not state.crash_help:
+                return Ok(3)
+            application.draw_for_test(window, state)?
+            state = press(window, rocket_raylib.key_p(), state)
+            state = press(window, rocket_raylib.key_up(), state)
+            state = press(window, rocket_raylib.key_tab(), state)
+            state = press(window, rocket_raylib.key_right(), state)
+            if state.crash.game.bet != 15 or state.crash.game.auto_cash_out_basis_points != 15100:
+                return Ok(4)
+            var attempts = 0
+            state = press(window, rocket_raylib.key_enter(), state)
+            while crash_api.phase_code(state.crash) == 2 and attempts < 20:
+                state = next_with_mouse(window, state)
+                state = press(window, rocket_raylib.key_enter(), state)
+                attempts = attempts + 1
+            if crash_api.phase_code(state.crash) != 1:
+                return Ok(5)
+            let public_live = crash_api.public_table(state.crash)
+            if public_live.revealed_crash_basis_points != 0 or public_live.multiplier_basis_points != 10000:
+                return Ok(6)
+            let ticks_before_help = state.crash.game.tick_count
+            state = press(window, rocket_raylib.key_p(), state)
+            state = wait_frames(window, state, 30)?
+            if state.crash.game.tick_count != ticks_before_help or not state.crash_help:
+                return Ok(7)
+            state = press(window, rocket_raylib.key_p(), state)
+            state = press(window, rocket_raylib.key_b(), state)
+            if state.screen != 12 or crash_api.phase_code(state.crash) != 1:
+                return Ok(8)
+            state = wait_frames(window, state, 20)?
+            let cash = crash_view.cash_out_rect(800)
+            state = click(window, cash.x + 20, cash.y + 20, state)
+            if crash_api.phase_code(state.crash) != 2 or not state.crash.game.cashed_out or state.crash.game.automatic or not file.exists(save_path):
+                return Ok(9)
+            let public_settled = crash_api.public_table(state.crash)
+            if public_settled.revealed_crash_basis_points != state.crash.game.crash_basis_points:
+                return Ok(10)
+            state = next_with_mouse(window, state)
+            state = press(window, rocket_raylib.key_r(), state)
+            if crash_api.phase_code(state.crash) != 0:
+                return Ok(11)
+            attempts = 0
+            state = start_with_mouse(window, state)
+            while attempts < 30 and(crash_api.phase_code(state.crash) == 2 or state.crash.game.crash_basis_points <= state.crash.game.auto_cash_out_basis_points):
+                if crash_api.phase_code(state.crash) == 1:
+                    state = wait_settled(window, state)?
+                state = next_with_mouse(window, state)
+                state = start_with_mouse(window, state)
+                attempts = attempts + 1
+            if crash_api.phase_code(state.crash) != 1 or state.crash.game.crash_basis_points <= state.crash.game.auto_cash_out_basis_points:
+                return Ok(12)
+            state = wait_settled(window, state)?
+            if not state.crash.game.automatic or state.crash.game.multiplier_basis_points != state.crash.game.auto_cash_out_basis_points or state.crash.game.payout < 1:
+                return Ok(13)
+            application.draw_for_test(window, state)?
+            let lobby = crash_view.lobby_rect(600)
+            state = click(window, lobby.x + 20, lobby.y + 20, state)
+            if state.screen != 1 or state.settings.play_balance != state.crash.game.balance:
+                return Ok(14)
+            let closed = rocket_raylib.close_window(window)
+            testing.cleanup_temp(temporary)?
+            if rocket_raylib_testing.buffer_live_count() != 0:
+                return Ok(15)
+            return Ok(0)
+        case Err(error):
+            return Err(error)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

@@ -82,6 +82,28 @@ baseline for every game milestone in `EXPANSION_PLAN.md`.
   remains on the last real verified 0.2.0 archive as required during expansion.
 - No package, push, publication, deployment, release, or signing was performed.
 
+## 0.3.0 milestone 4 - Crash
+
+- `crash_rules_test.rocket` enumerates all 1,000,000 tickets and verifies the
+  exact 40,000 instant points, 1.50x/2.00x/10.00x survival counts, 1,000x cap
+  mass, reciprocal monotonic block, exact 1.50x strict-boundary return example,
+  fixed curve through 20,000 ticks, wager/auto bounds, and payout floors
+  published in `CRASH_MATH.md`.
+- `crash_session_test.rocket` verifies deterministic thresholds, running-table
+  privacy, invalid and unaffordable atomic failures, strict before/at/after
+  cash-out behavior, immediate crash, single-round auto success/failure,
+  per-call tick caps, negative requests, 100 rounds, 20-entry history, restart,
+  and nonnegative capped balances.
+- `crash_gui_flow_test.rocket` runs at 800x600 and verifies tenth-entry routing,
+  keyboard and mouse configuration, running privacy, a 30-frame help pause,
+  disabled live lobby return, manual and automatic complete rounds, graph
+  drawing from public engine state, persistence, restart, lobby, and cleanup.
+- The complete suite passes 38/38 with every prior test preserved. Debug and
+  Release `scripts/validate.ps1` each pass native generation/build, `rocketc
+  check`, all 38 tests, and both formatting checks. Source website validation
+  remains on the last real verified 0.2.0 archive as required during expansion.
+- No package, push, publication, deployment, release, or signing was performed.
+
 ## Rocket and native application
 
 - Debug `scripts/validate.ps1`: CMake/raylib build, Rocket check, 10/10 tests, and `src`/`tests` formatting checks passed.

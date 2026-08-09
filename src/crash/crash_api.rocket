@@ -1,0 +1,54 @@
+import src.crash.crash_engine
+import src.crash.crash_model
+
+pub struct Session:
+    game: crash_model.Game
+
+pub struct PublicTable:
+    balance: Int
+    bet: Int
+    auto_cash_out_basis_points: Int
+    phase: Int
+    multiplier_basis_points: Int
+    wager: Int
+    payout: Int
+    crashed: Bool
+    cashed_out: Bool
+    automatic: Bool
+    tick_count: Int
+    revealed_crash_basis_points: Int
+    history: Array[crash_model.RoundResult]
+    message: String
+
+pub fn new_session(starting_balance: Int, seed: Int) -> Result[Session, String]:
+    return Ok(Session(crash_engine.new_game(starting_balance, seed)?))
+
+pub fn with_bet(session: Session, bet: Int) -> Result[Session, String]:
+    return Ok(Session(crash_engine.with_bet(session.game, bet)?))
+
+pub fn with_auto_cash_out(session: Session, target_basis_points: Int) -> Result[Session, String]:
+    return Ok(Session(crash_engine.with_auto_cash_out(session.game, target_basis_points)?))
+
+pub fn with_start(session: Session) -> Result[Session, String]:
+    return Ok(Session(crash_engine.start(session.game)?))
+
+pub fn with_ticks(session: Session, count: Int) -> Result[Session, String]:
+    return Ok(Session(crash_engine.tick_many(session.game, count)?))
+
+pub fn with_cash_out(session: Session) -> Result[Session, String]:
+    return Ok(Session(crash_engine.cash_out(session.game)?))
+
+pub fn with_next_round(session: Session) -> Result[Session, String]:
+    return Ok(Session(crash_engine.next_round(session.game)?))
+
+pub fn with_restart(session: Session) -> Result[Session, String]:
+    return Ok(Session(crash_engine.restart(session.game)?))
+
+pub fn phase_code(session: Session) -> Int:
+    return crash_engine.phase_code(session.game.phase)
+
+pub fn public_table(session: Session) -> PublicTable:
+    var revealed = 0
+    if phase_code(session) == 2:
+        revealed = session.game.crash_basis_points
+    return PublicTable(session.game.balance, session.game.bet, session.game.auto_cash_out_basis_points, phase_code(session), session.game.multiplier_basis_points, session.game.wager, session.game.payout, session.game.crashed, session.game.cashed_out, session.game.automatic, session.game.tick_count, revealed, session.game.history, session.game.message)

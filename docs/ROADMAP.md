@@ -31,6 +31,7 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
   combinatorial payout math, deterministic privacy, native UI, and regressions.
 - [x] Complete Dice with exact integer boundaries and finite stoppable auto-roll.
 - [x] Complete HiLo with a private checked deck and exact remaining-card math.
-- [ ] Complete Crash and Slots in that order.
+- [x] Complete Crash with a private precommitment and bounded fixed-tick curve.
+- [ ] Complete Slots with source-recomputed theoretical return.
 - [ ] Revalidate the eleven-game application, package, relocated smoke, and
   source/staged website with the real 0.3.0 archive.

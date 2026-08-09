@@ -21,8 +21,8 @@ Scroll2Roll is a polished, local, single-player, play-money casino shell. The
 accepted 0.2.0 baseline includes complete Blackjack, European Roulette, Plinko,
 Coop Climb, Midnight Crossing, and No-Limit Texas Hold'em. The owner-approved
 0.3.0 expansion in `EXPANSION_0_3_IMPLEMENTATION.md` adds Mines, Dice, HiLo,
-Crash, and Slots in that order. Mines, Dice, HiLo, and the save-v3 foundation
-are complete; Crash is the current milestone. Packaging and the website intentionally
+Crash, and Slots in that order. Mines, Dice, HiLo, Crash, and the save-v3 foundation
+are complete; Slots is the current milestone. Packaging and the website intentionally
 describe the last verified 0.2.0 archive until final 0.3.0 acceptance produces
 real replacement metadata.
 
@@ -57,7 +57,11 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
 - A modular rendering-independent Blackjack engine implements checked cards, exact hand values, a deterministic six-deck shoe, cut-card reshuffling, table limits, player/AI betting, legal actions, Hit, Stand, Double Down, Split, Double After Split, a four-hand maximum, split-Ace one-card behavior, no standard resplit, Late Surrender, dealer stand on soft 17, naturals, exact 3:2 settlement, and deterministic AI/basic-strategy progression.
 - Complete and consecutive rounds have bounded transitions and nonnegative play-money balances.
 - A small `src/blackjack/blackjack_api.rocket` facade is the only rules boundary used by the visual table.
-- The raylib application implements startup, reusable lobby routing, settings, exit confirmation, keyboard/mouse controls, playable Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, and No-Limit Hold'em tables, zero-to-five AI settings, disabled illegal actions, outcomes, next round/hand, restart/reset, and lobby return.
+- The raylib application implements startup, reusable lobby routing, settings,
+  exit confirmation, keyboard/mouse controls, ten playable Blackjack, Roulette,
+  Plinko, Coop Climb, Midnight Crossing, No-Limit Hold'em, Mines, Dice, HiLo,
+  and Crash tables, zero-to-five AI settings, disabled illegal actions,
+  outcomes, next round/hand, restart/reset, and lobby return.
 - Versioned local persistence stores display/audio preferences, AI count, first-run state, and approved play-money progress at `%LOCALAPPDATA%\Scroll2Roll\settings.s2r`, with safe missing/invalid/older-data recovery.
 - The static website and Cloudflare Pages staging flow are implemented without claiming browser play.
 - The static website is a responsive three-page experience: new visitors create
@@ -126,13 +130,20 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
   wagers, cumulative 96% basis-point math, cash-out, exhaustion settlement,
   sequence/history bounds, and safe lifecycle transitions. `HILO_MATH.md`
   publishes the exact probability, rounding, and cap contract.
+- Crash is fully playable as a local single-player precommitted curve. Its
+  rendering-independent engine prepays a validated wager, maps a deterministic
+  million-ticket sample to a hidden reciprocal threshold with an exact 4%
+  1.00x mass, advances an exact 20 Hz bounded multiplier, enforces strict
+  manual and one-round auto cash-out ordering, reveals only after settlement,
+  and caps history, balance, ticks, and per-frame work. `CRASH_MATH.md` publishes
+  the exact distribution, return example, curve, ordering, rounding, and caps.
 
 ## Architecture
 
 Dependency direction is one way:
 
 1. Per-game model values and validated rule constructors.
-2. Rendering-independent Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, Hold'em, Mines, Dice, and HiLo engines and settlement.
+2. Rendering-independent Blackjack, Roulette, Plinko, Coop Climb, Midnight Crossing, Hold'em, Mines, Dice, HiLo, and Crash engines and settlement.
 3. Small presentation-facing APIs and sessions.
 4. Versioned local persistence isolated from rules.
 5. Reusable router, design tokens, components, lobby, settings, and per-game views.
@@ -227,6 +238,10 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
   adding checked-deck/exhaustion coverage, exact counts for every rank and
   remaining prefix, privacy, deterministic/tie/cash-out sessions, and bounded
   minimum-size keyboard/mouse GUI animation coverage.
+- The complete post-Crash suite passes 38/38, preserving all 35 prior tests and
+  adding exhaustive million-ticket distribution/return coverage, deterministic
+  fixed-tick/boundary/auto/session tests, public-threshold privacy, long-frame
+  caps, help pause, and complete minimum-size keyboard/mouse flows.
 
 ## Deliberate limitations
 
@@ -304,7 +319,10 @@ Spacing, typography, component states, borders, timing, and responsive layout va
   finite stoppable auto-roll, native UI, focused tests, and all regressions.
 - Completed: 0.3.0 milestone 3 HiLo, including checked shared cards, exact
   remaining-deck probability, privacy-safe UI, focused tests, and all regressions.
-- Current: 0.3.0 milestone 4 Crash. Do not push, publish, deploy, create a
+- Completed: 0.3.0 milestone 4 Crash, including exact reciprocal distribution,
+  private deterministic precommitment, bounded fixed ticks, strict cash-out,
+  single-round auto target, full UI, focused tests, and all regressions.
+- Current: 0.3.0 milestone 5 Slots. Do not push, publish, deploy, create a
   release, or claim trusted signing without explicit approval.
 
 ## Major decisions
@@ -340,7 +358,7 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 Read `AGENTS.md`, `docs/MASTER_PLAN.md`, `docs/EXPANSION_PLAN.md`,
 `docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
 status and preserve user changes. The accepted 0.2.0 baseline remains intact;
-Mines, Dice, HiLo, and save-v3 are complete with 35/35 tests, and Crash is next. The
+Mines, Dice, HiLo, Crash, and save-v3 are complete with 38/38 tests, and Slots is next. The
 published website metadata must remain on the verified 0.2.0
 archive until the real 0.3.0 package is produced. Keep using frozen Rocket 2.0
 and the pinned raylib integration with custom frame control forced off. Do not

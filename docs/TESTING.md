@@ -65,9 +65,18 @@ Test setup helpers must return explicit failure or a nonzero test status when co
 - `hilo_gui_flow_test.rocket`: minimum-size ninth-entry routing, help,
   keyboard/mouse deal/prediction/cash-out/next/lobby flows, privacy projection,
   animation agreement, persistence, rendering, and native cleanup.
+- `crash_rules_test.rocket`: all one million distribution tickets, exact
+  instant/survival/cap counts, reciprocal return example, tick curve and caps,
+  wager/auto validation, and payout floor rounding.
+- `crash_session_test.rocket`: deterministic precommitments, live privacy,
+  before/at/after boundary behavior, auto cash-out, atomic failures, long-frame
+  caps, instant crashes, consecutive rounds, restart, history, and balances.
+- `crash_gui_flow_test.rocket`: minimum-size tenth-entry routing, help pause,
+  keyboard/mouse manual and automatic complete rounds, live privacy, graph
+  drawing, engine agreement, persistence, restart, lobby, and native cleanup.
 - Four reviewed raylib tests cover API behavior, audio stress, resource lifetime, and missing assets.
 
-The current post-HiLo suite passes 35/35 tests. Before those gates run,
+The current post-Crash suite passes 38/38 tests. Before those gates run,
 `scripts/validate.ps1` also rejects duplicate `.rocket` basenames under `src` so
 the frozen CodeView debugger can map every source unambiguously. Package
 relocation and source/staged website checks are separate scripts. The website

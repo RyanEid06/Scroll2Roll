@@ -1,0 +1,58 @@
+pub fn ticket_count() -> Int:
+    return 1000000
+
+pub fn return_factor_basis_points() -> Int:
+    return 9600
+
+pub fn maximum_crash_basis_points() -> Int:
+    return 10000000
+
+pub fn maximum_balance() -> Int:
+    return 10000000000
+
+pub fn fixed_ticks_per_second() -> Int:
+    return 20
+
+pub fn max_ticks_per_frame() -> Int:
+    return 8
+
+pub fn maximum_round_ticks() -> Int:
+    return 20000
+
+pub fn valid_bet(bet: Int) -> Bool:
+    return bet >= 5 and bet <= 1000 and bet / 5 * 5 == bet
+
+pub fn valid_auto_cash_out(target_basis_points: Int) -> Bool:
+    return target_basis_points == 0 or target_basis_points >= 10100 and target_basis_points <= 1000000 and target_basis_points / 100 * 100 == target_basis_points
+
+pub fn crash_from_ticket(ticket: Int) -> Result[Int, String]:
+    if ticket < 1 or ticket > ticket_count():
+        return Err("Crash distribution ticket must be between 1 and 1000000")
+    if ticket <= 40000:
+        return Ok(10000)
+    let denominator = ticket - 40000
+    var threshold = 10000 * 960000 / denominator
+    if threshold <= 10000:
+        threshold = 10001
+    if threshold > maximum_crash_basis_points():
+        threshold = maximum_crash_basis_points()
+    return Ok(threshold)
+
+pub fn multiplier_for_tick(tick: Int) -> Result[Int, String]:
+    if tick < 0 or tick > maximum_round_ticks():
+        return Err("Crash simulation tick is outside the finite round bound")
+    let value = 10000 + tick * 50 + tick * tick / 20
+    if value > maximum_crash_basis_points():
+        return Ok(maximum_crash_basis_points())
+    return Ok(value)
+
+pub fn payout(wager: Int, multiplier_basis_points: Int) -> Int:
+    let value = wager * multiplier_basis_points / 10000
+    if value > maximum_balance():
+        return maximum_balance()
+    return value
+
+pub fn credited_balance(balance: Int, payout_value: Int) -> Int:
+    if balance >= maximum_balance() - payout_value:
+        return maximum_balance()
+    return balance + payout_value

@@ -157,6 +157,23 @@ Equal rank is always a loss and is called out at the table and in help. Only
 drawn cards appear in the visible sequence; future cards stay private. See
 `HILO_MATH.md`.
 
+## Crash
+
+- `Down` / `Up`: change the ready wager by 5 credits.
+- `Tab`: enable or disable the explicit single-round auto cash-out target.
+- `Left` / `Right`: change an enabled auto target by 0.01x.
+- `Enter`: validate and prepay the wager, then start at 1.00x.
+- `S`: cash out the exact current engine multiplier before the hidden point.
+- Mouse: use all wager, auto, Start, Cash Out, Help, Next, Restart, and Lobby controls.
+- `P`: toggle distribution, return, tick, privacy, and rounding help; an open help panel pauses ticks.
+- `N`: ready a newly committed next round; `R`: restart at a safe boundary.
+- `B` / `Escape`: return to the lobby only while ready or settled.
+
+The threshold is deterministic and precommitted but remains hidden during the
+round. Animation, graph color, and audio do not advance the fixed-tick engine.
+The auto target applies to one round and never starts another wager. See
+`CRASH_MATH.md`.
+
 ## Settings
 
 - `M`: toggle audio.

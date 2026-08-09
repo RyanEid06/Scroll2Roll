@@ -1,0 +1,127 @@
+import src.crash.crash_api
+import src.crash.crash_engine
+import src.crash.crash_model
+import src.crash.crash_rules
+import std.collections
+
+fn find_seed(minimum: Int, maximum: Int) -> Result[Int, String]:
+    var seed = 1
+    while seed < 10000:
+        let threshold = crash_engine.committed_threshold(seed, 1)?
+        if threshold >= minimum and threshold <= maximum:
+            return Ok(seed)
+        seed = seed + 1
+    return Err("Unable to find deterministic Crash seed")
+
+fn running_fixture(multiplier: Int, threshold: Int) -> crash_model.Game:
+    let history: Array[crash_model.RoundResult] = []
+    return crash_model.Game(990, 10, 0, crash_model.Running(), threshold, multiplier, 10, 0, false, false, false, 10, history, 1, 1, "Boundary fixture")
+
+fn run_to_settlement(source: crash_model.Game) -> Result[crash_model.Game, String]:
+    var game = source
+    var guard = 0
+    while crash_engine.phase_code(game.phase) == 1 and guard < crash_rules.maximum_round_ticks():
+        game = crash_engine.tick_many(game, 8)?
+        guard = guard + 8
+    if crash_engine.phase_code(game.phase) != 2:
+        return Err("Crash deterministic round exceeded its finite tick bound")
+    return Ok(game)
+
+fn run() -> Result[Int, String]:
+    match crash_engine.new_game(4, 1):
+        case Ok(game):
+            return Ok(1)
+        case Err(error):
+            let expected_error = true
+    var poor = crash_engine.new_game(5, 1)?
+    poor = crash_engine.with_bet(poor, 10)?
+    match crash_engine.start(poor):
+        case Ok(game):
+            return Ok(2)
+        case Err(error):
+            let expected_error = true
+    if poor.balance != 5 or poor.wager != 0 or crash_engine.phase_code(poor.phase) != 0:
+        return Ok(19)
+    let live_seed = find_seed(15001, 500000)?
+    var game = crash_engine.with_bet(crash_engine.new_game(1000, live_seed)?, 25)?
+    let duplicate = crash_engine.start(crash_engine.with_bet(crash_engine.new_game(1000, live_seed)?, 25)?)?
+    game = crash_engine.start(game)?
+    if game.crash_basis_points != duplicate.crash_basis_points or game.balance != 975 or game.multiplier_basis_points != 10000 or game.wager != 25:
+        return Ok(3)
+    let public_live = crash_api.public_table(crash_api.Session(game))
+    if public_live.revealed_crash_basis_points != 0:
+        return Ok(4)
+    match crash_engine.with_bet(game, 50):
+        case Ok(value):
+            return Ok(5)
+        case Err(error):
+            let expected_error = true
+    match crash_engine.restart(game):
+        case Ok(value):
+            return Ok(6)
+        case Err(error):
+            let expected_error = true
+    let capped = crash_engine.tick_many(game, 100)?
+    if capped.tick_count != 8:
+        return Ok(7)
+    match crash_engine.tick_many(game, -1):
+        case Ok(value):
+            return Ok(8)
+        case Err(error):
+            let expected_error = true
+    let before = running_fixture(10499, 10500)
+    let cashed = crash_engine.cash_out(before)?
+    if cashed.payout != crash_rules.payout(10, 10499) or cashed.balance != 990 + cashed.payout or not cashed.cashed_out:
+        return Ok(9)
+    match crash_engine.cash_out(running_fixture(10500, 10500)):
+        case Ok(value):
+            return Ok(10)
+        case Err(error):
+            let expected_error = true
+    let crashed = crash_engine.tick_many(running_fixture(10499, 10500), 1)?
+    if crash_engine.phase_code(crashed.phase) != 2 or not crashed.crashed or crashed.payout != 0:
+        return Ok(11)
+    match crash_engine.cash_out(crashed):
+        case Ok(value):
+            return Ok(12)
+        case Err(error):
+            let expected_error = true
+    var automatic = crash_engine.new_game(1000, live_seed)?
+    automatic = crash_engine.with_auto_cash_out(automatic, 15000)?
+    automatic = crash_engine.start(automatic)?
+    automatic = run_to_settlement(automatic)?
+    if not automatic.cashed_out or not automatic.automatic or automatic.multiplier_basis_points != 15000 or automatic.payout != 15:
+        return Ok(13)
+    let low_seed = find_seed(10001, 14999)?
+    var auto_loses = crash_engine.with_auto_cash_out(crash_engine.new_game(1000, low_seed)?, 15000)?
+    auto_loses = run_to_settlement(crash_engine.start(auto_loses)?)?
+    if not auto_loses.crashed or auto_loses.automatic or auto_loses.payout != 0:
+        return Ok(14)
+    let instant_seed = find_seed(10000, 10000)?
+    let instant = crash_engine.start(crash_engine.new_game(1000, instant_seed)?)?
+    if crash_engine.phase_code(instant.phase) != 2 or instant.tick_count != 0 or not instant.crashed:
+        return Ok(15)
+    var current = crash_engine.new_game(5000, 777)?
+    var round = 0
+    while round < 100:
+        current = crash_engine.start(current)?
+        if crash_engine.phase_code(current.phase) == 1:
+            current = crash_engine.cash_out(current)?
+        if current.balance < 0 or current.balance > crash_rules.maximum_balance():
+            return Ok(16)
+        current = crash_engine.next_round(current)?
+        round = round + 1
+    if collections.length(current.history) != 20 or current.round_number != 101:
+        return Ok(17)
+    let restarted = crash_engine.restart(current)?
+    if collections.length(restarted.history) != 0 or crash_engine.phase_code(restarted.phase) != 0:
+        return Ok(18)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

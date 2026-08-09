@@ -68,6 +68,13 @@ potential-return rail, and a newest-first visible sequence. At 800x600 future
 cards never appear, help remains readable, and result animations only reveal
 the card already committed by the engine.
 
+Crash uses an original local flight-recorder layout: a midnight plotting area,
+procedural point trail, oversized exact multiplier, and an emerald-to-gold-to-
+danger progression driven only by public engine state. A compact control rail
+keeps wager, one-round auto target, Cash Out, revealed settlement, and bounded
+history distinct at 800x600. Running screens say the point is hidden and never
+show users, live bets, simulated activity, or multiplayer language.
+
 The static website now applies the same tokens in a three-page experience. The
 profile page pairs an editorial welcome panel with a raised local-profile card.
 The Play page follows a dense premium dashboard direction with a compact sticky
