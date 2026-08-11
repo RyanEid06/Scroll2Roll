@@ -1,0 +1,165 @@
+import src.app.components
+import src.app.crash_view
+import src.app.dice_view
+import src.app.mines_view
+import src.app.slots_view
+import src.app.ui_resources
+import src.crash.crash_api
+import src.dice.dice_api
+import src.mines.mines_api
+import src.rocket_raylib
+import src.rocket_raylib_testing
+import src.slots.slots_api
+import std.collections
+
+fn overlap(first: components.Rect, second: components.Rect) -> Bool:
+    return first.x < second.x + second.width and first.x + first.width > second.x and first.y < second.y + second.height and first.y + first.height > second.y
+
+fn target_valid(value: components.Rect, width: Int, height: Int) -> Bool:
+    return value.width >= 44 and value.height >= 44 and value.x >= 0 and value.y >= 0 and value.x + value.width <= width and value.y + value.height <= height
+
+fn board_target_valid(value: components.Rect, width: Int, height: Int) -> Bool:
+    return value.width >= 32 and value.height >= 32 and value.x >= 0 and value.y >= 0 and value.x + value.width <= width and value.y + value.height <= height
+
+fn set_valid(values: Array[components.Rect], width: Int, height: Int) -> Bool:
+    var index = 0
+    while index < collections.length(values):
+        if not target_valid(values[index], width, height):
+            return false
+        var other = index + 1
+        while other < collections.length(values):
+            if overlap(values[index], values[other]):
+                return false
+            other = other + 1
+        index = index + 1
+    return true
+
+fn layout_valid(width: Int, height: Int) -> Bool:
+    let mines_ready = [mines_view.bet_minus_rect(width, height), mines_view.bet_plus_rect(width, height), mines_view.mines_minus_rect(width, height), mines_view.mines_plus_rect(width, height), mines_view.start_rect(width, height), mines_view.restart_rect(width, height)]
+    let mines_settled = [mines_view.next_rect(width, height), mines_view.restart_rect(width, height)]
+    if not set_valid(mines_ready, width, height) or not set_valid(mines_settled, width, height) or not target_valid(mines_view.cash_out_rect(width, height), width, height) or not target_valid(mines_view.help_rect(width, height), width, height) or not target_valid(mines_view.lobby_rect(width, height), width, height):
+        print("final layout: mines")
+        return false
+    var tile = 0
+    while tile < 25:
+        let box = mines_view.tile_rect(tile, width, height)
+        if not board_target_valid(box, width, height):
+            print("final layout: mines tile")
+            return false
+        var previous = 0
+        while previous < tile:
+            if overlap(box, mines_view.tile_rect(previous, width, height)):
+                print("final layout: mines tile overlap")
+                return false
+            previous = previous + 1
+        tile = tile + 1
+
+    let dice_ready = [dice_view.direction_rect(width, height), dice_view.target_minus_rect(width, height), dice_view.target_plus_rect(width, height), dice_view.bet_minus_rect(width, height), dice_view.bet_plus_rect(width, height), dice_view.auto_count_rect(width, height), dice_view.win_stop_rect(width, height), dice_view.loss_stop_rect(width, height), dice_view.roll_rect(width, height), dice_view.auto_rect(width, height)]
+    let dice_settled = [dice_view.next_rect(width, height), dice_view.restart_rect(width, height)]
+    if not set_valid(dice_ready, width, height) or not set_valid(dice_settled, width, height) or not target_valid(dice_view.help_rect(width, height), width, height) or not target_valid(dice_view.lobby_rect(width, height), width, height):
+        print("final layout: dice")
+        return false
+
+    let crash_ready = [crash_view.bet_minus_rect(width, height), crash_view.bet_plus_rect(width, height), crash_view.auto_toggle_rect(width, height), crash_view.auto_minus_rect(width, height), crash_view.auto_plus_rect(width, height), crash_view.start_rect(width, height)]
+    let crash_settled = [crash_view.next_rect(width, height), crash_view.restart_rect(width, height)]
+    if not set_valid(crash_ready, width, height) or not set_valid(crash_settled, width, height) or not target_valid(crash_view.cash_out_rect(width, height), width, height) or not target_valid(crash_view.help_rect(width, height), width, height) or not target_valid(crash_view.lobby_rect(width, height), width, height):
+        print("final layout: crash")
+        return false
+
+    let slots_ready = [slots_view.bet_minus_rect(width, height), slots_view.bet_plus_rect(width, height), slots_view.turbo_rect(width, height), slots_view.auto_count_rect(width, height), slots_view.spin_rect(width, height), slots_view.auto_rect(width, height)]
+    let slots_settled = [slots_view.next_rect(width, height), slots_view.restart_rect(width, height)]
+    if not set_valid(slots_ready, width, height) or not set_valid(slots_settled, width, height) or not target_valid(slots_view.help_rect(width, height), width, height) or not target_valid(slots_view.lobby_rect(width, height), width, height):
+        print("final layout: slots")
+        return false
+    return true
+
+fn safe_mines_tile(session: mines_api.Session) -> Result[Int, String]:
+    var tile = 0
+    while tile < 25:
+        if session.game.mine_layout[tile] == 0:
+            return Ok(tile)
+        tile = tile + 1
+    return Err("Mines view fixture did not contain a safe tile")
+
+fn settled_slots(source: slots_api.Session) -> Result[slots_api.Session, String]:
+    var session = source
+    var guard = 0
+    while slots_api.phase_code(session) == 1 and guard < 8:
+        session = slots_api.with_finish_presentation(session)?
+        guard = guard + 1
+    if slots_api.phase_code(session) != 2:
+        return Err("Slots view fixture exceeded the free-spin presentation bound")
+    return Ok(session)
+
+fn draw_states(window: rocket_raylib.Window, light_mode: Bool) -> Result[Bool, String]:
+    let resources = ui_resources.empty()
+
+    let mines_ready = mines_api.new_session(1000, 20260861)?
+    let mines_active = mines_api.with_start(mines_ready)?
+    let mines_revealed = mines_api.with_reveal(mines_active, safe_mines_tile(mines_active)?)?
+    let mines_settled = mines_api.with_cash_out(mines_revealed)?
+
+    let dice_ready = dice_api.new_session(1000, 20260862)?
+    let dice_configured = dice_api.with_auto(dice_ready, 6, 0, 0)?
+    let dice_active = dice_api.with_start_auto(dice_configured)?
+    let dice_settled = dice_api.with_stop_auto(dice_active)?
+
+    var crash_seed = 20260863
+    var crash_ready = crash_api.new_session(1000, crash_seed)?
+    var crash_active = crash_api.with_start(crash_ready)?
+    while crash_api.phase_code(crash_active) != 1 and crash_seed < 20260963:
+        crash_seed = crash_seed + 1
+        crash_ready = crash_api.new_session(1000, crash_seed)?
+        crash_active = crash_api.with_start(crash_ready)?
+    if crash_api.phase_code(crash_active) != 1:
+        return Err("Crash view fixture could not find a live committed flight")
+    let crash_settled = crash_api.with_cash_out(crash_active)?
+
+    let slots_ready = slots_api.new_session(1000, 20260864)?
+    let slots_active = slots_api.with_spin(slots_ready)?
+    let slots_settled = settled_slots(slots_active)?
+
+    let frame = rocket_raylib.begin_frame(window)?
+    rocket_raylib.clear(frame, rocket_raylib.black())?
+    mines_view.draw(window, frame, resources, mines_ready, 0, false, light_mode, false, 0.0, 0.0, -100, -100)?
+    mines_view.draw(window, frame, resources, mines_revealed, safe_mines_tile(mines_active)?, false, light_mode, false, 0.3, 0.7, -100, -100)?
+    mines_view.draw(window, frame, resources, mines_settled, 0, light_mode, light_mode, true, 1.0, 0.0, -100, -100)?
+    dice_view.draw(window, frame, resources, dice_ready, false, light_mode, false, 0.0, 0.0, -100, -100)?
+    dice_view.draw(window, frame, resources, dice_active, false, light_mode, false, 0.3, 0.7, -100, -100)?
+    dice_view.draw(window, frame, resources, dice_settled, light_mode, light_mode, true, 1.0, 0.0, -100, -100)?
+    crash_view.draw(window, frame, resources, crash_api.public_table(crash_ready), false, light_mode, false, 0.0, -100, -100)?
+    crash_view.draw(window, frame, resources, crash_api.public_table(crash_active), false, light_mode, false, 0.3, -100, -100)?
+    crash_view.draw(window, frame, resources, crash_api.public_table(crash_settled), light_mode, light_mode, true, 1.0, -100, -100)?
+    slots_view.draw(window, frame, resources, slots_ready, false, 0, light_mode, false, 0.0, 0.0, -100, -100)?
+    slots_view.draw(window, frame, resources, slots_active, false, 2, light_mode, false, 0.3, 0.7, -100, -100)?
+    slots_view.draw(window, frame, resources, slots_settled, light_mode, 5, light_mode, true, 1.0, 0.0, -100, -100)?
+    if rocket_raylib_testing.scissor_active() or rocket_raylib_testing.draw_count() < 650:
+        return Ok(false)
+    rocket_raylib.end_frame(frame)?
+    return Ok(true)
+
+fn run() -> Result[Int, String]:
+    if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
+        return Ok(1)
+    let widths = [800, 1024, 1280, 1600, 1920]
+    let heights = [600, 768, 720, 900, 1080]
+    var index = 0
+    while index < collections.length(widths):
+        if not layout_valid(widths[index], heights[index]):
+            return Ok(2 + index)
+        let window = rocket_raylib.open_window(widths[index], heights[index], "Final game interior states")?
+        if not draw_states(window, false)? or not draw_states(window, true)?:
+            return Ok(10 + index)
+        rocket_raylib.close_window(window)?
+        index = index + 1
+    if rocket_raylib_testing.buffer_live_count() != 0:
+        return Ok(20)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

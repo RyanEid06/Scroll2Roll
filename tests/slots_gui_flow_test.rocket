@@ -87,12 +87,12 @@ fn run() -> Result[Int, String]:
             state = finish_round(window, state)?
             if not file.exists(save_path) or collections.length(state.slots.game.history) != 1 or state.slots_reel_stage != 5:
                 return Ok(7)
-            let next = slots_view.next_rect(600)
-            state = click(window, next.x + 20, next.y + 20, state)
-            let plus = slots_view.bet_plus_rect(800)
-            state = click(window, plus.x + 20, plus.y + 20, state)
-            let spin = slots_view.spin_rect(800)
-            state = click(window, spin.x + 20, spin.y + 20, state)
+            let next = slots_view.next_rect(800, 600)
+            state = click(window, next.x + next.width / 2, next.y + next.height / 2, state)
+            let plus = slots_view.bet_plus_rect(800, 600)
+            state = click(window, plus.x + plus.width / 2, plus.y + plus.height / 2, state)
+            let spin = slots_view.spin_rect(800, 600)
+            state = click(window, spin.x + spin.width / 2, spin.y + spin.height / 2, state)
             state = finish_round(window, state)?
             if collections.length(state.slots.game.history) != 2:
                 return Ok(8)
@@ -100,8 +100,8 @@ fn run() -> Result[Int, String]:
             state = press(window, rocket_raylib.key_h(), state)
             if not state.slots.game.auto_active or slots_api.phase_code(state.slots) != 1:
                 return Ok(9)
-            let auto = slots_view.auto_rect(800)
-            state = click(window, auto.x + 20, auto.y + 20, state)
+            let auto = slots_view.auto_rect(800, 600)
+            state = click(window, auto.x + auto.width / 2, auto.y + auto.height / 2, state)
             state = finish_round(window, state)?
             if state.slots.game.auto_active or collections.length(state.slots.game.history) != 3:
                 return Ok(10)
@@ -111,12 +111,12 @@ fn run() -> Result[Int, String]:
             if collections.length(state.slots.game.history) != 7 or state.slots.game.auto_remaining != 0:
                 return Ok(11)
             application.draw_for_test(window, state)?
-            let restart = slots_view.restart_rect(600)
-            state = click(window, restart.x + 20, restart.y + 20, state)
+            let restart = slots_view.restart_rect(800, 600)
+            state = click(window, restart.x + restart.width / 2, restart.y + restart.height / 2, state)
             if slots_api.phase_code(state.slots) != 0 or collections.length(state.slots.game.history) != 0:
                 return Ok(12)
-            let lobby = slots_view.lobby_rect(600)
-            state = click(window, lobby.x + 20, lobby.y + 20, state)
+            let lobby = slots_view.lobby_rect(800, 600)
+            state = click(window, lobby.x + lobby.width / 2, lobby.y + lobby.height / 2, state)
             if state.screen != 1 or state.settings.play_balance != state.slots.game.balance:
                 return Ok(13)
             let closed = rocket_raylib.close_window(window)

@@ -99,17 +99,19 @@ rail. At 800x600 up to five opponents, sizing, legal action buttons, help,
 settlement, reset, and lobby controls remain distinct. The view receives only
 the privacy-safe public table and never the shuffled deck.
 
-Mines adds an original midnight-blue 5-by-5 grid with gold procedural gems,
-charcoal hidden tiles, a restrained red mine treatment, gold keyboard focus,
-and a compact probability/control rail. At 800x600 the complete grid, balance,
-wager, mine count, safe count, multiplier, potential payout, history, and
-settlement actions remain distinct. Unrevealed tiles share one presentation
-state regardless of their committed engine value.
+Mines is a violet-and-orange treasure cavern around a dimensional 5-by-5 grid,
+with cyan/violet procedural gems, stylized mechanical mines, tactile hidden
+tiles, and a strong keyboard focus state. Compact and wide control compositions
+keep wager, mine count, safe reveals, multiplier, potential payout, history,
+and settlement actions distinct. Unrevealed tiles share one presentation state
+regardless of their committed engine value.
 
-Dice uses an original navy signal chamber with a large gold integer readout,
-exact chance/multiplier rail, green/red result history, and compact finite-auto
-controls. At 800x600 the visible Stop action, help, outcomes, restart, and lobby
-remain separate; the readout consumes only the engine's locked integer.
+Dice uses an original navy signal chamber with two dimensional signal dice, a
+single unambiguous four-digit result heading, an exact probability band,
+chance/multiplier rail, result history, and compact finite-auto controls. At
+800x600 the visible Stop action, help, outcomes, restart, and lobby remain
+separate; both two-digit faces and the combined heading consume only the
+engine's locked 0000-9999 integer.
 
 HiLo uses an original midnight prediction table with one oversized drawn card,
 two clearly disabled/enabled direction actions, exact remaining outcome counts,
@@ -119,18 +121,20 @@ cards never appear, help remains readable, and result animations only reveal
 the card already committed by the engine.
 
 Crash uses an original local flight-recorder layout: a midnight plotting area,
-procedural point trail, oversized exact multiplier, and an emerald-to-gold-to-
-danger progression driven only by public engine state. A compact control rail
-keeps wager, one-round auto target, Cash Out, revealed settlement, and bounded
-history distinct at 800x600. Running screens say the point is hidden and never
+procedural rocket, bright exhaust, smooth exact curve, oversized multiplier,
+and committed crash burst driven only by public engine state. Compact and wide
+controls keep wager, one-round auto target, Cash Out, revealed settlement, and
+bounded history distinct. Running screens say the point is hidden and never
 show users, live bets, simulated activity, or multiplayer language.
 
-Slots uses an original brass-and-midnight mechanical cabinet with five distinct
-reel columns, three symbol rows, fixed-payline traces, and engine-proven win
-highlights. A compact rail keeps line bet, five-line total, Turbo, finite
-autoplay, Stop, free-spin status, Bonus, round result, and bounded history
-distinct at 800x600. Sequential reveal consumes only precommitted stops; Turbo
-changes timing but not layout, outcome, or settlement.
+Slots uses an original brass-and-midnight mechanical cabinet with five reel
+columns, three symbol rows, and eight distinct procedural symbols: Pebble,
+Quill, Lantern, Compass, Scroll, Wild, Moon, and Gear. Cell-clipped reel streaks,
+fixed-payline traces, and engine-proven win highlights keep ordered motion
+inside the cabinet. Compact and wide controls keep line bet, five-line total,
+Turbo, finite autoplay, Stop, free-spin/Bonus state, result, and bounded history
+distinct. Sequential reveal consumes only precommitted stops; Turbo changes
+timing but not layout, outcome, or settlement.
 
 The static website now applies the same tokens in a three-page experience. The
 profile page pairs an editorial welcome panel with a raised local-profile card.

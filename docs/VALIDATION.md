@@ -225,6 +225,47 @@ This file records the complete local acceptance pass performed on Windows x64 on
   unchanged. Nothing was pushed, deployed, published, released, signed, or
   purchased.
 
+## Native UI overhaul milestone 6 - final four interiors
+
+- On 2026-08-11, the actual native executable was captured for Mines, Dice,
+  Crash, and Slots in dark and light themes at 800x600, 1024x768, 1280x720,
+  and 1600x900. The requested 1920x1080 review used the current display's
+  1920x1055 maximum forced client while exact 1920x1080 is exercised by the
+  deterministic renderer test. A separate true Windows maximize pass measured
+  and reviewed a 1920x991 client for all four games. Ignored evidence is under
+  `out/visual-audit/milestone6/`; capture profiles isolate both `APPDATA` and
+  `LOCALAPPDATA`, assert client dimensions, and never consume real user saves.
+- Representative live-state captures cover every game at light 800x600 and
+  dark 1280x720. Mines shows its privacy-uniform unopened cavern and focused
+  live grid; Dice shows one exact four-digit result split across two designed
+  dice and a visible finite-auto Stop; Crash shows only the public live curve,
+  rocket/exhaust, oversized multiplier, and Cash Out; Slots shows staged
+  precommitted reels, procedural symbols, free-spin state, and disabled/Stop
+  auto presentation without revealing unreached reels.
+- Native inspection found and corrected two product defects. Dice originally
+  drew the combined result over both already-labeled dice, duplicating and
+  colliding glyphs; it now uses one result heading above the two two-digit
+  faces. Slots' animated reel streaks originally escaped cell bounds into the
+  marquee; every hidden reel is now scissored to its cell and the focused test
+  proves balanced scissor cleanup. Replacement captures pass in both themes.
+- Mines uses only `mines_api.tile_state` for tile rendering, so unrevealed mine
+  placement never leaks. Crash consumes only `crash_api.PublicTable`, whose
+  running crash point remains hidden. Dice and Slots render committed API state
+  without selecting results or recomputing payouts. Reduced-motion paths retain
+  clear committed state without motion offsets.
+- `ui_final_games_view_test.rocket` checks the five exact target dimensions,
+  every exported phase-specific control, 44-pixel actions, practical compact
+  Mines board cells, non-overlap, bounds, both-theme ready/active/settled
+  drawing, substantial draw activity, and balanced scissor state. Updated GUI
+  flows derive all changed mouse actions from responsive view geometry while
+  preserving complete rules, privacy, persistence, finite-auto, and safe-lobby
+  behavior.
+- Sequential Debug and Release `scripts/validate.ps1` passes each completed the
+  native build, `rocketc check`, all 48 tests, and both formatting checks. The
+  frozen Rocket checkout remained clean and the bundled font hash remained
+  unchanged. Nothing was pushed, deployed, published, released, signed, or
+  purchased.
+
 ## 0.2.0 expansion baseline
 
 Before expansion implementation, both Debug and Release

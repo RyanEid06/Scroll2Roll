@@ -1,43 +1,79 @@
 import src.app.components
+import src.app.game_components
+import src.app.game_layout
+import src.app.shell_view
 import src.app.theme
+import src.app.ui_resources
 import src.crash.crash_api
 import src.crash.crash_rules
 import src.rocket_raylib
 import std.collections
 import std.string
 
-pub fn bet_minus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 190, 46, 40)
+fn interior(width: Int, height: Int) -> game_layout.Interior:
+    return game_layout.interior(width, height)
 
-pub fn bet_plus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 144, 190, 46, 40)
+pub fn bet_minus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + 14, 44, 44)
+    return components.rect(value.rail.x + 16, value.rail.y + 184, 48, 44)
 
-pub fn auto_toggle_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 246, 112, 40)
+pub fn bet_plus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 136, value.dock.y + 14, 44, 44)
+    return components.rect(value.rail.x + value.rail.width - 64, value.rail.y + 184, 48, 44)
 
-pub fn auto_minus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 208, 246, 50, 40)
+pub fn auto_toggle_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 196, value.dock.y + 14, 136, 44)
+    return components.rect(value.rail.x + 16, value.rail.y + 246, value.rail.width - 144, 44)
 
-pub fn auto_plus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 148, 246, 50, 40)
+pub fn auto_minus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 342, value.dock.y + 14, 44, 44)
+    return components.rect(value.rail.x + value.rail.width - 120, value.rail.y + 246, 48, 44)
 
-pub fn start_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 304, 232, 48)
+pub fn auto_plus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 396, value.dock.y + 14, 44, 44)
+    return components.rect(value.rail.x + value.rail.width - 64, value.rail.y + 246, 48, 44)
 
-pub fn cash_out_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 304, 232, 48)
+pub fn start_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 456, value.dock.y + 14, value.dock.width - 472, 44)
+    return components.rect(value.rail.x + 16, value.rail.y + 306, value.rail.width - 32, 50)
 
-pub fn help_rect(width: Int) -> components.Rect:
-    return components.rect(width - 118, 24, 86, 38)
+pub fn cash_out_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + value.dock.width / 2, value.dock.y + value.dock.height - 60, value.dock.width / 2 - 16, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 128, value.rail.width - 32, 50)
 
-pub fn next_rect(height: Int) -> components.Rect:
-    return components.rect(32, height - 68, 150, 42)
+pub fn help_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    return components.rect(value.stage.x + value.stage.width - 88, value.stage.y + 6, 76, 44)
 
-pub fn lobby_rect(height: Int) -> components.Rect:
-    return components.rect(192, height - 68, 120, 42)
+pub fn next_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + value.dock.height - 60, value.dock.width / 2 - 24, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 128, value.rail.width - 32, 50)
 
-pub fn restart_rect(height: Int) -> components.Rect:
-    return components.rect(322, height - 68, 136, 42)
+pub fn restart_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + value.dock.width / 2, value.dock.y + value.dock.height - 60, value.dock.width / 2 - 16, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 68, value.rail.width - 32, 50)
+
+pub fn lobby_rect(width: Int, height: Int) -> components.Rect:
+    let expected = height
+    return shell_view.back_rect(width)
 
 fn multiplier_label(basis_points: Int) -> String:
     let whole = basis_points / 10000
@@ -47,107 +83,172 @@ fn multiplier_label(basis_points: Int) -> String:
         fraction = string.concat("0", fraction)
     return string.concat(string.from_int(whole), string.concat(".", string.concat(fraction, "x")))
 
-fn draw_graph(frame: rocket_raylib.Frame, table: crash_api.PublicTable) -> Result[Bool, String]:
-    let x = 32
-    let y = 104
-    let width = 394
-    let height = 330
-    rocket_raylib.draw_rectangle(frame, x, y, width, height, theme.panel())?
-    rocket_raylib.draw_rectangle(frame, x, y + height - 2, width, 2, theme.border())?
-    rocket_raylib.draw_rectangle(frame, x, y, 2, height, theme.border())?
-    var ink = theme.emerald()
+fn phase_name(phase: Int) -> String:
+    if phase == 0:
+        return "FLIGHT READY"
+    if phase == 1:
+        return "IN FLIGHT"
+    return "FLIGHT SETTLED"
+
+fn graph_color(table: crash_api.PublicTable, light_mode: Bool) -> rocket_raylib.Color:
+    if table.crashed:
+        return theme.destructive(light_mode)
+    if table.multiplier_basis_points >= 50000:
+        return theme.highlight(light_mode)
     if table.multiplier_basis_points >= 20000:
-        ink = theme.gold()
-    if table.multiplier_basis_points >= 50000 or table.crashed:
-        ink = theme.danger()
-    var points = table.tick_count
-    if points > 60:
-        points = 60
-    var index = 0
-    while index <= points:
-        let source_tick = table.tick_count - points + index
-        let value = crash_rules.multiplier_for_tick(source_tick)?
-        var vertical = value - 10000
-        let visible_range = table.multiplier_basis_points - 10000
-        if visible_range > 0:
-            vertical = vertical * 270 / visible_range
-        if vertical > 270:
-            vertical = 270
-        let point_x = x + 18 + index * 350 / 60
-        let point_y = y + height - 22 - vertical
-        rocket_raylib.draw_circle(frame, point_x, point_y, 3.0, ink)?
-        index = index + 1
-    rocket_raylib.draw_text(frame, multiplier_label(table.multiplier_basis_points), x + 112, y + 126, theme.title_size(), ink)?
-    rocket_raylib.draw_text(frame, "LOCAL PRECOMMITTED CURVE", x + 80, y + 290, theme.small_size(), theme.muted())?
+        return theme.violet(light_mode)
+    return theme.success(light_mode)
+
+fn draw_grid(frame: rocket_raylib.Frame, box: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    var column = 1
+    while column < 6:
+        let x = box.x + box.width * column / 6
+        rocket_raylib.draw_line(frame, x, box.y, x, box.y + box.height, 1.0, rocket_raylib.color(130, 170, 220, 38))?
+        column = column + 1
+    var row = 1
+    while row < 5:
+        let y = box.y + box.height * row / 5
+        rocket_raylib.draw_line(frame, box.x, y, box.x + box.width, y, 1.0, rocket_raylib.color(130, 170, 220, 38))?
+        row = row + 1
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, box.x, box.y, box.width, box.height, 0.04, 8, 1.0, theme.subtle_border(light_mode))
+
+fn curve_point(table: crash_api.PublicTable, graph: components.Rect, point: Int, count: Int) -> Result[components.Rect, String]:
+    var source_tick = table.tick_count - count + point
+    if source_tick < 0:
+        source_tick = 0
+    let value = crash_rules.multiplier_for_tick(source_tick)?
+    var range = table.multiplier_basis_points - 10000
+    if range < 2000:
+        range = 2000
+    var vertical =(value - 10000) *(graph.height - 54) / range
+    if vertical > graph.height - 54:
+        vertical = graph.height - 54
+    return Ok(components.rect(graph.x + 26 + point *(graph.width - 52) / count, graph.y + graph.height - 26 - vertical, 1, 1))
+
+fn draw_rocket(frame: rocket_raylib.Frame, x: Int, y: Int, crashed: Bool, tick: Int, reduced_motion: Bool, light_mode: Bool) -> Result[Bool, String]:
+    if crashed:
+        let danger = theme.destructive(light_mode)
+        rocket_raylib.draw_ring_pixels(frame, x, y, 10, 32, 0.0, 360.0, 28, danger)?
+        rocket_raylib.draw_line(frame, x - 34, y, x + 34, y, 4.0, danger)?
+        rocket_raylib.draw_line(frame, x, y - 34, x, y + 34, 4.0, danger)?
+        rocket_raylib.draw_line(frame, x - 24, y - 24, x + 24, y + 24, 4.0, danger)?
+        return rocket_raylib.draw_line(frame, x + 24, y - 24, x - 24, y + 24, 4.0, danger)
+    var flame = 20
+    if not reduced_motion and tick - tick / 2 * 2 == 0:
+        flame = 30
+    rocket_raylib.draw_triangle(frame, x - 20 - flame, y + 8, x - 20, y - 7, x - 20, y + 20, theme.highlight(light_mode))?
+    rocket_raylib.draw_triangle(frame, x + 26, y, x - 14, y - 22, x - 14, y + 22, theme.cyan(light_mode))?
+    rocket_raylib.draw_triangle(frame, x - 8, y - 18, x - 24, y - 32, x - 20, y - 8, theme.violet(light_mode))?
+    rocket_raylib.draw_triangle(frame, x - 8, y + 18, x - 24, y + 32, x - 20, y + 8, theme.violet(light_mode))?
+    return rocket_raylib.draw_circle_pixels(frame, x - 2, y, 6, rocket_raylib.color(235, 249, 255, 255))
+
+fn draw_graph(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: crash_api.PublicTable, value: game_layout.Interior, light_mode: Bool, reduced_motion: Bool) -> Result[Bool, String]:
+    let graph = game_layout.inset(value.stage, 20)
+    rocket_raylib.draw_rounded_rectangle(frame, graph.x, graph.y, graph.width, graph.height, 0.04, 10, rocket_raylib.color(4, 13, 35, 230))?
+    draw_grid(frame, graph, light_mode)?
+    let ink = graph_color(table, light_mode)
+    var count = table.tick_count
+    if count > 90:
+        count = 90
+    if count < 1:
+        count = 1
+    var previous = curve_point(table, graph, 0, count)?
+    var point = 1
+    while point <= count:
+        let current = curve_point(table, graph, point, count)?
+        rocket_raylib.draw_line(frame, previous.x, previous.y, current.x, current.y, 3.0, ink)?
+        previous = current
+        point = point + 1
+    var rocket_x = previous.x
+    var rocket_y = previous.y
+    if table.phase == 0:
+        rocket_x = graph.x + 64
+        rocket_y = graph.y + graph.height - 44
+    draw_rocket(frame, rocket_x, rocket_y, table.crashed, table.tick_count, reduced_motion, light_mode)?
+    let readout = components.rect(graph.x + graph.width / 2 - 140, graph.y + graph.height / 2 - 62, 280, 124)
+    rocket_raylib.draw_rounded_rectangle(frame, readout.x, readout.y, readout.width, readout.height, 0.16, 10, rocket_raylib.color(4, 9, 28, 205))?
+    components.type_centered(window, frame, resources, multiplier_label(table.multiplier_basis_points), components.rect(readout.x, readout.y + 14, readout.width, 58), components.type_display(), ink)?
+    var subtitle = "PRECOMMITTED POINT HIDDEN"
+    if table.phase == 2:
+        subtitle = string.concat("REVEALED  ", multiplier_label(table.revealed_crash_basis_points))
+    components.type_centered(window, frame, resources, subtitle, components.rect(readout.x, readout.y + 78, readout.width, 28), components.type_caption(), theme.secondary_text(light_mode))?
+    components.type_text(window, frame, resources, "LOCAL FLIGHT CURVE  /  20 HZ", value.stage.x + 16, value.stage.y + 14, components.type_caption(), rocket_raylib.color(255, 255, 255, 140))?
     return Ok(true)
 
-fn draw_history(frame: rocket_raylib.Frame, table: crash_api.PublicTable, width: Int) -> Result[Bool, String]:
-    var title_y = 378
-    var row_y = 404
-    if table.phase == 2:
-        title_y = 404
-        row_y = 426
-    rocket_raylib.draw_text(frame, "Recent committed points", width - 330, title_y, theme.small_size(), theme.muted())?
+fn draw_history(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: crash_api.PublicTable, value: game_layout.Interior, light_mode: Bool) -> Result[Bool, String]:
+    if value.compact:
+        return Ok(true)
+    components.type_text(window, frame, resources, "RECENT COMMITTED POINTS", value.rail.x + 16, value.rail.y + 382, components.type_caption(), theme.secondary_text(light_mode))?
     var index = 0
     while index < collections.length(table.history) and index < 5:
         let result = table.history[index]
-        var label = string.concat("Crash ", multiplier_label(result.crash_basis_points))
-        var ink = theme.danger()
+        var label = string.concat("CRASH  ", multiplier_label(result.crash_basis_points))
+        var ink = theme.destructive(light_mode)
         if result.payout > 0:
-            label = string.concat(string.concat("Out ", multiplier_label(result.cash_out_basis_points)), string.concat(" / ", string.from_int(result.payout)))
-            ink = theme.emerald()
-        rocket_raylib.draw_text(frame, label, width - 330, row_y + index * 22, theme.small_size(), ink)?
+            label = string.concat(string.concat("OUT  ", multiplier_label(result.cash_out_basis_points)), string.concat("  /  ", string.from_int(result.payout)))
+            ink = theme.success(light_mode)
+        components.type_text(window, frame, resources, label, value.rail.x + 16, value.rail.y + 408 + index * 24, components.type_caption(), ink)?
         index = index + 1
     return Ok(true)
 
-fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.overlay())?
-    let box = components.rect(width / 2 - 350, 60, 700, 500)
-    components.panel(frame, box)?
-    rocket_raylib.draw_text(frame, "CRASH RULES AND PRECOMMITMENT", box.x + 26, box.y + 22, theme.heading_size(), theme.gold())?
-    let lines = ["The wager is prepaid and one deterministic crash point is committed.", "The curve starts at 1.00x and advances on bounded 20 Hz engine ticks.", "Cash Out settles the exact current integer multiplier only before crash.", "The hidden point is revealed after settlement and never chosen by the view.", "Tickets 1-40000 crash at 1.00x; later tickets use a 960000 range.", "Threshold = clamp(floor(10000 x 960000 / denominator)).", "That is an exact 4% instant point and 96% reciprocal survival model.", "One optional auto target is validated for this round; help pauses ticks.", "No users/live bets exist. Arrows/Tab configure; Enter/S act; P closes."]
-    var index = 0
-    while index < collections.length(lines):
-        rocket_raylib.draw_text(frame, lines[index], box.x + 26, box.y + 72 + index * 43, theme.body_size(), theme.text())?
-        index = index + 1
-    return Ok(true)
-
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, table: crash_api.PublicTable, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_text(frame, "CRASH", 32, 26, theme.heading_size(), theme.gold())?
-    rocket_raylib.draw_text(frame, "Local deterministic fixed-tick flight", 32, 62, theme.small_size(), theme.muted())?
-    rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(table.balance)), width - 300, 76, theme.body_size(), theme.emerald())?
-    let help_button = help_rect(width)
-    components.button(window, frame, help_button, "Help [P]", true, components.contains(help_button, mouse_x, mouse_y), false)?
-    draw_graph(frame, table)?
-    components.panel(frame, components.rect(width - 350, 112, 272, 430))?
-    rocket_raylib.draw_text(frame, table.message, width - 330, 126, theme.small_size(), theme.muted())?
-    rocket_raylib.draw_text(frame, string.concat("Wager: ", string.from_int(table.bet)), width - 270, 200, theme.body_size(), theme.text())?
-    components.button(window, frame, bet_minus_rect(width), "-", table.phase == 0, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, bet_plus_rect(width), "+", table.phase == 0, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
-    var auto_label = "Auto Off [Tab]"
-    if table.auto_cash_out_basis_points > 0:
-        auto_label = multiplier_label(table.auto_cash_out_basis_points)
-    components.button(window, frame, auto_toggle_rect(width), auto_label, table.phase == 0, components.contains(auto_toggle_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, auto_minus_rect(width), "-", table.phase == 0 and table.auto_cash_out_basis_points > 0, components.contains(auto_minus_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, auto_plus_rect(width), "+", table.phase == 0 and table.auto_cash_out_basis_points > 0, components.contains(auto_plus_rect(width), mouse_x, mouse_y), false)?
+fn draw_controls(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: crash_api.PublicTable, value: game_layout.Interior, mouse_x: Int, mouse_y: Int, light_mode: Bool) -> Result[Bool, String]:
+    components.modern_panel(frame, value.rail, light_mode, true)?
+    if value.compact:
+        if table.phase == 0:
+            components.type_centered(window, frame, resources, string.concat("BET ", string.from_int(table.bet)), components.rect(value.dock.x + 60, value.dock.y + 14, 76, 44), components.type_caption(), theme.primary_text(light_mode))?
+        else:
+            components.badge(window, frame, resources, components.rect(value.dock.x + 16, value.dock.y + 14, 136, 28), phase_name(table.phase), light_mode)?
+            game_components.metric(window, frame, resources, "MULTIPLIER", multiplier_label(table.multiplier_basis_points), value.dock.x + 168, value.dock.y + 10, 108, true, light_mode)?
+            game_components.metric(window, frame, resources, "RETURN", string.from_int(table.payout), value.dock.x + 292, value.dock.y + 10, 84, true, light_mode)?
+    else:
+        components.badge(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 16, 146, 28), phase_name(table.phase), light_mode)?
+        game_components.status_banner(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 56, value.rail.width - 32, 54), table.message, light_mode)?
+        game_components.metric(window, frame, resources, "MULTIPLIER", multiplier_label(table.multiplier_basis_points), value.rail.x + 16, value.rail.y + 118, 112, true, light_mode)?
+        game_components.metric(window, frame, resources, "RETURN", string.from_int(table.payout), value.rail.x + 146, value.rail.y + 118, 90, true, light_mode)?
     if table.phase == 0:
-        components.button(window, frame, start_rect(width), "Start [Enter]", table.bet <= table.balance, components.contains(start_rect(width), mouse_x, mouse_y), true)?
+        let bet_minus = bet_minus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let bet_plus = bet_plus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let auto_toggle = auto_toggle_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let auto_minus = auto_minus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let auto_plus = auto_plus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let start = start_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, bet_minus, "-", components.button_secondary(), true, components.contains(bet_minus, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, bet_plus, "+", components.button_secondary(), true, components.contains(bet_plus, mouse_x, mouse_y), false, light_mode)?
+        if not value.compact:
+            components.type_centered(window, frame, resources, string.concat("WAGER  ", string.from_int(table.bet)), components.rect(bet_minus.x + 48, bet_minus.y, bet_plus.x - bet_minus.x - 48, 44), components.type_label(), theme.primary_text(light_mode))?
+        var auto_label = "AUTO OFF"
+        if table.auto_cash_out_basis_points > 0:
+            auto_label = multiplier_label(table.auto_cash_out_basis_points)
+        components.modern_button(window, frame, resources, auto_toggle, auto_label, components.button_secondary(), true, components.contains(auto_toggle, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, auto_minus, "-", components.button_secondary(), table.auto_cash_out_basis_points > 0, components.contains(auto_minus, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, auto_plus, "+", components.button_secondary(), table.auto_cash_out_basis_points > 0, components.contains(auto_plus, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, start, "LAUNCH [ENTER]", components.button_primary(), table.bet <= table.balance, components.contains(start, mouse_x, mouse_y), true, light_mode)?
     if table.phase == 1:
-        components.button(window, frame, cash_out_rect(width), "Cash Out [S]", true, components.contains(cash_out_rect(width), mouse_x, mouse_y), true)?
-        rocket_raylib.draw_text(frame, "Crash point: hidden", width - 330, 360, theme.small_size(), theme.muted())?
+        let cash = cash_out_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, cash, "CASH OUT [S]", components.button_primary(), true, components.contains(cash, mouse_x, mouse_y), true, light_mode)?
     if table.phase == 2:
-        rocket_raylib.draw_text(frame, string.concat("Crash point: ", multiplier_label(table.revealed_crash_basis_points)), width - 330, 350, theme.body_size(), theme.danger())?
-        rocket_raylib.draw_text(frame, string.concat("Return: ", string.from_int(table.payout)), width - 330, 376, theme.body_size(), theme.emerald())?
-    draw_history(frame, table, width)?
-    if table.phase == 2:
-        components.button(window, frame, next_rect(height), "Next [N]", true, components.contains(next_rect(height), mouse_x, mouse_y), true)?
+        let next = next_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, next, "NEXT FLIGHT [N]", components.button_primary(), true, components.contains(next, mouse_x, mouse_y), true, light_mode)?
     if table.phase != 1:
-        components.button(window, frame, lobby_rect(height), "Lobby [B]", true, components.contains(lobby_rect(height), mouse_x, mouse_y), false)?
-        components.button(window, frame, restart_rect(height), "Restart [R]", true, components.contains(restart_rect(height), mouse_x, mouse_y), false)?
+        let restart = restart_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, restart, "RESET [R]", components.button_secondary(), true, components.contains(restart, mouse_x, mouse_y), false, light_mode)?
+    draw_history(window, frame, resources, table, value, light_mode)?
+    return Ok(true)
+
+fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, light_mode: Bool) -> Result[Bool, String]:
+    let lines = ["The wager is prepaid and one deterministic crash point is committed.", "The curve starts at 1.00x and advances on bounded 20 Hz engine ticks.", "Cash Out settles the exact current integer multiplier only before crash.", "The hidden point is revealed after settlement and never reaches this view.", "Tickets 1-40000 crash at 1.00x; later tickets use a 960000 range.", "Threshold = clamp(floor(10000 x 960000 / denominator)).", "That is an exact 4% instant point and 96% reciprocal survival model.", "One optional auto target is validated for the round; help pauses ticks.", "Arrows/Tab configure, Enter launches, and S cashes out."]
+    return game_components.help_overlay(window, frame, resources, "CRASH  /  PRECOMMITMENT GUIDE", lines, -1, light_mode)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: crash_api.PublicTable, help: Bool, light_mode: Bool, reduced_motion: Bool, now: Float, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let value = interior(width, height)
+    let expected = now
+    game_components.ambient_stage(frame, resources, value.stage, 9, light_mode)?
+    draw_graph(window, frame, resources, table, value, light_mode, reduced_motion)?
+    draw_controls(window, frame, resources, table, value, mouse_x, mouse_y, light_mode)?
+    let rules = help_rect(width, height)
+    components.modern_button(window, frame, resources, rules, "RULES", components.button_quiet(), true, components.contains(rules, mouse_x, mouse_y), false, light_mode)?
     if help:
-        draw_help(window, frame)?
+        draw_help(window, frame, resources, light_mode)?
     return Ok(true)

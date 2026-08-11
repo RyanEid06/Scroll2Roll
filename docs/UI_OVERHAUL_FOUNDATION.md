@@ -153,7 +153,7 @@ Implementation status on 2026-08-11:
 | Startup, shell, lobby, settings, help, modals | Accepted | Actual dark/light native captures at every target and maximized; 45/45 |
 | Blackjack, Roulette, Hold'em, HiLo interiors | Accepted | Actual dark/light native matrix, responsive state drawing, exact guides; 46/46 |
 | Plinko, Coop Climb, Midnight Crossing interiors | Accepted | Actual dark/light native matrix, active states, responsive drawing; 47/47 |
-| Mines, Dice, Crash, Slots interiors | Pending | Must pass focused implementation, visual, and regression gates |
+| Mines, Dice, Crash, Slots interiors | Accepted | Actual dark/light matrix, active and maximized states, privacy-safe responsive drawing; 48/48 |
 | Website, package, final acceptance | Pending | Must use the completed asset-bearing application |
 
 Every milestone must pass the relevant focused tests and the complete Debug and
@@ -169,6 +169,6 @@ safe; both themes have readable contrast; keyboard and mouse reach the same
 legal actions; labels do not clip; and the minimum viewport has no overlap,
 negative geometry, or unreachable control.
 
-This ledger does not claim that the visual overhaul is complete. It defines the
-evidence required to make that claim after all eleven interiors, the package,
-and the aligned website have passed.
+All eleven native interiors are accepted. This ledger does not yet claim that
+the full overhaul Definition of Done is complete because the real package,
+aligned website, final documentation, and clean-tree audit remain pending.

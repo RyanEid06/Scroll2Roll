@@ -428,6 +428,13 @@ bearing package, and the final acceptance matrix pass.
   Climb, and Midnight Crossing replacements; committed-path interpolation;
   privacy-safe ladder and public fixed-tick hazard rendering; actual dark/light
   and active-state native review; and passing 47/47 Debug and Release gates.
+- Completed: native UI overhaul milestone 6, including complete Mines, Dice,
+  Crash, and Slots replacements; privacy-safe tiles and committed flight data;
+  exact signal and reel-result presentation; procedural gems, mines, dice,
+  rocket/exhaust, cabinet, paylines, and eight symbols; actual dark/light,
+  active-state, requested-1080p, and maximized native review; and passing 48/48
+  Debug and Release gates. All eleven native game interiors are now accepted;
+  website/package/final acceptance remains.
 
 ## Major decisions
 
@@ -475,13 +482,15 @@ Read `AGENTS.md`, `UI_OVERHAUL.md`, `docs/MASTER_PLAN.md`,
 `docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
 status and preserve user changes. The accepted 0.2.0 baseline remains intact;
 Mines, Dice, HiLo, Crash, Slots, and the accepted save-v3 behavior baseline are
-complete. The UI-overhaul suite currently passes 47/47. The
+complete. The UI-overhaul suite currently passes 48/48. The
 verified local 0.3.0 archive is 1,919,372 bytes with SHA-256
 `FD2B4EC31734DCB6E51707C862A439966E5771CBDA136DCD4F6B09726082688B`;
 source/staged website and responsive browser checks pass. Keep using frozen Rocket 2.0
 and the pinned raylib integration with custom frame control forced off. Do not
 push, publish, deploy, sign, or add an unapproved game without owner approval.
-UI overhaul milestones 1 through 5 pass 47/47 in Debug and Release. Blackjack,
-European Roulette, Plinko, Coop Climb, Midnight Crossing, No-Limit Hold'em, and
-HiLo are visually accepted. Continue with Mines, Dice, Crash, and Slots. Do not
-mistake those compatibility-rendered old game views for accepted UI.
+UI overhaul milestones 1 through 6 pass 48/48 in Debug and Release. All eleven
+game interiors are visually accepted in both themes and across the responsive
+matrix. Continue with website alignment, the real asset-bearing Windows
+package, source/staged-site validation, final documentation, and the clean-tree
+acceptance audit. Do not reuse the superseded 0.3.0 package or stale website
+screenshots.

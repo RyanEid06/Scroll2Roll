@@ -1,5 +1,9 @@
 import src.app.components
+import src.app.game_components
+import src.app.game_layout
+import src.app.shell_view
 import src.app.theme
+import src.app.ui_resources
 import src.rocket_raylib
 import src.slots.slots_api
 import src.slots.slots_model
@@ -7,63 +11,71 @@ import src.slots.slots_rules
 import std.collections
 import std.string
 
-pub fn bet_minus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 292, 166, 44, 38)
+fn interior(width: Int, height: Int) -> game_layout.Interior:
+    return game_layout.interior(width, height)
 
-pub fn bet_plus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 146, 166, 44, 38)
+pub fn bet_minus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + 14, 44, 44)
+    return components.rect(value.rail.x + 16, value.rail.y + 180, 48, 44)
 
-pub fn turbo_rect(width: Int) -> components.Rect:
-    return components.rect(width - 292, 216, 190, 38)
+pub fn bet_plus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 136, value.dock.y + 14, 44, 44)
+    return components.rect(value.rail.x + value.rail.width - 64, value.rail.y + 180, 48, 44)
 
-pub fn auto_count_rect(width: Int) -> components.Rect:
-    return components.rect(width - 292, 264, 190, 38)
+pub fn turbo_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 196, value.dock.y + 14, 122, 44)
+    return components.rect(value.rail.x + 16, value.rail.y + 238, value.rail.width - 32, 44)
 
-pub fn spin_rect(width: Int) -> components.Rect:
-    return components.rect(width - 292, 314, 90, 44)
+pub fn auto_count_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 330, value.dock.y + 14, 128, 44)
+    return components.rect(value.rail.x + 16, value.rail.y + 294, value.rail.width - 32, 44)
 
-pub fn auto_rect(width: Int) -> components.Rect:
-    return components.rect(width - 192, 314, 90, 44)
+pub fn spin_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 470, value.dock.y + 14, 142, 44)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 128, value.rail.width / 2 - 20, 50)
 
-pub fn help_rect(width: Int) -> components.Rect:
-    return components.rect(width - 118, 24, 86, 38)
+pub fn auto_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 624, value.dock.y + 14, value.dock.width - 640, 44)
+    return components.rect(value.rail.x + value.rail.width / 2 + 4, value.rail.y + value.rail.height - 128, value.rail.width / 2 - 20, 50)
 
-pub fn next_rect(height: Int) -> components.Rect:
-    return components.rect(32, height - 68, 140, 42)
+pub fn help_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    return components.rect(value.stage.x + value.stage.width - 88, value.stage.y + 6, 76, 44)
 
-pub fn lobby_rect(height: Int) -> components.Rect:
-    return components.rect(182, height - 68, 120, 42)
+pub fn next_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + value.dock.height - 60, value.dock.width / 2 - 24, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 128, value.rail.width - 32, 50)
 
-pub fn restart_rect(height: Int) -> components.Rect:
-    return components.rect(312, height - 68, 136, 42)
+pub fn restart_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + value.dock.width / 2, value.dock.y + value.dock.height - 60, value.dock.width / 2 - 16, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 68, value.rail.width - 32, 50)
 
-fn symbol_letter(symbol: Int) -> String:
-    if symbol == 0:
-        return "P"
-    if symbol == 1:
-        return "Q"
-    if symbol == 2:
-        return "L"
-    if symbol == 3:
-        return "C"
-    if symbol == 4:
-        return "S"
-    if symbol == 5:
-        return "W"
-    if symbol == 6:
-        return "M"
-    return "G"
+pub fn lobby_rect(width: Int, height: Int) -> components.Rect:
+    let expected = height
+    return shell_view.back_rect(width)
 
-fn symbol_ink(symbol: Int) -> rocket_raylib.Color:
-    if symbol == 0:
-        return theme.muted()
-    if symbol == 2 or symbol == 4 or symbol == 5:
-        return theme.gold()
-    if symbol == 3 or symbol == 7:
-        return theme.emerald()
-    if symbol == 6:
-        return theme.danger()
-    return theme.text()
+fn phase_name(code: Int) -> String:
+    if code == 0:
+        return "CABINET READY"
+    if code == 1:
+        return "REELS TURNING"
+    return "SPIN SETTLED"
 
 fn winning_cell(result: slots_model.SpinResult, row: Int, reel: Int) -> Result[Bool, String]:
     var index = 0
@@ -74,122 +86,246 @@ fn winning_cell(result: slots_model.SpinResult, row: Int, reel: Int) -> Result[B
         index = index + 1
     return Ok(false)
 
-fn draw_symbol(frame: rocket_raylib.Frame, x: Int, y: Int, symbol: Int, winning: Bool) -> Result[Bool, String]:
-    var border = theme.border()
+fn symbol_color(symbol: Int, light_mode: Bool) -> rocket_raylib.Color:
+    if symbol == 0:
+        return rocket_raylib.color(130, 149, 170, 255)
+    if symbol == 1:
+        return theme.cyan(light_mode)
+    if symbol == 2 or symbol == 4:
+        return theme.highlight(light_mode)
+    if symbol == 3 or symbol == 7:
+        return theme.success(light_mode)
+    if symbol == 5:
+        return theme.violet(light_mode)
+    return theme.destructive(light_mode)
+
+fn draw_pebble(frame: rocket_raylib.Frame, x: Int, y: Int, size: Int, ink: rocket_raylib.Color) -> Result[Bool, String]:
+    rocket_raylib.draw_circle_pixels(frame, x, y + size / 10, size / 3, ink)?
+    rocket_raylib.draw_circle_pixels(frame, x - size / 5, y - size / 7, size / 5, rocket_raylib.color(190, 207, 222, 255))?
+    return rocket_raylib.draw_circle_pixels(frame, x + size / 6, y - size / 8, size / 9, rocket_raylib.color(240, 248, 255, 220))
+
+fn draw_quill(frame: rocket_raylib.Frame, x: Int, y: Int, size: Int, ink: rocket_raylib.Color) -> Result[Bool, String]:
+    rocket_raylib.draw_line(frame, x - size / 3, y + size / 3, x + size / 3, y - size / 3, 4.0, ink)?
+    rocket_raylib.draw_triangle(frame, x - size / 8, y + size / 8, x + size / 3, y - size / 3, x + size / 8, y - size / 14, ink)?
+    rocket_raylib.draw_line(frame, x - size / 8, y, x + size / 5, y - size / 5, 2.0, rocket_raylib.color(255, 255, 255, 180))?
+    return rocket_raylib.draw_line(frame, x - size / 3, y + size / 3, x - size / 2, y + size / 2, 3.0, ink)
+
+fn draw_lantern(frame: rocket_raylib.Frame, x: Int, y: Int, size: Int, ink: rocket_raylib.Color) -> Result[Bool, String]:
+    rocket_raylib.draw_ring_pixels(frame, x, y - size / 3, size / 5, size / 4, 190.0, 350.0, 16, ink)?
+    rocket_raylib.draw_rounded_rectangle(frame, x - size / 3, y - size / 4, size * 2 / 3, size * 3 / 4, 0.18, 8, rocket_raylib.color(40, 32, 20, 255))?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, x - size / 3, y - size / 4, size * 2 / 3, size * 3 / 4, 0.18, 8, 3.0, ink)?
+    return rocket_raylib.draw_circle_pixels(frame, x, y + size / 8, size / 6, ink)
+
+fn draw_compass(frame: rocket_raylib.Frame, x: Int, y: Int, size: Int, ink: rocket_raylib.Color) -> Result[Bool, String]:
+    rocket_raylib.draw_ring_pixels(frame, x, y, size / 3, size / 2, 0.0, 360.0, 28, ink)?
+    rocket_raylib.draw_triangle(frame, x, y - size / 3, x - size / 8, y + size / 4, x + size / 8, y + size / 4, theme.destructive(false))?
+    return rocket_raylib.draw_circle_pixels(frame, x, y, size / 10, rocket_raylib.color(245, 250, 255, 255))
+
+fn draw_scroll(frame: rocket_raylib.Frame, x: Int, y: Int, size: Int, ink: rocket_raylib.Color) -> Result[Bool, String]:
+    rocket_raylib.draw_rounded_rectangle(frame, x - size / 3, y - size / 3, size * 2 / 3, size * 2 / 3, 0.08, 6, ink)?
+    rocket_raylib.draw_ring_pixels(frame, x - size / 3, y - size / 3, size / 9, size / 6, 90.0, 270.0, 12, ink)?
+    rocket_raylib.draw_ring_pixels(frame, x + size / 3, y + size / 3, size / 9, size / 6, 270.0, 450.0, 12, ink)?
+    rocket_raylib.draw_line(frame, x - size / 5, y - size / 8, x + size / 5, y - size / 8, 2.0, rocket_raylib.color(74, 54, 26, 170))?
+    return rocket_raylib.draw_line(frame, x - size / 5, y + size / 10, x + size / 8, y + size / 10, 2.0, rocket_raylib.color(74, 54, 26, 170))
+
+fn draw_wild(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, x: Int, y: Int, size: Int, ink: rocket_raylib.Color) -> Result[Bool, String]:
+    rocket_raylib.draw_triangle(frame, x, y - size / 2, x - size / 2, y + size / 3, x + size / 2, y + size / 3, ink)?
+    rocket_raylib.draw_triangle(frame, x, y + size / 2, x - size / 2, y - size / 3, x + size / 2, y - size / 3, ink)?
+    return components.type_centered(window, frame, resources, "W", components.rect(x - size / 2, y - size / 2, size, size), components.type_heading(), rocket_raylib.color(255, 255, 255, 255))
+
+fn draw_moon(frame: rocket_raylib.Frame, x: Int, y: Int, size: Int, ink: rocket_raylib.Color, cell_fill: rocket_raylib.Color) -> Result[Bool, String]:
+    rocket_raylib.draw_circle_pixels(frame, x, y, size / 2, ink)?
+    rocket_raylib.draw_circle_pixels(frame, x + size / 5, y - size / 8, size / 2, cell_fill)?
+    return rocket_raylib.draw_circle_pixels(frame, x - size / 4, y - size / 4, size / 14, rocket_raylib.color(255, 255, 255, 220))
+
+fn draw_gear(frame: rocket_raylib.Frame, x: Int, y: Int, size: Int, ink: rocket_raylib.Color) -> Result[Bool, String]:
+    rocket_raylib.draw_ring_pixels(frame, x, y, size / 4, size / 2, 0.0, 360.0, 16, ink)?
+    rocket_raylib.draw_line(frame, x - size / 2, y, x + size / 2, y, 5.0, ink)?
+    rocket_raylib.draw_line(frame, x, y - size / 2, x, y + size / 2, 5.0, ink)?
+    rocket_raylib.draw_line(frame, x - size / 3, y - size / 3, x + size / 3, y + size / 3, 5.0, ink)?
+    rocket_raylib.draw_line(frame, x + size / 3, y - size / 3, x - size / 3, y + size / 3, 5.0, ink)?
+    return rocket_raylib.draw_circle_pixels(frame, x, y, size / 7, rocket_raylib.color(8, 20, 35, 255))
+
+fn draw_symbol(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, box: components.Rect, symbol: Int, winning: Bool, light_mode: Bool) -> Result[Bool, String]:
+    var border = theme.subtle_border(light_mode)
     if winning:
-        border = theme.gold()
-    rocket_raylib.draw_rectangle(frame, x, y, 76, 72, border)?
-    rocket_raylib.draw_rectangle(frame, x + 3, y + 3, 70, 66, theme.background())?
-    rocket_raylib.draw_circle(frame, x + 38, y + 34, 22.0, symbol_ink(symbol))?
-    rocket_raylib.draw_text(frame, symbol_letter(symbol), x + 30, y + 20, theme.heading_size(), theme.background())?
+        border = theme.highlight(light_mode)
+    let fill = rocket_raylib.color(13, 27, 46, 250)
+    rocket_raylib.draw_rounded_rectangle(frame, box.x, box.y + 4, box.width, box.height, 0.12, 8, rocket_raylib.color(1, 5, 18, 120))?
+    rocket_raylib.draw_rounded_rectangle(frame, box.x, box.y, box.width, box.height, 0.12, 8, fill)?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, box.x, box.y, box.width, box.height, 0.12, 8, 2.0, border)?
+    let x = box.x + box.width / 2
+    let y = box.y + box.height / 2
+    var size = box.height * 55 / 100
+    if size > box.width * 60 / 100:
+        size = box.width * 60 / 100
+    let ink = symbol_color(symbol, light_mode)
+    if symbol == 0:
+        return draw_pebble(frame, x, y, size, ink)
+    if symbol == 1:
+        return draw_quill(frame, x, y, size, ink)
+    if symbol == 2:
+        return draw_lantern(frame, x, y, size, ink)
+    if symbol == 3:
+        return draw_compass(frame, x, y, size, ink)
+    if symbol == 4:
+        return draw_scroll(frame, x, y, size, ink)
+    if symbol == 5:
+        return draw_wild(window, frame, resources, x, y, size, ink)
+    if symbol == 6:
+        return draw_moon(frame, x, y, size, ink, fill)
+    return draw_gear(frame, x, y, size, ink)
+
+fn reel_area(value: game_layout.Interior) -> components.Rect:
+    let cabinet = game_layout.inset(value.stage, 18)
+    return components.rect(cabinet.x + 24, cabinet.y + 56, cabinet.width - 48, cabinet.height - 118)
+
+fn cell_rect(value: game_layout.Interior, row: Int, reel: Int) -> components.Rect:
+    let area = reel_area(value)
+    let gap = 8
+    let width =(area.width - gap * 4) / 5
+    let height =(area.height - gap * 2) / 3
+    return components.rect(area.x + reel *(width + gap), area.y + row *(height + gap), width, height)
+
+fn draw_hidden_reel(frame: rocket_raylib.Frame, box: components.Rect, reel: Int, motion: Int, light_mode: Bool) -> Result[Bool, String]:
+    rocket_raylib.draw_rounded_rectangle(frame, box.x, box.y, box.width, box.height, 0.12, 8, rocket_raylib.color(11, 23, 43, 250))?
+    rocket_raylib.begin_scissor(frame, box.x, box.y, box.width, box.height)?
+    var stripe = -2
+    while stripe < 5:
+        let y = box.y + stripe * 24 + motion + reel * 5
+        rocket_raylib.draw_line(frame, box.x + 12, y, box.x + box.width - 12, y + 12, 5.0, theme.violet(light_mode))?
+        stripe = stripe + 1
+    rocket_raylib.end_scissor(frame)?
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, box.x, box.y, box.width, box.height, 0.12, 8, 2.0, theme.cyan(light_mode))
+
+fn draw_paylines(frame: rocket_raylib.Frame, result: slots_model.SpinResult, value: game_layout.Interior, light_mode: Bool) -> Result[Bool, String]:
+    var index = 0
+    while index < collections.length(result.line_wins):
+        let win = result.line_wins[index]
+        var reel = 0
+        var previous = cell_rect(value, slots_rules.payline_row(win.line_index, 0)?, 0)
+        while reel < win.count - 1:
+            let next_reel = reel + 1
+            let current = cell_rect(value, slots_rules.payline_row(win.line_index, next_reel)?, next_reel)
+            rocket_raylib.draw_line(frame, previous.x + previous.width / 2, previous.y + previous.height / 2, current.x + current.width / 2, current.y + current.height / 2, 3.0, theme.highlight(light_mode))?
+            previous = current
+            reel = reel + 1
+        index = index + 1
     return Ok(true)
 
-fn draw_reels(frame: rocket_raylib.Frame, session: slots_api.Session, reel_stage: Int) -> Result[Bool, String]:
+fn draw_cabinet(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, session: slots_api.Session, value: game_layout.Interior, reel_stage: Int, light_mode: Bool, reduced_motion: Bool, now: Float, animation_end: Float) -> Result[Bool, String]:
     let game = session.game
-    components.panel(frame, components.rect(28, 108, 424, 252))?
+    let phase = slots_api.phase_code(session)
+    let cabinet = game_layout.inset(value.stage, 18)
+    rocket_raylib.draw_rounded_rectangle(frame, cabinet.x, cabinet.y, cabinet.width, cabinet.height, 0.04, 12, rocket_raylib.color(31, 18, 54, 235))?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, cabinet.x, cabinet.y, cabinet.width, cabinet.height, 0.04, 12, 3.0, theme.highlight(light_mode))?
+    let header = components.rect(cabinet.x + 24, cabinet.y + 12, cabinet.width - 48, 36)
+    rocket_raylib.draw_rounded_rectangle(frame, header.x, header.y, header.width, header.height, 0.3, 10, theme.violet(light_mode))?
+    components.type_centered(window, frame, resources, "SCROLLWORKS  /  FIVE LINES", header, components.type_label(), rocket_raylib.color(255, 255, 255, 255))?
+    let motion = game_components.motion_offset(now, animation_end, reduced_motion, 20)
     var row = 0
     while row < slots_rules.row_count():
         var reel = 0
         while reel < slots_rules.reel_count():
-            let x = 38 + reel * 82
-            let y = 118 + row * 78
-            var revealed = slots_api.phase_code(session) != 1 or reel < reel_stage
+            let box = cell_rect(value, row, reel)
+            var revealed = phase != 1 or reel < reel_stage
             if collections.length(game.spin.grid) != 15:
                 revealed = false
             if revealed:
                 let symbol = game.spin.grid[row * 5 + reel]
-                draw_symbol(frame, x, y, symbol, winning_cell(game.spin, row, reel)?)?
+                draw_symbol(window, frame, resources, box, symbol, winning_cell(game.spin, row, reel)?, light_mode)?
             else:
-                rocket_raylib.draw_rectangle(frame, x, y, 76, 72, theme.border())?
-                rocket_raylib.draw_rectangle(frame, x + 3, y + 3, 70, 66, theme.panel())?
-                rocket_raylib.draw_text(frame, "--", x + 24, y + 22, theme.heading_size(), theme.muted())?
+                draw_hidden_reel(frame, box, reel, motion, light_mode)?
             reel = reel + 1
         row = row + 1
+    if phase == 2:
+        draw_paylines(frame, game.spin, value, light_mode)?
+    let marquee = components.rect(cabinet.x + 24, cabinet.y + cabinet.height - 50, cabinet.width - 48, 34)
+    rocket_raylib.draw_rounded_rectangle(frame, marquee.x, marquee.y, marquee.width, marquee.height, 0.28, 10, rocket_raylib.color(6, 15, 35, 225))?
+    var message = string.concat("CURRENT WIN  ", string.from_int(game.round_win))
+    if game.free_spins_remaining > 0:
+        message = string.concat(message, string.concat("   FREE SPINS  ", string.from_int(game.free_spins_remaining)))
+    components.type_centered(window, frame, resources, message, marquee, components.type_caption(), theme.highlight(light_mode))?
     return Ok(true)
 
-fn draw_results(frame: rocket_raylib.Frame, game: slots_model.Game) -> Result[Bool, String]:
-    rocket_raylib.draw_text(frame, "Engine-proven line results", 32, 378, theme.small_size(), theme.muted())?
+fn draw_history(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: slots_model.Game, value: game_layout.Interior, light_mode: Bool) -> Result[Bool, String]:
+    if value.compact:
+        return Ok(true)
+    components.type_text(window, frame, resources, "RECENT PAID ROUNDS", value.rail.x + 16, value.rail.y + 386, components.type_caption(), theme.secondary_text(light_mode))?
     var index = 0
-    while index < collections.length(game.spin.line_wins) and index < 5:
-        let win = game.spin.line_wins[index]
-        let label = string.concat(string.concat("Line ", string.from_int(win.line_index + 1)), string.concat("  ", string.concat(slots_rules.symbol_name(win.symbol), string.concat(" x", string.concat(string.from_int(win.count), string.concat("  +", string.from_int(win.payout)))))))
-        rocket_raylib.draw_text(frame, label, 32, 400 + index * 20, theme.small_size(), theme.emerald())?
-        index = index + 1
-    if collections.length(game.spin.line_wins) == 0:
-        rocket_raylib.draw_text(frame, "No line award on the committed grid", 32, 402, theme.small_size(), theme.muted())?
-    rocket_raylib.draw_text(frame, string.concat("Moon scatters ", string.from_int(game.spin.scatter_count)), 276, 378, theme.small_size(), theme.danger())?
-    var bonus = "Gear bonus not triggered"
-    if game.spin.bonus_count >= 3:
-        bonus = string.concat("Gear bonus x", string.from_int(game.spin.bonus_multiplier))
-    rocket_raylib.draw_text(frame, bonus, 276, 400, theme.small_size(), theme.gold())?
-    return Ok(true)
-
-fn draw_history(frame: rocket_raylib.Frame, game: slots_model.Game) -> Result[Bool, String]:
-    rocket_raylib.draw_text(frame, "Recent paid rounds", 32, 500, theme.small_size(), theme.muted())?
-    var index = 0
-    while index < collections.length(game.history) and index < 3:
+    while index < collections.length(game.history) and index < 4:
         let result = game.history[index]
-        let label = string.concat(string.concat("Bet ", string.from_int(result.total_bet)), string.concat("  win ", string.concat(string.from_int(result.payout), string.concat("  FS ", string.from_int(result.free_spins)))))
-        rocket_raylib.draw_text(frame, label, 150 + index * 126, 500, theme.small_size(), theme.text())?
+        let label = string.concat(string.concat("BET ", string.from_int(result.total_bet)), string.concat(string.concat("  WIN ", string.from_int(result.payout)), string.concat("  FS ", string.from_int(result.free_spins))))
+        components.type_text(window, frame, resources, label, value.rail.x + 16, value.rail.y + 412 + index * 24, components.type_caption(), theme.primary_text(light_mode))?
         index = index + 1
     return Ok(true)
 
-fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.overlay())?
-    let box = components.rect(width / 2 - 350, 48, 700, 512)
-    components.panel(frame, box)?
-    rocket_raylib.draw_text(frame, "SCROLLWORKS SLOT RULES", box.x + 24, box.y + 18, theme.heading_size(), theme.gold())?
-    let lines = ["Symbols: Pebble, Quill, Lantern, Compass, Scroll, Wild, Moon, Gear.", "Five fixed lines: top, middle, bottom, V, and inverted V; wins start left.", "Pays P 3/9/24, Q 6/15/36, L 9/24/60 times line bet for 3/4/5.", "Pays C 12/36/105, S 18/60/180, Wild 24/90/300 for 3/4/5.", "Wild substitutes for P-Q-L-C-S; the engine chooses the highest one-line award.", "3/4/5 Moons pay 2/10/40 x total bet and award 2/3/5 free spins.", "Free spins do not retrigger and apply a fixed 2x multiplier to every award.", "3+ Gears use the precommitted ticket: 1x, 2x, 4x, or 6x total bet.", "Each reel has 20 exact stops; every paid spin prepays all five fixed lines.", "Source-recomputed total return is 95.9836866495%; floor display is 95.98%.", "Up/Down line bet | D Turbo | M Auto count | Enter Spin | H Auto | S Stop."]
-    var index = 0
-    while index < collections.length(lines):
-        rocket_raylib.draw_text(frame, lines[index], box.x + 24, box.y + 68 + index * 37, theme.small_size(), theme.text())?
-        index = index + 1
-    return Ok(true)
-
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, session: slots_api.Session, help: Bool, reel_stage: Int, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
+fn draw_controls(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, session: slots_api.Session, value: game_layout.Interior, mouse_x: Int, mouse_y: Int, light_mode: Bool) -> Result[Bool, String]:
     let game = session.game
     let phase = slots_api.phase_code(session)
     let ready = phase == 0
-    rocket_raylib.draw_text(frame, "SCROLLWORKS SLOTS", 32, 24, theme.heading_size(), theme.gold())?
-    rocket_raylib.draw_text(frame, "Original 5-reel procedural workshop", 32, 62, theme.small_size(), theme.muted())?
-    rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(game.balance)), width - 300, 76, theme.body_size(), theme.emerald())?
-    let help_button = help_rect(width)
-    components.button(window, frame, help_button, "Help [P]", true, components.contains(help_button, mouse_x, mouse_y), false)?
-    draw_reels(frame, session, reel_stage)?
-    draw_results(frame, game)?
-    draw_history(frame, game)?
-    components.panel(frame, components.rect(width - 310, 108, 228, 408))?
-    rocket_raylib.draw_text(frame, game.message, width - 292, 120, theme.small_size(), theme.muted())?
-    rocket_raylib.draw_text(frame, string.concat("Line bet ", string.from_int(game.bet_per_line)), width - 226, 176, theme.small_size(), theme.text())?
-    components.button(window, frame, bet_minus_rect(width), "-", ready, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, bet_plus_rect(width), "+", ready, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
-    rocket_raylib.draw_text(frame, string.concat("Total bet ", string.from_int(slots_rules.total_bet(game.bet_per_line)?)), width - 292, 202, theme.small_size(), theme.gold())?
-    var turbo = "Turbo Off [D]"
-    if game.turbo:
-        turbo = "Turbo On [D]"
-    components.button(window, frame, turbo_rect(width), turbo, ready, components.contains(turbo_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, auto_count_rect(width), string.concat("Finite Auto ", string.from_int(game.auto_count)), ready, components.contains(auto_count_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, spin_rect(width), "Spin", ready and slots_rules.total_bet(game.bet_per_line)? <= game.balance, components.contains(spin_rect(width), mouse_x, mouse_y), true)?
-    var auto_label = "Auto [H]"
-    var auto_enabled = ready and slots_rules.total_bet(game.bet_per_line)? <= game.balance
+    let total_bet = slots_rules.total_bet(game.bet_per_line)?
+    components.modern_panel(frame, value.rail, light_mode, true)?
+    if value.compact:
+        if ready:
+            components.type_centered(window, frame, resources, string.concat("LINE ", string.from_int(game.bet_per_line)), components.rect(value.dock.x + 60, value.dock.y + 14, 76, 44), components.type_caption(), theme.primary_text(light_mode))?
+        else:
+            var status_y = value.dock.y + 72
+            if phase == 2:
+                status_y = value.dock.y + 10
+            components.badge(window, frame, resources, components.rect(value.dock.x + 16, status_y + 4, 138, 28), phase_name(phase), light_mode)?
+            game_components.metric(window, frame, resources, "WIN", string.from_int(game.round_win), value.dock.x + 170, status_y, 72, true, light_mode)?
+            game_components.metric(window, frame, resources, "FREE SPINS", string.from_int(game.free_spins_remaining), value.dock.x + 258, status_y, 92, false, light_mode)?
+    else:
+        components.badge(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 16, 148, 28), phase_name(phase), light_mode)?
+        game_components.status_banner(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 56, value.rail.width - 32, 54), game.message, light_mode)?
+        game_components.metric(window, frame, resources, "TOTAL BET", string.from_int(total_bet), value.rail.x + 16, value.rail.y + 118, 92, false, light_mode)?
+        game_components.metric(window, frame, resources, "CURRENT WIN", string.from_int(game.round_win), value.rail.x + 126, value.rail.y + 118, 102, true, light_mode)?
+        game_components.metric(window, frame, resources, "FREE SPINS", string.from_int(game.free_spins_remaining), value.rail.x + 238, value.rail.y + 118, 82, false, light_mode)?
+    if ready:
+        let bet_minus = bet_minus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let bet_plus = bet_plus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let turbo = turbo_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let auto_count = auto_count_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let spin = spin_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, bet_minus, "-", components.button_secondary(), true, components.contains(bet_minus, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, bet_plus, "+", components.button_secondary(), true, components.contains(bet_plus, mouse_x, mouse_y), false, light_mode)?
+        if not value.compact:
+            components.type_centered(window, frame, resources, string.concat("LINE BET  ", string.from_int(game.bet_per_line)), components.rect(bet_minus.x + 48, bet_minus.y, bet_plus.x - bet_minus.x - 48, 44), components.type_label(), theme.primary_text(light_mode))?
+        var turbo_label = "TURBO OFF"
+        if game.turbo:
+            turbo_label = "TURBO ON"
+        components.modern_button(window, frame, resources, turbo, turbo_label, components.button_secondary(), true, components.contains(turbo, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, auto_count, string.concat("AUTO  ", string.from_int(game.auto_count)), components.button_secondary(), true, components.contains(auto_count, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, spin, "SPIN [ENTER]", components.button_primary(), total_bet <= game.balance, components.contains(spin, mouse_x, mouse_y), true, light_mode)?
+    let automatic = auto_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+    var auto_label = "AUTO [H]"
     if game.auto_active:
-        auto_label = "Stop [S]"
-        auto_enabled = true
-    components.button(window, frame, auto_rect(width), auto_label, auto_enabled, components.contains(auto_rect(width), mouse_x, mouse_y), false)?
-    rocket_raylib.draw_text(frame, string.concat("Current win ", string.from_int(game.round_win)), width - 292, 382, theme.body_size(), theme.emerald())?
-    rocket_raylib.draw_text(frame, string.concat("Free spins left ", string.from_int(game.free_spins_remaining)), width - 292, 414, theme.small_size(), theme.text())?
-    rocket_raylib.draw_text(frame, string.concat("Spin multiplier x", string.from_int(game.spin.spin_multiplier)), width - 292, 440, theme.small_size(), theme.gold())?
-    rocket_raylib.draw_text(frame, string.concat("Auto remaining ", string.from_int(game.auto_remaining)), width - 292, 466, theme.small_size(), theme.text())?
-    rocket_raylib.draw_text(frame, "Exact return 95.98% (floored)", width - 292, 492, theme.small_size(), theme.muted())?
+        auto_label = "STOP [S]"
+    components.modern_button(window, frame, resources, automatic, auto_label, components.button_secondary(), game.auto_active or ready and total_bet <= game.balance, components.contains(automatic, mouse_x, mouse_y), false, light_mode)?
     if phase == 2 and not game.auto_active:
-        components.button(window, frame, next_rect(height), "Next [N]", true, components.contains(next_rect(height), mouse_x, mouse_y), true)?
-    if phase != 1 and not game.auto_active:
-        components.button(window, frame, lobby_rect(height), "Lobby [B]", true, components.contains(lobby_rect(height), mouse_x, mouse_y), false)?
-        components.button(window, frame, restart_rect(height), "Restart [R]", true, components.contains(restart_rect(height), mouse_x, mouse_y), false)?
+        let next = next_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let restart = restart_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, next, "NEXT SPIN [N]", components.button_primary(), true, components.contains(next, mouse_x, mouse_y), true, light_mode)?
+        components.modern_button(window, frame, resources, restart, "RESET [R]", components.button_secondary(), true, components.contains(restart, mouse_x, mouse_y), false, light_mode)?
+    draw_history(window, frame, resources, game, value, light_mode)?
+    if not value.compact:
+        components.type_text(window, frame, resources, "EXACT RETURN 95.98% (FLOORED)", value.rail.x + 16, value.rail.y + 350, components.type_caption(), theme.secondary_text(light_mode))?
+    return Ok(true)
+
+fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, light_mode: Bool) -> Result[Bool, String]:
+    let lines = ["Eight symbols fill five reels: Pebble, Quill, Lantern, Compass, Scroll, Wild, Moon, Gear.", "Five fixed lines are top, middle, bottom, V, and inverted V; wins start left.", "Pebble through Wild pay exact tested 3/4/5-of-kind line-bet multipliers.", "Wild substitutes for the five ordinary symbols and selects the highest line award.", "Three to five Moons pay scatter awards and grant 2/3/5 free spins.", "Free spins do not retrigger and apply a fixed 2x multiplier to each award.", "Three or more Gears use the precommitted 1x/2x/4x/6x bonus ticket.", "Each reel has 20 exact stops; paid spins prepay all five fixed lines.", "Exact source-recomputed total return is 95.9836866495%.", "Up/Down line bet, D Turbo, M auto count, Enter Spin, H Auto, S Stop."]
+    return game_components.help_overlay(window, frame, resources, "SCROLLWORKS SLOTS  /  PAYTABLE GUIDE", lines, -1, light_mode)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, session: slots_api.Session, help: Bool, reel_stage: Int, light_mode: Bool, reduced_motion: Bool, now: Float, animation_end: Float, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let value = interior(width, height)
+    game_components.ambient_stage(frame, resources, value.stage, 10, light_mode)?
+    draw_cabinet(window, frame, resources, session, value, reel_stage, light_mode, reduced_motion, now, animation_end)?
+    draw_controls(window, frame, resources, session, value, mouse_x, mouse_y, light_mode)?
+    let rules = help_rect(width, height)
+    components.modern_button(window, frame, resources, rules, "RULES", components.button_quiet(), true, components.contains(rules, mouse_x, mouse_y), false, light_mode)?
     if help:
-        draw_help(window, frame)?
+        draw_help(window, frame, resources, light_mode)?
     return Ok(true)

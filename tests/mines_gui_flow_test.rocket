@@ -72,26 +72,32 @@ fn run() -> Result[Int, String]:
             if mines_api.phase_code(state.mines) != 2 or not file.exists(save_path):
                 return Ok(7)
             state = finish_animation(window, state)?
-            state = click(window, 100, 550, state)
+            let restart = mines_view.restart_rect(800, 600)
+            state = click(window, restart.x + restart.width / 2, restart.y + restart.height / 2, state)
             if mines_api.phase_code(state.mines) != 0:
                 return Ok(8)
-            state = click(window, 586, 226, state)
-            state = click(window, 679, 286, state)
-            state = click(window, 586, 349, state)
+            let bet_plus = mines_view.bet_plus_rect(800, 600)
+            state = click(window, bet_plus.x + bet_plus.width / 2, bet_plus.y + bet_plus.height / 2, state)
+            let mines_plus = mines_view.mines_plus_rect(800, 600)
+            state = click(window, mines_plus.x + mines_plus.width / 2, mines_plus.y + mines_plus.height / 2, state)
+            let start = mines_view.start_rect(800, 600)
+            state = click(window, start.x + start.width / 2, start.y + start.height / 2, state)
             if mines_api.phase_code(state.mines) != 1:
                 return Ok(9)
             let second_safe = find_tile(state, 0)?
-            let box = mines_view.tile_rect(second_safe)
-            state = click(window, box.x + 20, box.y + 20, state)
+            let box = mines_view.tile_rect(second_safe, 800, 600)
+            state = click(window, box.x + box.width / 2, box.y + box.height / 2, state)
             if state.mines.game.safe_reveals != 1:
                 return Ok(10)
             state = finish_animation(window, state)?
-            state = click(window, 586, 349, state)
+            let cash = mines_view.cash_out_rect(800, 600)
+            state = click(window, cash.x + cash.width / 2, cash.y + cash.height / 2, state)
             if mines_api.phase_code(state.mines) != 2:
                 return Ok(11)
             state = finish_animation(window, state)?
             application.draw_for_test(window, state)?
-            state = click(window, 230, 550, state)
+            let lobby = mines_view.lobby_rect(800, 600)
+            state = click(window, lobby.x + lobby.width / 2, lobby.y + lobby.height / 2, state)
             if state.screen != 1 or state.settings.play_balance != state.mines.game.balance:
                 return Ok(12)
             let closed = rocket_raylib.close_window(window)

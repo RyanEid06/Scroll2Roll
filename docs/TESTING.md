@@ -146,6 +146,16 @@ dimensions. The three scripted GUI flows now click those exported responsive
 rectangles instead of compatibility-era pixels. The current suite passes
 47/47 in Debug and Release.
 
+`ui_final_games_view_test.rocket` covers the accepted Mines, Dice, Crash, and
+Slots replacement group. It validates every exported phase-specific control at
+800x600, 1024x768, 1280x720, 1600x900, and exact 1920x1080 for bounds,
+non-overlap, and 44-pixel targets. Mines' 25 compact board cells have a separate
+32-pixel practical minimum while every action remains at least 44 pixels. The
+test draws ready/active/settled states in both themes, verifies balanced scissor
+state after clipped reel motion, and requires substantial draw activity. The
+four scripted GUI flows now use exported responsive rectangles for every
+changed pointer path. The current suite passes 48/48 in Debug and Release.
+
 Functional drawing tests are necessary but not visual acceptance. Each visual
 milestone launches the actual native executable and records dark/light captures
 at 800x600, 1024x768, 1280x720, 1600x900, 1920x1080, and maximized. Review must

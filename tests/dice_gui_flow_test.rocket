@@ -69,11 +69,12 @@ fn run() -> Result[Int, String]:
             if dice_api.phase_code(state.dice) != 2 or state.dice.game.batch_rolls != 1 or not file.exists(save_path):
                 return Ok(5)
             state = wait_frames(window, state, 16)?
-            state = click(window, 100, 550, state)
+            let next = dice_view.next_rect(800, 600)
+            state = click(window, next.x + next.width / 2, next.y + next.height / 2, state)
             if dice_api.phase_code(state.dice) != 0:
                 return Ok(6)
-            let roll = dice_view.roll_rect(800)
-            state = click(window, roll.x + 20, roll.y + 20, state)
+            let roll = dice_view.roll_rect(800, 600)
+            state = click(window, roll.x + roll.width / 2, roll.y + roll.height / 2, state)
             if dice_api.phase_code(state.dice) != 2:
                 return Ok(7)
             state = wait_frames(window, state, 16)?
@@ -81,8 +82,8 @@ fn run() -> Result[Int, String]:
             state = press(window, rocket_raylib.key_s(), state)
             if dice_api.phase_code(state.dice) != 1:
                 return Ok(8)
-            let auto = dice_view.auto_rect(800)
-            state = click(window, auto.x + 20, auto.y + 20, state)
+            let auto = dice_view.auto_rect(800, 600)
+            state = click(window, auto.x + auto.width / 2, auto.y + auto.height / 2, state)
             if dice_api.phase_code(state.dice) != 2 or state.dice.game.batch_rolls != 0:
                 return Ok(9)
             state = wait_frames(window, state, 10)?
@@ -93,7 +94,8 @@ fn run() -> Result[Int, String]:
                 return Ok(10)
             state = wait_frames(window, state, 12)?
             application.draw_for_test(window, state)?
-            state = click(window, 230, 550, state)
+            let lobby = dice_view.lobby_rect(800, 600)
+            state = click(window, lobby.x + lobby.width / 2, lobby.y + lobby.height / 2, state)
             if state.screen != 1 or state.settings.play_balance != state.dice.game.balance:
                 return Ok(11)
             let closed = rocket_raylib.close_window(window)

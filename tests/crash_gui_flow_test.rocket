@@ -36,12 +36,12 @@ fn wait_settled(window: rocket_raylib.Window, source: application.State) -> Resu
     return Ok(state)
 
 fn next_with_mouse(window: rocket_raylib.Window, state: application.State) -> application.State:
-    let box = crash_view.next_rect(600)
-    return click(window, box.x + 20, box.y + 20, state)
+    let box = crash_view.next_rect(800, 600)
+    return click(window, box.x + box.width / 2, box.y + box.height / 2, state)
 
 fn start_with_mouse(window: rocket_raylib.Window, state: application.State) -> application.State:
-    let box = crash_view.start_rect(800)
-    return click(window, box.x + 20, box.y + 20, state)
+    let box = crash_view.start_rect(800, 600)
+    return click(window, box.x + box.width / 2, box.y + box.height / 2, state)
 
 fn run() -> Result[Int, String]:
     if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
@@ -92,8 +92,8 @@ fn run() -> Result[Int, String]:
                 return Ok(8)
             state = press(window, rocket_raylib.key_enter(), state)
             state = wait_frames(window, state, 20)?
-            let cash = crash_view.cash_out_rect(800)
-            state = click(window, cash.x + 20, cash.y + 20, state)
+            let cash = crash_view.cash_out_rect(800, 600)
+            state = click(window, cash.x + cash.width / 2, cash.y + cash.height / 2, state)
             if crash_api.phase_code(state.crash) != 2 or not state.crash.game.cashed_out or state.crash.game.automatic or not file.exists(save_path):
                 return Ok(9)
             let public_settled = crash_api.public_table(state.crash)
@@ -117,8 +117,8 @@ fn run() -> Result[Int, String]:
             if not state.crash.game.automatic or state.crash.game.multiplier_basis_points != state.crash.game.auto_cash_out_basis_points or state.crash.game.payout < 1:
                 return Ok(13)
             application.draw_for_test(window, state)?
-            let lobby = crash_view.lobby_rect(600)
-            state = click(window, lobby.x + 20, lobby.y + 20, state)
+            let lobby = crash_view.lobby_rect(800, 600)
+            state = click(window, lobby.x + lobby.width / 2, lobby.y + lobby.height / 2, state)
             if state.screen != 1 or state.settings.play_balance != state.crash.game.balance:
                 return Ok(14)
             let closed = rocket_raylib.close_window(window)

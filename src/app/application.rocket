@@ -1152,27 +1152,27 @@ fn mines_move_selection(state: State, delta: Int) -> State:
 fn update_mines(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int, now: Float) -> State:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
-    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(mines_view.help_rect(width), mouse_x, mouse_y):
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(mines_view.help_rect(width, height), mouse_x, mouse_y):
         return mines_help(state, not state.mines_help)
     if state.mines_help:
         return state
     if now < state.mines_animation_end:
         return state
     let phase = mines_api.phase_code(state.mines)
-    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(mines_view.restart_rect(height), mouse_x, mouse_y)):
+    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(mines_view.restart_rect(width, height), mouse_x, mouse_y)):
         return mines_restart(state)
     if phase == 0:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(mines_view.bet_minus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(mines_view.bet_minus_rect(width, height), mouse_x, mouse_y):
             return mines_configure_bet(state, -5)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(mines_view.bet_plus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(mines_view.bet_plus_rect(width, height), mouse_x, mouse_y):
             return mines_configure_bet(state, 5)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(mines_view.mines_minus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(mines_view.mines_minus_rect(width, height), mouse_x, mouse_y):
             return mines_configure_count(state, -1)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(mines_view.mines_plus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(mines_view.mines_plus_rect(width, height), mouse_x, mouse_y):
             return mines_configure_count(state, 1)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(mines_view.start_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(mines_view.start_rect(width, height), mouse_x, mouse_y):
             return mines_start(state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(mines_view.lobby_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(mines_view.lobby_rect(width, height), mouse_x, mouse_y):
             return mines_return_to_lobby(state)
     if phase == 1:
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()):
@@ -1185,22 +1185,22 @@ fn update_mines(state: State, window: rocket_raylib.Window, clicked: Bool, mouse
             return mines_move_selection(state, 5)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()):
             return mines_reveal(state, state.mines_selected, now)
-        if state.mines.game.safe_reveals > 0 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(mines_view.cash_out_rect(width), mouse_x, mouse_y)):
+        if state.mines.game.safe_reveals > 0 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(mines_view.cash_out_rect(width, height), mouse_x, mouse_y)):
             return mines_cash_out(state, now)
         if clicked:
             var tile = 0
             while tile < 25:
-                if components.contains(mines_view.tile_rect(tile), mouse_x, mouse_y):
+                if components.contains(mines_view.tile_rect(tile, width, height), mouse_x, mouse_y):
                     return mines_reveal(state, tile, now)
                 tile = tile + 1
     if phase == 2:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(mines_view.next_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(mines_view.next_rect(width, height), mouse_x, mouse_y):
             match mines_api.with_next_round(state.mines):
                 case Ok(session):
                     return with_mines(state, session, 0, 0.0)
                 case Err(error):
                     return with_error(state, error)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(mines_view.lobby_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(mines_view.lobby_rect(width, height), mouse_x, mouse_y):
             return mines_return_to_lobby(state)
     return state
 
@@ -1317,13 +1317,13 @@ fn dice_return_to_lobby(state: State) -> State:
 fn update_dice(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int, now: Float) -> State:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
-    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(dice_view.help_rect(width), mouse_x, mouse_y):
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(dice_view.help_rect(width, height), mouse_x, mouse_y):
         return dice_help(state, not state.dice_help)
     if state.dice_help:
         return state
     let phase = dice_api.phase_code(state.dice)
     if phase == 1:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(dice_view.auto_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(dice_view.auto_rect(width, height), mouse_x, mouse_y):
             return dice_stop_auto(state, now)
         if now >= state.dice_animation_end:
             return dice_auto_step(state, now)
@@ -1331,31 +1331,31 @@ fn update_dice(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_
     if now < state.dice_animation_end:
         return state
     if phase == 0:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_tab()) or clicked and components.contains(dice_view.direction_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_tab()) or clicked and components.contains(dice_view.direction_rect(width, height), mouse_x, mouse_y):
             return dice_toggle_direction(state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(dice_view.target_minus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(dice_view.target_minus_rect(width, height), mouse_x, mouse_y):
             return dice_configure_target(state, -100)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(dice_view.target_plus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(dice_view.target_plus_rect(width, height), mouse_x, mouse_y):
             return dice_configure_target(state, 100)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(dice_view.bet_minus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(dice_view.bet_minus_rect(width, height), mouse_x, mouse_y):
             return dice_configure_bet(state, -5)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(dice_view.bet_plus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(dice_view.bet_plus_rect(width, height), mouse_x, mouse_y):
             return dice_configure_bet(state, 5)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_m()) or clicked and components.contains(dice_view.auto_count_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_m()) or clicked and components.contains(dice_view.auto_count_rect(width, height), mouse_x, mouse_y):
             return dice_configure_auto(state, 0)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()) or clicked and components.contains(dice_view.win_stop_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()) or clicked and components.contains(dice_view.win_stop_rect(width, height), mouse_x, mouse_y):
             return dice_configure_auto(state, 1)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_d()) or clicked and components.contains(dice_view.loss_stop_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_d()) or clicked and components.contains(dice_view.loss_stop_rect(width, height), mouse_x, mouse_y):
             return dice_configure_auto(state, 2)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(dice_view.roll_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(dice_view.roll_rect(width, height), mouse_x, mouse_y):
             return dice_manual_roll(state, now)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(dice_view.auto_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(dice_view.auto_rect(width, height), mouse_x, mouse_y):
             return dice_start_auto(state, now)
-    if phase == 2 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(dice_view.next_rect(height), mouse_x, mouse_y)):
+    if phase == 2 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(dice_view.next_rect(width, height), mouse_x, mouse_y)):
         return dice_next(state)
-    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(dice_view.restart_rect(height), mouse_x, mouse_y)):
+    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(dice_view.restart_rect(width, height), mouse_x, mouse_y)):
         return dice_restart(state)
-    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(dice_view.lobby_rect(height), mouse_x, mouse_y)):
+    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(dice_view.lobby_rect(width, height), mouse_x, mouse_y)):
         return dice_return_to_lobby(state)
     return state
 
@@ -1543,33 +1543,33 @@ fn crash_return_to_lobby(state: State) -> State:
 fn update_crash(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int) -> State:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
-    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(crash_view.help_rect(width), mouse_x, mouse_y):
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(crash_view.help_rect(width, height), mouse_x, mouse_y):
         return crash_help(state, not state.crash_help)
     if state.crash_help:
         return state
     let phase = crash_api.phase_code(state.crash)
     if phase == 0:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(crash_view.bet_minus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(crash_view.bet_minus_rect(width, height), mouse_x, mouse_y):
             return crash_configure_bet(state, -5)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(crash_view.bet_plus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(crash_view.bet_plus_rect(width, height), mouse_x, mouse_y):
             return crash_configure_bet(state, 5)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_tab()) or clicked and components.contains(crash_view.auto_toggle_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_tab()) or clicked and components.contains(crash_view.auto_toggle_rect(width, height), mouse_x, mouse_y):
             return crash_configure_auto(state, 0, true)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(crash_view.auto_minus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(crash_view.auto_minus_rect(width, height), mouse_x, mouse_y):
             return crash_configure_auto(state, -100, false)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(crash_view.auto_plus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(crash_view.auto_plus_rect(width, height), mouse_x, mouse_y):
             return crash_configure_auto(state, 100, false)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(crash_view.start_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(crash_view.start_rect(width, height), mouse_x, mouse_y):
             return crash_start(state)
     if phase == 1:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(crash_view.cash_out_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(crash_view.cash_out_rect(width, height), mouse_x, mouse_y):
             return crash_cash_out(state)
         return crash_ticks(state, window)
-    if phase == 2 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(crash_view.next_rect(height), mouse_x, mouse_y)):
+    if phase == 2 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(crash_view.next_rect(width, height), mouse_x, mouse_y)):
         return crash_next(state)
-    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(crash_view.restart_rect(height), mouse_x, mouse_y)):
+    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(crash_view.restart_rect(width, height), mouse_x, mouse_y)):
         return crash_restart(state)
-    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(crash_view.lobby_rect(height), mouse_x, mouse_y)):
+    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(crash_view.lobby_rect(width, height), mouse_x, mouse_y)):
         return crash_return_to_lobby(state)
     return state
 
@@ -1678,35 +1678,35 @@ fn slots_return_to_lobby(state: State) -> State:
 fn update_slots(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int, now: Float) -> State:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
-    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(slots_view.help_rect(width), mouse_x, mouse_y):
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(slots_view.help_rect(width, height), mouse_x, mouse_y):
         return slots_help(state, not state.slots_help)
     if state.slots_help:
         return state
-    if state.slots.game.auto_active and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(slots_view.auto_rect(width), mouse_x, mouse_y)):
+    if state.slots.game.auto_active and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(slots_view.auto_rect(width, height), mouse_x, mouse_y)):
         return slots_stop_auto(state)
     let phase = slots_api.phase_code(state.slots)
     if phase == 0:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(slots_view.bet_minus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(slots_view.bet_minus_rect(width, height), mouse_x, mouse_y):
             return slots_configure_bet(state, -1)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(slots_view.bet_plus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(slots_view.bet_plus_rect(width, height), mouse_x, mouse_y):
             return slots_configure_bet(state, 1)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_d()) or clicked and components.contains(slots_view.turbo_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_d()) or clicked and components.contains(slots_view.turbo_rect(width, height), mouse_x, mouse_y):
             return slots_configure_turbo(state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_m()) or clicked and components.contains(slots_view.auto_count_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_m()) or clicked and components.contains(slots_view.auto_count_rect(width, height), mouse_x, mouse_y):
             return slots_configure_auto_count(state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(slots_view.spin_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(slots_view.spin_rect(width, height), mouse_x, mouse_y):
             return slots_spin(state, now)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()) or clicked and components.contains(slots_view.auto_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()) or clicked and components.contains(slots_view.auto_rect(width, height), mouse_x, mouse_y):
             return slots_start_auto(state, now)
     if phase == 1:
         return slots_advance_presentation(state, now)
     if phase == 2 and state.slots.game.auto_active:
         return slots_auto_next(state, now)
-    if phase == 2 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(slots_view.next_rect(height), mouse_x, mouse_y)):
+    if phase == 2 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(slots_view.next_rect(width, height), mouse_x, mouse_y)):
         return slots_next(state)
-    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(slots_view.restart_rect(height), mouse_x, mouse_y)):
+    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(slots_view.restart_rect(width, height), mouse_x, mouse_y)):
         return slots_restart(state)
-    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(slots_view.lobby_rect(height), mouse_x, mouse_y)):
+    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(slots_view.lobby_rect(width, height), mouse_x, mouse_y)):
         return slots_return_to_lobby(state)
     return state
 
@@ -1900,17 +1900,17 @@ fn draw(window: rocket_raylib.Window, state: State, resources: ui_resources.UiRe
         let can_all_in = holdem_api.can_action(state.holdem, 4, 0)
         holdem_view.draw(window, frame, resources, table, state.holdem_target, can_fold, can_call_check, can_raise, can_all_in, state.holdem_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.next_step, mouse_x, mouse_y)?
     if state.screen == 9:
-        mines_view.draw(window, frame, state.mines, state.mines_selected, state.mines_help, mouse_x, mouse_y)?
+        mines_view.draw(window, frame, resources, state.mines, state.mines_selected, state.mines_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.mines_animation_end, mouse_x, mouse_y)?
     if state.screen == 10:
-        dice_view.draw(window, frame, state.dice, state.dice_help, mouse_x, mouse_y)?
+        dice_view.draw(window, frame, resources, state.dice, state.dice_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.dice_animation_end, mouse_x, mouse_y)?
     if state.screen == 11:
         let table = hilo_api.public_table(state.hilo)?
         hilo_view.draw(window, frame, resources, table, state.hilo_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.hilo_animation_end, mouse_x, mouse_y)?
     if state.screen == 12:
         let table = crash_api.public_table(state.crash)
-        crash_view.draw(window, frame, table, state.crash_help, mouse_x, mouse_y)?
+        crash_view.draw(window, frame, resources, table, state.crash_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), mouse_x, mouse_y)?
     if state.screen == 13:
-        slots_view.draw(window, frame, state.slots, state.slots_help, state.slots_reel_stage, mouse_x, mouse_y)?
+        slots_view.draw(window, frame, resources, state.slots, state.slots_help, state.slots_reel_stage, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.slots_animation_end, mouse_x, mouse_y)?
     if shell_view.is_help_screen(state.screen):
         shell_view.draw_help(window, frame, resources, shell_view.help_source(state.screen), state.settings.light_mode)?
     if state.screen != 0:
