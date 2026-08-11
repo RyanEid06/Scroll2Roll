@@ -24,10 +24,37 @@ foreach ($file in @('README.md', 'NOTICE.md', 'THIRD_PARTY_NOTICES.md', 'VERSION
 }
 Copy-Item -LiteralPath (Join-Path $repository 'docs\CONTROLS.md'),(Join-Path $repository 'docs\TROUBLESHOOTING.md') -Destination $stage
 
+$raylibLicense = Join-Path $RocketRoot 'dependencies\installed\raylib-6.0\LICENSE'
+if (-not (Test-Path -LiteralPath $raylibLicense -PathType Leaf)) {
+    throw "Pinned raylib license missing: $raylibLicense"
+}
+Copy-Item -LiteralPath $raylibLicense -Destination (Join-Path $stage 'RAYLIB_LICENSE.txt')
+
+$assetHashes = [ordered]@{
+    'assets\MANIFEST.md' = '2655E57EE40AD07A11BBF2FF849B9DD8B528DED6EC8294BA264B2EB016651FF4'
+    'assets\fonts\manrope\Manrope-wght.ttf' = 'D0639BE45D0AF36E798172419D7BD173C4BD4F29E2B76CBB69DB1D11BF8B0A40'
+    'assets\fonts\manrope\Manrope-Medium.ttf' = '98EE850D1D257F4BB2328C24DFFF392F85A351A61ED7F600DBA140BCBB5313F9'
+    'assets\fonts\manrope\OFL.txt' = 'E01B637272E0CBDFB240184DD98EA5CC671556D9894DAE2668D92AB2C906787C'
+    'assets\fonts\manrope\METADATA.pb' = '368BEDA3AA55B0AFE90EDC142D67CF37E743258C76481D520172AFBC148C6CCA'
+    'assets\ui\IMAGEGEN_PROMPTS.md' = '89853C25DBD121FDE3A78DC3AF01F2F70CF222ED88D0A7A8B9B7495006340177'
+    'assets\ui\scroll2roll-cover-atlas-a.png' = 'DD9D2B43D3CE4B0B39378DC6F1B211D5FC4D7F6750D552BE535B6545917B9052'
+    'assets\ui\scroll2roll-cover-atlas-b.png' = 'D594D31752824E905B4E7D2E8BC6D262E4D97EC4E7BCAC5BB8253F8C67C502AC'
+}
+foreach ($relative in $assetHashes.Keys) {
+    $source = Join-Path $repository $relative
+    if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Required package asset missing: $relative" }
+    $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $source).Hash
+    if ($actualHash -ne $assetHashes[$relative]) { throw "Reviewed asset hash changed: $relative" }
+    $destination = Join-Path $stage $relative
+    New-Item -ItemType Directory -Force -Path (Split-Path $destination -Parent) | Out-Null
+    Copy-Item -LiteralPath $source -Destination $destination
+}
+
 $checksumPath = Join-Path $stage 'SHA256SUMS.txt'
-$lines = Get-ChildItem -LiteralPath $stage -File | Sort-Object Name | ForEach-Object {
+$lines = Get-ChildItem -LiteralPath $stage -File -Recurse | Sort-Object FullName | ForEach-Object {
     $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant()
-    "$hash  $($_.Name)"
+    $relative = $_.FullName.Substring($stage.Length + 1).Replace('\', '/')
+    "$hash  $relative"
 }
 Set-Content -LiteralPath $checksumPath -Value $lines -Encoding ascii
 

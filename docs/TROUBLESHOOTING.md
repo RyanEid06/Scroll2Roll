@@ -21,7 +21,21 @@ The game continues silently if Windows cannot open an audio device. Audio can be
 
 ## Settings are damaged or need resetting
 
-Version 3 stores only local, non-sensitive settings and play-money progress in `%LOCALAPPDATA%\Scroll2Roll\settings.s2r`. Valid version-1 and version-2 data is migrated automatically. Delete that file while Scroll2Roll is closed to restore defaults. Missing, unsupported, or invalid data is recovered safely.
+Version 4 stores only local, non-sensitive settings, play-money progress, the
+dark/light theme choice, and reduced-motion preference in
+`%LOCALAPPDATA%\Scroll2Roll\settings.s2r`. Valid version-1, version-2, and
+version-3 data is migrated automatically. Delete that file while Scroll2Roll is
+closed to restore defaults. Missing, unsupported, or invalid data is recovered
+safely.
+
+## Typography or illustrated covers are missing
+
+Keep the extracted `assets` directory beside `Scroll2Roll.exe`; do not move the
+executable out of its package folder. The reviewed package includes both cover
+atlases, the Manrope runtime font, its OFL license, metadata, prompts, and asset
+manifest. If a resource is absent or corrupt, Scroll2Roll enters an explicit
+procedural/default-font fallback instead of crashing, but the package checksum
+will no longer match. Re-extract a verified complete ZIP.
 
 ## Visual Studio cannot find rocketc.exe or rocket-lsp.exe
 
