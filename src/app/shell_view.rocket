@@ -389,14 +389,110 @@ fn help_panel_rect(index: Int, width: Int, height: Int) -> components.Rect:
     let panel_width =(content_width - gap * 2) / 3
     return components.rect(x + index *(panel_width + gap), y, panel_width, height - y - layout.safe_margin(width))
 
-fn help_title(index: Int) -> String:
+fn game_help_title(source: Int, index: Int) -> String:
+    if source == 2:
+        if index == 0:
+            return "TABLE RULES"
+        if index == 1:
+            return "LEGAL ACTIONS"
+        return "ROUND SAFETY"
+    if source == 4:
+        if index == 0:
+            return "PAYOUTS"
+        if index == 1:
+            return "BET PRECISION"
+        return "LOCKED SPIN"
+    if source == 8:
+        if index == 0:
+            return "BEST FIVE"
+        if index == 1:
+            return "NO-LIMIT"
+        return "SIDE POTS"
+    if source == 11:
+        if index == 0:
+            return "PRIVATE DECK"
+        if index == 1:
+            return "PREDICTION"
+        return "EXACT RETURN"
     if index == 0:
         return "LOCAL BY DESIGN"
     if index == 1:
         return "CLEAR CONTROLS"
     return "FAIR PLAY"
 
-fn help_line(index: Int, line: Int) -> String:
+fn game_help_line(source: Int, index: Int, line: Int) -> String:
+    if source == 2:
+        if index == 0 and line == 0:
+            return "Blackjack pays 3:2."
+        if index == 0 and line == 1:
+            return "Dealer stands on soft 17."
+        if index == 0:
+            return "Split aces receive one card."
+        if index == 1 and line == 0:
+            return "H hit | S stand | D double."
+        if index == 1 and line == 1:
+            return "P split | R surrender."
+        if index == 1:
+            return "Unavailable actions stay disabled."
+        if index == 2 and line == 0:
+            return "Wagers commit only on Deal."
+        if index == 2 and line == 1:
+            return "Back is blocked mid-round."
+        return "Settled credits save locally."
+    if source == 4:
+        if index == 0 and line == 0:
+            return "Straight 35:1 | split 17:1."
+        if index == 0 and line == 1:
+            return "Street 11:1 | corner 8:1."
+        if index == 0:
+            return "Six-line 5:1 | dozen 2:1."
+        if index == 1 and line == 0:
+            return "Centers place straight bets."
+        if index == 1 and line == 1:
+            return "Edges and corners combine."
+        if index == 1:
+            return "Rails place street/six-line."
+        if index == 2 and line == 0:
+            return "The pocket locks before motion."
+        if index == 2 and line == 1:
+            return "S spins | H undo | D clears."
+        return "R repeats or rebets safely."
+    if source == 8:
+        if index == 0 and line == 0:
+            return "Use the best five of seven."
+        if index == 0 and line == 1:
+            return "Opponent cards stay private."
+        if index == 0:
+            return "Eligible cards show at showdown."
+        if index == 1 and line == 0:
+            return "Enter checks or calls."
+        if index == 1 and line == 1:
+            return "D folds | R raises | H all-in."
+        if index == 1:
+            return "Arrows change raise-to size."
+        if index == 2 and line == 0:
+            return "Contribution tiers form pots."
+        if index == 2 and line == 1:
+            return "Short all-ins may not reopen."
+        return "Odd chips move left of dealer."
+    if source == 11:
+        if index == 0 and line == 0:
+            return "Only the current card is shown."
+        if index == 0 and line == 1:
+            return "Future cards remain private."
+        if index == 0:
+            return "Counts use the checked deck."
+        if index == 1 and line == 0:
+            return "H predicts higher; L lower."
+        if index == 1 and line == 1:
+            return "Equal rank always loses."
+        if index == 1:
+            return "Disabled directions have zero wins."
+        if index == 2 and line == 0:
+            return "Correct picks grow multiplier."
+        if index == 2 and line == 1:
+            return "S cashes out after one correct."
+        return "Integer return floors once."
     if index == 0 and line == 0:
         return "No account, deposits, ads,"
     if index == 0 and line == 1:
@@ -424,10 +520,10 @@ pub fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resou
     while index < 3:
         let panel = help_panel_rect(index, width, rocket_raylib.window_height(window))
         components.modern_panel(frame, panel, light_mode, false)?
-        components.badge(window, frame, resources, components.rect(panel.x + 20, panel.y + 18, 132, 28), help_title(index), light_mode)?
+        components.badge(window, frame, resources, components.rect(panel.x + 20, panel.y + 18, 142, 28), game_help_title(source_screen, index), light_mode)?
         var line = 0
         while line < 3:
-            components.type_text(window, frame, resources, help_line(index, line), panel.x + 20, panel.y + 62 + line * 28, components.type_caption(), theme.primary_text(light_mode))?
+            components.type_text(window, frame, resources, game_help_line(source_screen, index, line), panel.x + 20, panel.y + 62 + line * 28, components.type_caption(), theme.primary_text(light_mode))?
             line = line + 1
         index = index + 1
     return Ok(true)

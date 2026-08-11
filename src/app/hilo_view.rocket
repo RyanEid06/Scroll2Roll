@@ -1,40 +1,84 @@
 import src.app.components
+import src.app.game_components
+import src.app.game_layout
+import src.app.shell_view
 import src.app.theme
+import src.app.ui_resources
 import src.hilo.hilo_api
 import src.hilo.hilo_cards
+import src.hilo.hilo_model
+import src.holdem.holdem_cards
+import src.holdem.holdem_model
 import src.rocket_raylib
 import std.collections
 import std.string
 
-pub fn bet_minus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 202, 46, 40)
+fn interior(width: Int, height: Int) -> game_layout.Interior:
+    return game_layout.interior(width, height)
 
-pub fn bet_plus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 144, 202, 46, 40)
+pub fn help_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    return components.rect(value.stage.x + value.stage.width - 88, value.stage.y + 6, 76, 44)
 
-pub fn start_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 266, 232, 46)
+pub fn bet_minus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + value.dock.height - 60, 48, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + 170, 48, 46)
 
-pub fn lower_rect() -> components.Rect:
-    return components.rect(42, 382, 158, 48)
+pub fn bet_plus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 72, value.dock.y + value.dock.height - 60, 48, 48)
+    return components.rect(value.rail.x + value.rail.width - 64, value.rail.y + 170, 48, 46)
 
-pub fn higher_rect() -> components.Rect:
-    return components.rect(220, 382, 158, 48)
+pub fn start_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 136, value.dock.y + value.dock.height - 60, value.dock.width - 274, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + 232, value.rail.width - 32, 50)
 
-pub fn cash_out_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 326, 232, 46)
+pub fn lower_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + value.dock.height - 60, 210, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 196,(value.rail.width - 40) / 2, 50)
 
-pub fn help_rect(width: Int) -> components.Rect:
-    return components.rect(width - 118, 24, 86, 38)
+pub fn higher_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 234, value.dock.y + value.dock.height - 60, 210, 48)
+    let lower = lower_rect(width, height)
+    return components.rect(lower.x + lower.width + 8, lower.y, lower.width, lower.height)
 
-pub fn next_rect(height: Int) -> components.Rect:
-    return components.rect(32, height - 68, 150, 42)
+pub fn cash_out_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 452, value.dock.y + value.dock.height - 60, value.dock.width - 468, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 136, value.rail.width - 32, 50)
 
-pub fn lobby_rect(height: Int) -> components.Rect:
-    return components.rect(192, height - 68, 120, 42)
+pub fn next_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + value.dock.width - 318, value.dock.y + value.dock.height - 60, 188, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 124, value.rail.width - 32, 50)
 
-pub fn restart_rect(height: Int) -> components.Rect:
-    return components.rect(322, height - 68, 136, 42)
+pub fn restart_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + value.dock.width - 122, value.dock.y + value.dock.height - 60, 106, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 64, value.rail.width - 32, 44)
+
+pub fn lobby_rect(width: Int, height: Int) -> components.Rect:
+    let expected = height
+    return shell_view.back_rect(width)
+
+fn phase_name(code: Int) -> String:
+    if code == 0:
+        return "ROUND READY"
+    if code == 1:
+        return "PREDICT"
+    return "ROUND SETTLED"
 
 fn multiplier_label(basis_points: Int) -> String:
     let whole = basis_points / 10000
@@ -44,103 +88,163 @@ fn multiplier_label(basis_points: Int) -> String:
         fraction = string.concat("0", fraction)
     return string.concat(string.from_int(whole), string.concat(".", string.concat(fraction, "x")))
 
-fn draw_card(frame: rocket_raylib.Frame, table: hilo_api.PublicTable) -> Result[Bool, String]:
-    let card = components.rect(128, 142, 164, 204)
-    rocket_raylib.draw_rectangle(frame, card.x, card.y, card.width, card.height, theme.border())?
-    rocket_raylib.draw_rectangle(frame, card.x + 4, card.y + 4, card.width - 8, card.height - 8, theme.text())?
-    var ink = theme.background()
-    if hilo_cards.is_red(table.current_card):
-        ink = theme.danger()
-    rocket_raylib.draw_text(frame, hilo_cards.name(table.current_card), card.x + 44, card.y + 76, theme.title_size(), ink)?
+fn draw_deck(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, stage: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    var width = stage.width / 9
+    if width < 58:
+        width = 58
+    if width > 86:
+        width = 86
+    let height = width * 7 / 5
+    let x = stage.x + stage.width / 8 - width / 2
+    let y = stage.y + stage.height / 2 - height / 2 - 8
+    var index = 3
+    while index >= 0:
+        game_components.playing_card(window, frame, resources, components.rect(x + index * 4, y - index * 4, width, height), "A", 0, true, false, light_mode)?
+        index = index - 1
+    components.type_centered(window, frame, resources, "PRIVATE DECK", components.rect(x - 22, y + height + 14, width + 52, 24), components.type_caption(), theme.secondary_text(light_mode))?
     return Ok(true)
 
-fn draw_sequence(frame: rocket_raylib.Frame, table: hilo_api.PublicTable) -> Result[Bool, String]:
-    rocket_raylib.draw_text(frame, "Visible sequence", 42, 452, theme.small_size(), theme.muted())?
+fn draw_current(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: hilo_api.PublicTable, stage: components.Rect, offset: Int, light_mode: Bool) -> Result[Bool, String]:
+    var width = stage.width / 7
+    if width < 92:
+        width = 92
+    if width > 126:
+        width = 126
+    let height = width * 7 / 5
+    let x = stage.x + stage.width * 46 / 100 - width / 2
+    let y = stage.y + stage.height / 2 - height / 2 - 10 - offset
+    if table.phase == 0:
+        rocket_raylib.draw_rounded_rectangle_lines(frame, x, y, width, height, 0.12, 10, 2.0, rocket_raylib.color(255, 255, 255, 70))?
+        components.type_centered(window, frame, resources, "?", components.rect(x, y + height / 2 - 22, width, 44), components.type_heading(), rocket_raylib.color(255, 255, 255, 130))?
+        components.type_centered(window, frame, resources, "DEAL TO REVEAL", components.rect(x - 36, y + height + 14, width + 72, 24), components.type_caption(), theme.secondary_text(light_mode))?
+        return Ok(true)
+    game_components.playing_card(window, frame, resources, components.rect(x, y, width, height), holdem_cards.rank_name(table.current_card.rank), table.current_card.suit, false, true, light_mode)?
+    components.badge(window, frame, resources, components.rect(x - 4, y + height + 14 + offset, width + 8, 28), "CURRENT CARD", light_mode)?
+    return Ok(true)
+
+fn draw_probability_bar(frame: rocket_raylib.Frame, value: components.Rect, table: hilo_api.PublicTable, light_mode: Bool) -> Result[Bool, String]:
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.5, 10, theme.elevated(light_mode))?
+    if table.remaining_cards <= 0:
+        return Ok(true)
+    let lower_width = value.width * table.lower_outcomes / table.remaining_cards
+    let equal_width = value.width * table.equal_outcomes / table.remaining_cards
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, lower_width, value.height, 0.5, 10, theme.violet(light_mode))?
+    rocket_raylib.draw_rectangle(frame, value.x + lower_width, value.y, equal_width, value.height, theme.destructive(light_mode))?
+    return rocket_raylib.draw_rounded_rectangle(frame, value.x + lower_width + equal_width, value.y, value.width - lower_width - equal_width, value.height, 0.5, 10, theme.success(light_mode))
+
+fn draw_odds(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: hilo_api.PublicTable, stage: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    let panel = components.rect(stage.x + stage.width * 65 / 100, stage.y + 58, stage.width * 31 / 100, stage.height - 116)
+    components.modern_panel(frame, panel, light_mode, true)?
+    components.type_text(window, frame, resources, "CARDS REMAINING", panel.x + 18, panel.y + 16, components.type_caption(), theme.secondary_text(light_mode))?
+    components.type_text(window, frame, resources, string.from_int(table.remaining_cards), panel.x + 18, panel.y + 38, components.type_numeric(), theme.primary_text(light_mode))?
+    if table.phase == 1:
+        game_components.metric(window, frame, resources, "LOWER", string.from_int(table.lower_outcomes), panel.x + 18, panel.y + 86, panel.width / 3, false, light_mode)?
+        game_components.metric(window, frame, resources, "EQUAL", string.from_int(table.equal_outcomes), panel.x + panel.width / 3 + 6, panel.y + 86, panel.width / 3, false, light_mode)?
+        game_components.metric(window, frame, resources, "HIGHER", string.from_int(table.higher_outcomes), panel.x + panel.width * 2 / 3, panel.y + 86, panel.width / 3, true, light_mode)?
+        draw_probability_bar(frame, components.rect(panel.x + 18, panel.y + 140, panel.width - 36, 14), table, light_mode)?
+        components.type_centered(window, frame, resources, "LOWER        EQUAL        HIGHER", components.rect(panel.x + 8, panel.y + 162, panel.width - 16, 22), components.type_caption(), theme.secondary_text(light_mode))?
+    else:
+        components.type_text(window, frame, resources, "Future cards stay private", panel.x + 18, panel.y + 96, components.type_caption(), theme.secondary_text(light_mode))?
+        components.type_text(window, frame, resources, "Counts appear after the deal", panel.x + 18, panel.y + 124, components.type_caption(), theme.secondary_text(light_mode))?
+    return Ok(true)
+
+fn draw_sequence(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: hilo_api.PublicTable, stage: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    let count = collections.length(table.sequence)
+    if count <= 0:
+        return Ok(true)
+    var shown = count
+    if shown > 7:
+        shown = 7
+    let width = 34
+    let height = 48
+    let first = count - shown
+    let total_width = width +(shown - 1) * 24
+    let x = stage.x + stage.width / 2 - total_width / 2
+    let y = stage.y + stage.height - 62
     var index = 0
-    var label = ""
-    while index < collections.length(table.sequence) and index < 9:
-        let source = collections.length(table.sequence) - 1 - index
-        if index > 0:
-            label = string.concat(label, "  ")
-        label = string.concat(label, hilo_cards.name(table.sequence[source]))
+    while index < shown:
+        let card = table.sequence[first + index]
+        game_components.playing_card(window, frame, resources, components.rect(x + index * 24, y, width, height), holdem_cards.rank_name(card.rank), card.suit, false, index == shown - 1, light_mode)?
         index = index + 1
-    rocket_raylib.draw_text(frame, label, 42, 478, theme.body_size(), theme.text())?
+    components.type_text(window, frame, resources, "VISIBLE SEQUENCE", x - 118, y + 15, components.type_caption(), theme.secondary_text(light_mode))?
     return Ok(true)
 
-fn draw_history(frame: rocket_raylib.Frame, table: hilo_api.PublicTable, width: Int) -> Result[Bool, String]:
-    rocket_raylib.draw_text(frame, "Recent", width - 330, 394, theme.small_size(), theme.muted())?
+fn result_label(result: hilo_model.RoundResult) -> String:
+    if result.tie_loss:
+        return string.concat(string.from_int(result.correct_predictions), " correct  /  EQUAL LOSS")
+    if result.payout > 0:
+        return string.concat(string.concat(string.from_int(result.correct_predictions), " correct  /  RETURN "), string.from_int(result.payout))
+    return string.concat(string.from_int(result.correct_predictions), " correct  /  LOST")
+
+fn draw_history(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: hilo_api.PublicTable, value: game_layout.Interior, light_mode: Bool) -> Result[Bool, String]:
+    components.type_text(window, frame, resources, "RECENT ROUNDS", value.rail.x + 16, value.rail.y + 280, components.type_caption(), theme.secondary_text(light_mode))?
     var index = 0
     while index < collections.length(table.history) and index < 4:
         let result = table.history[index]
-        var label = string.concat(string.from_int(result.correct_predictions), " correct - lost")
-        var ink = theme.danger()
+        var ink = theme.destructive(light_mode)
         if result.payout > 0:
-            label = string.concat(string.concat(string.from_int(result.correct_predictions), " correct - return "), string.from_int(result.payout))
-            ink = theme.emerald()
-        if result.tie_loss:
-            label = string.concat(string.from_int(result.correct_predictions), " correct - EQUAL loss")
-        rocket_raylib.draw_text(frame, label, width - 330, 420 + index * 25, theme.small_size(), ink)?
+            ink = theme.success(light_mode)
+        components.type_text(window, frame, resources, result_label(result), value.rail.x + 16, value.rail.y + 306 + index * 25, components.type_caption(), ink)?
         index = index + 1
     return Ok(true)
 
-fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.overlay())?
-    let box = components.rect(width / 2 - 350, 60, 700, 500)
-    components.panel(frame, box)?
-    rocket_raylib.draw_text(frame, "HILO RULES AND EXACT RETURN", box.x + 26, box.y + 22, theme.heading_size(), theme.gold())?
-    let lines = ["A checked 52-card deck is Fisher-Yates shuffled only at round start.", "One card is visible. Every future card remains private until drawn.", "Choose only an enabled Higher or Lower action from the cards left.", "EQUAL RANK IS ALWAYS A LOSS, regardless of the prediction.", "A correct prediction advances the card and cumulative multiplier.", "Cash Out is legal after one correct prediction; a wrong pick loses.", "Step multiplier = floor(previous x 9600 x remaining / winning / 10000).", "Payout = floor(wager x multiplier / 10000); caps protect play credits.", "H/L predict | Arrows bet | Enter deal | S cashes out | P closes help."]
-    var index = 0
-    while index < collections.length(lines):
-        var ink = theme.text()
-        if index == 3:
-            ink = theme.danger()
-        rocket_raylib.draw_text(frame, lines[index], box.x + 26, box.y + 72 + index * 43, theme.body_size(), ink)?
-        index = index + 1
-    return Ok(true)
-
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, table: hilo_api.PublicTable, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_text(frame, "HILO", 32, 26, theme.heading_size(), theme.gold())?
-    rocket_raylib.draw_text(frame, "Exact remaining-deck prediction", 32, 62, theme.small_size(), theme.muted())?
-    rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(table.balance)), width - 300, 76, theme.body_size(), theme.emerald())?
-    let help_button = help_rect(width)
-    components.button(window, frame, help_button, "Help [P]", true, components.contains(help_button, mouse_x, mouse_y), false)?
-    if table.phase != 0:
-        draw_card(frame, table)?
+fn draw_controls(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: hilo_api.PublicTable, value: game_layout.Interior, mouse_x: Int, mouse_y: Int, light_mode: Bool) -> Result[Bool, String]:
+    components.modern_panel(frame, value.rail, light_mode, true)?
+    if value.compact:
+        components.badge(window, frame, resources, components.rect(value.dock.x + 16, value.dock.y + 12, 126, 28), phase_name(table.phase), light_mode)?
+        game_components.metric(window, frame, resources, "WAGER", string.from_int(table.bet), value.dock.x + 176, value.dock.y + 8, 92, false, light_mode)?
+        game_components.metric(window, frame, resources, "MULTIPLIER", multiplier_label(table.multiplier_basis_points), value.dock.x + 286, value.dock.y + 8, 116, false, light_mode)?
+        game_components.metric(window, frame, resources, "POTENTIAL", string.from_int(table.potential_payout), value.dock.x + 420, value.dock.y + 8, 112, true, light_mode)?
+        game_components.metric(window, frame, resources, "CORRECT", string.from_int(table.correct_predictions), value.dock.x + 550, value.dock.y + 8, 92, false, light_mode)?
+    else:
+        components.badge(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 16, 142, 28), phase_name(table.phase), light_mode)?
+        game_components.status_banner(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 56, value.rail.width - 32, 54), table.message, light_mode)?
+        game_components.metric(window, frame, resources, "WAGER", string.from_int(table.bet), value.rail.x + 16, value.rail.y + 124, 92, false, light_mode)?
+        game_components.metric(window, frame, resources, "MULTIPLIER", multiplier_label(table.multiplier_basis_points), value.rail.x + 126, value.rail.y + 124, 116, false, light_mode)?
+        game_components.metric(window, frame, resources, "POTENTIAL", string.from_int(table.potential_payout), value.rail.x + 252, value.rail.y + 124, 108, true, light_mode)?
+        draw_history(window, frame, resources, table, value, light_mode)?
     if table.phase == 0:
-        components.panel(frame, components.rect(80, 150, 260, 190))?
-        rocket_raylib.draw_text(frame, "Future cards stay private", 104, 218, theme.body_size(), theme.text())?
-        rocket_raylib.draw_text(frame, "Deal to reveal one card", 112, 260, theme.small_size(), theme.muted())?
-    rocket_raylib.draw_text(frame, "EQUAL RANK = LOSS", 112, 354, theme.body_size(), theme.danger())?
+        let minus = bet_minus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let plus = bet_plus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let start = start_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let restart = restart_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, minus, "-", components.button_secondary(), true, components.contains(minus, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, plus, "+", components.button_secondary(), true, components.contains(plus, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, start, string.concat("DEAL  ", string.from_int(table.bet)), components.button_primary(), table.bet <= table.balance, components.contains(start, mouse_x, mouse_y), true, light_mode)?
+        components.modern_button(window, frame, resources, restart, "RESTART [R]", components.button_secondary(), true, components.contains(restart, mouse_x, mouse_y), false, light_mode)?
     if table.phase == 1:
-        let lower = lower_rect()
-        let higher = higher_rect()
-        components.button(window, frame, lower, string.concat("Lower [L] ", string.from_int(table.lower_outcomes)), table.can_lower, components.contains(lower, mouse_x, mouse_y), true)?
-        components.button(window, frame, higher, string.concat("Higher [H] ", string.from_int(table.higher_outcomes)), table.can_higher, components.contains(higher, mouse_x, mouse_y), true)?
-        rocket_raylib.draw_text(frame, string.concat("Equal-loss cards: ", string.from_int(table.equal_outcomes)), 42, 438, theme.small_size(), theme.danger())?
-        draw_sequence(frame, table)?
-    components.panel(frame, components.rect(width - 350, 112, 272, 430))?
-    rocket_raylib.draw_text(frame, table.message, width - 330, 126, theme.small_size(), theme.muted())?
-    rocket_raylib.draw_text(frame, string.concat("Wager: ", string.from_int(table.bet)), width - 270, 212, theme.body_size(), theme.text())?
-    components.button(window, frame, bet_minus_rect(width), "-", table.phase == 0, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, bet_plus_rect(width), "+", table.phase == 0, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
-    if table.phase == 0:
-        components.button(window, frame, start_rect(width), "Deal [Enter]", table.bet <= table.balance, components.contains(start_rect(width), mouse_x, mouse_y), true)?
-    if table.phase == 1:
-        components.button(window, frame, cash_out_rect(width), "Cash Out [S]", table.correct_predictions > 0, components.contains(cash_out_rect(width), mouse_x, mouse_y), true)?
-    rocket_raylib.draw_text(frame, string.concat("Remaining: ", string.from_int(table.remaining_cards)), width - 330, 322, theme.small_size(), theme.text())?
-    rocket_raylib.draw_text(frame, string.concat("Correct: ", string.from_int(table.correct_predictions)), width - 210, 322, theme.small_size(), theme.text())?
-    rocket_raylib.draw_text(frame, string.concat("Multiplier: ", multiplier_label(table.multiplier_basis_points)), width - 330, 350, theme.small_size(), theme.gold())?
-    rocket_raylib.draw_text(frame, string.concat("Potential: ", string.from_int(table.potential_payout)), width - 330, 374, theme.small_size(), theme.emerald())?
-    draw_history(frame, table, width)?
+        let lower = lower_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let higher = higher_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let cash = cash_out_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, lower, string.concat("LOWER [L]  ", string.from_int(table.lower_outcomes)), components.button_primary(), table.can_lower, components.contains(lower, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, higher, string.concat("HIGHER [H]  ", string.from_int(table.higher_outcomes)), components.button_primary(), table.can_higher, components.contains(higher, mouse_x, mouse_y), true, light_mode)?
+        components.modern_button(window, frame, resources, cash, "CASH OUT [S]", components.button_secondary(), table.correct_predictions > 0, components.contains(cash, mouse_x, mouse_y), false, light_mode)?
     if table.phase == 2:
-        components.button(window, frame, next_rect(height), "Next [N]", true, components.contains(next_rect(height), mouse_x, mouse_y), true)?
-    if table.phase != 1:
-        components.button(window, frame, lobby_rect(height), "Lobby [B]", true, components.contains(lobby_rect(height), mouse_x, mouse_y), false)?
-        components.button(window, frame, restart_rect(height), "Restart [R]", true, components.contains(restart_rect(height), mouse_x, mouse_y), false)?
+        let next = next_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let restart = restart_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, next, "NEXT ROUND [N]", components.button_primary(), true, components.contains(next, mouse_x, mouse_y), true, light_mode)?
+        components.modern_button(window, frame, resources, restart, "RESTART [R]", components.button_secondary(), true, components.contains(restart, mouse_x, mouse_y), false, light_mode)?
+    return Ok(true)
+
+fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, light_mode: Bool) -> Result[Bool, String]:
+    let lines = ["A checked 52-card deck is Fisher-Yates shuffled only at round start.", "One card is visible; every future card remains private until it is drawn.", "Choose an enabled Higher or Lower action using the exact cards-left counts.", "EQUAL RANK = LOSS, regardless of whether Higher or Lower was selected.", "Each correct prediction reveals the next card and advances the multiplier.", "Cash Out becomes legal after one correct prediction; a wrong pick loses.", "Step return = floor(previous x 9600 x remaining / winning / 10000).", "Payout = floor(wager x multiplier / 10000); integer caps protect credits.", "H / L predicts, arrows size wager, Enter deals, and S cashes out."]
+    return game_components.help_overlay(window, frame, resources, "HILO  /  EXACT RETURN GUIDE", lines, 3, light_mode)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: hilo_api.PublicTable, help: Bool, light_mode: Bool, reduced_motion: Bool, now: Float, animation_end: Float, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let value = interior(width, height)
+    game_components.ambient_stage(frame, resources, value.stage, 8, light_mode)?
+    let offset = game_components.motion_offset(now, animation_end, reduced_motion, 34)
+    draw_deck(window, frame, resources, value.stage, light_mode)?
+    draw_current(window, frame, resources, table, value.stage, offset, light_mode)?
+    draw_odds(window, frame, resources, table, value.stage, light_mode)?
+    draw_sequence(window, frame, resources, table, value.stage, light_mode)?
+    components.badge(window, frame, resources, components.rect(value.stage.x + value.stage.width / 2 - 92, value.stage.y + 14, 184, 32), "EQUAL RANK = LOSS", light_mode)?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, value.stage.x + value.stage.width / 2 - 96, value.stage.y + 10, 192, 40, 0.4, 10, 2.0, theme.destructive(light_mode))?
+    draw_controls(window, frame, resources, table, value, mouse_x, mouse_y, light_mode)?
+    let help_button = help_rect(width, height)
+    components.modern_button(window, frame, resources, help_button, "RULES", components.button_quiet(), true, components.contains(help_button, mouse_x, mouse_y), false, light_mode)?
     if help:
-        draw_help(window, frame)?
+        draw_help(window, frame, resources, light_mode)?
     return Ok(true)

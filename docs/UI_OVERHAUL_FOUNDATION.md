@@ -151,7 +151,7 @@ Implementation status on 2026-08-11:
 | Foundation and rejected-baseline audit | Accepted | Five responsive geometry targets; 42/42 Debug and Release |
 | Assets, resources, persistence, components | Accepted | Reviewed ImageGen atlases, licensed Manrope, degraded modes; 44/44 |
 | Startup, shell, lobby, settings, help, modals | Accepted | Actual dark/light native captures at every target and maximized; 45/45 |
-| Blackjack, Roulette, Hold'em, HiLo interiors | Pending | Must pass focused implementation, visual, and regression gates |
+| Blackjack, Roulette, Hold'em, HiLo interiors | Accepted | Actual dark/light native matrix, responsive state drawing, exact guides; 46/46 |
 | Remaining seven interiors | Pending | Must pass focused implementation, visual, and regression gates |
 | Website, package, final acceptance | Pending | Must use the completed asset-bearing application |
 

@@ -1,5 +1,9 @@
 import src.app.components
+import src.app.game_components
+import src.app.game_layout
+import src.app.shell_view
 import src.app.theme
+import src.app.ui_resources
 import src.roulette.roulette_engine
 import src.roulette.roulette_model
 import src.roulette.roulette_rules
@@ -7,53 +11,126 @@ import src.rocket_raylib
 import std.collections
 import std.string
 
-fn grid_x() -> Int:
-    return 70
-
-fn grid_y() -> Int:
-    return 132
-
-fn row_height() -> Int:
-    return 44
-
-fn cell_width(width: Int) -> Int:
-    return(width - 430) / 12
-
-fn grid_right(width: Int) -> Int:
-    return grid_x() + cell_width(width) * 12
-
-fn grid_bottom() -> Int:
-    return grid_y() + row_height() * 3
-
 fn remainder(value: Int, divisor: Int) -> Int:
     return value - value / divisor * divisor
 
-pub fn spin_rect(height: Int) -> components.Rect:
-    return components.rect(32, height - 68, 126, 42)
+fn interior(width: Int, height: Int) -> game_layout.Interior:
+    return game_layout.interior(width, height)
 
-pub fn undo_rect(height: Int) -> components.Rect:
-    return components.rect(168, height - 68, 96, 42)
+fn board_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    let wheel_width = value.stage.width * 31 / 100
+    var board_height = value.stage.height - 74
+    if board_height > 264:
+        board_height = 264
+    var board_y = value.stage.y +(value.stage.height - board_height) / 2
+    if board_y < value.stage.y + 52:
+        board_y = value.stage.y + 52
+    return components.rect(value.stage.x + wheel_width + 12, board_y, value.stage.width - wheel_width - 26, board_height)
 
-pub fn clear_rect(height: Int) -> components.Rect:
-    return components.rect(274, height - 68, 96, 42)
+fn zero_width(width: Int, height: Int) -> Int:
+    let board = board_rect(width, height)
+    var value = board.width / 15
+    if value < 28:
+        value = 28
+    return value
 
-pub fn repeat_rect(height: Int) -> components.Rect:
-    return components.rect(380, height - 68, 104, 42)
+fn cell_width(width: Int, height: Int) -> Int:
+    let board = board_rect(width, height)
+    return(board.width - zero_width(width, height) - 34) / 12
 
-pub fn next_rect(height: Int) -> components.Rect:
-    return components.rect(32, height - 68, 150, 42)
+fn row_height(width: Int, height: Int) -> Int:
+    let board = board_rect(width, height)
+    var value =(board.height - 28) / 5
+    if value > 46:
+        value = 46
+    if value < 28:
+        value = 28
+    return value
 
-pub fn rebet_rect(height: Int) -> components.Rect:
-    return components.rect(192, height - 68, 120, 42)
+fn grid_x(width: Int, height: Int) -> Int:
+    let board = board_rect(width, height)
+    return board.x + zero_width(width, height)
 
-pub fn lobby_rect(height: Int) -> components.Rect:
-    return components.rect(322, height - 68, 120, 42)
+fn grid_y(width: Int, height: Int) -> Int:
+    let board = board_rect(width, height)
+    return board.y + 12
 
-pub fn help_rect(width: Int) -> components.Rect:
-    return components.rect(width - 118, 24, 86, 38)
+fn grid_right(width: Int, height: Int) -> Int:
+    return grid_x(width, height) + cell_width(width, height) * 12
 
-pub fn chip_rect(index: Int, width: Int) -> components.Rect:
-    return components.rect(width - 332 + index * 50, 78, 44, 38)
+fn grid_bottom(width: Int, height: Int) -> Int:
+    return grid_y(width, height) + row_height(width, height) * 3
+
+fn outside_rect(index: Int, width: Int, height: Int) -> components.Rect:
+    let each = cell_width(width, height) * 2
+    return components.rect(grid_x(width, height) + index * each, grid_bottom(width, height) + 8, each, row_height(width, height) - 4)
+
+fn dozen_rect(index: Int, width: Int, height: Int) -> components.Rect:
+    let each = cell_width(width, height) * 4
+    return components.rect(grid_x(width, height) + index * each, grid_bottom(width, height) + row_height(width, height) + 8, each, row_height(width, height) - 6)
+
+fn column_rect(index: Int, width: Int, height: Int) -> components.Rect:
+    return components.rect(grid_right(width, height) + 4, grid_y(width, height) + index * row_height(width, height), 28, row_height(width, height))
+
+pub fn basket_rect(width: Int, height: Int) -> components.Rect:
+    let board = board_rect(width, height)
+    return components.rect(board.x, grid_bottom(width, height) + 8, zero_width(width, height) - 4, row_height(width, height) - 4)
+
+pub fn help_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    return components.rect(value.stage.x + value.stage.width - 88, value.stage.y + 6, 76, 44)
+
+pub fn spin_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + value.dock.width - 402, value.dock.y + value.dock.height - 58, 116, 46)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 64, value.rail.width - 32, 48)
+
+pub fn undo_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + value.dock.width - 278, value.dock.y + value.dock.height - 58, 82, 46)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 116,(value.rail.width - 48) / 3, 44)
+
+pub fn clear_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + value.dock.width - 188, value.dock.y + value.dock.height - 58, 82, 46)
+    let undo = undo_rect(width, height)
+    return components.rect(undo.x + undo.width + 8, undo.y, undo.width, undo.height)
+
+pub fn repeat_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + value.dock.width - 98, value.dock.y + value.dock.height - 58, 86, 46)
+    let clear = clear_rect(width, height)
+    return components.rect(clear.x + clear.width + 8, clear.y, clear.width, clear.height)
+
+pub fn next_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + value.dock.width - 318, value.dock.y + value.dock.height - 58, 150, 46)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 116, value.rail.width - 32, 46)
+
+pub fn rebet_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + value.dock.width - 158, value.dock.y + value.dock.height - 58, 146, 46)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 62, value.rail.width - 32, 46)
+
+pub fn lobby_rect(width: Int, height: Int) -> components.Rect:
+    let expected = height
+    return shell_view.back_rect(width)
+
+pub fn chip_rect(index: Int, width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16 + index * 48, value.dock.y + value.dock.height - 58, 44, 44)
+    let column = index - index / 3 * 3
+    let row = index / 3
+    let each =(value.rail.width - 48) / 3
+    return components.rect(value.rail.x + 16 + column *(each + 8), value.rail.y + 132 + row * 52, each, 44)
 
 pub fn chip_value(index: Int) -> Int:
     let values = [5, 10, 25, 50, 100, 500]
@@ -61,40 +138,41 @@ pub fn chip_value(index: Int) -> Int:
         return 10
     return values[index]
 
+pub fn is_bet_target(x: Int, y: Int, width: Int, height: Int) -> Bool:
+    let board = board_rect(width, height)
+    return x >= board.x and x <= grid_right(width, height) + 32 and y >= grid_y(width, height) and y <= grid_bottom(width, height) + row_height(width, height) * 2 + 4
+
 fn number_for_cell(column: Int, row: Int) -> Int:
     return column * 3 +(3 - row)
 
-fn outside_rect(index: Int, width: Int) -> components.Rect:
-    let each = cell_width(width) * 2
-    return components.rect(grid_x() + index * each, grid_bottom() + 28, each, 38)
+pub fn number_rect(number: Int, width: Int, height: Int) -> components.Rect:
+    if number == 0:
+        let board = board_rect(width, height)
+        return components.rect(board.x, grid_y(width, height), zero_width(width, height) - 4, row_height(width, height) * 3)
+    let column =(number - 1) / 3
+    let position = number - column * 3
+    let row = 3 - position
+    return components.rect(grid_x(width, height) + column * cell_width(width, height), grid_y(width, height) + row * row_height(width, height), cell_width(width, height), row_height(width, height))
 
-fn dozen_rect(index: Int, width: Int) -> components.Rect:
-    let each = cell_width(width) * 4
-    return components.rect(grid_x() + index * each, grid_bottom() + 70, each, 36)
+pub fn street_rail_rect(column: Int, width: Int, height: Int) -> components.Rect:
+    return components.rect(grid_x(width, height) + column * cell_width(width, height), grid_bottom(width, height), cell_width(width, height), 7)
 
-fn column_rect(index: Int, width: Int) -> components.Rect:
-    return components.rect(grid_right(width) + 8, grid_y() + index * row_height(), 64, row_height())
+pub fn six_line_rail_rect(boundary: Int, width: Int, height: Int) -> components.Rect:
+    return components.rect(grid_x(width, height) + boundary * cell_width(width, height), grid_bottom(width, height), 5, 7)
 
-fn basket_rect() -> components.Rect:
-    return components.rect(24, grid_bottom() + 28, 42, 38)
-
-pub fn is_bet_target(x: Int, y: Int, width: Int) -> Bool:
-    if x >= 24 and x <= grid_right(width) + 72 and y >= grid_y() and y <= grid_bottom() + 106:
-        return true
-    return false
-
-pub fn mouse_bet(x: Int, y: Int, width: Int, stake: Int) -> Result[roulette_model.Bet, String]:
-    let zero = components.rect(24, grid_y(), 42, row_height() * 3)
+pub fn mouse_bet(x: Int, y: Int, width: Int, height: Int, stake: Int) -> Result[roulette_model.Bet, String]:
+    let board = board_rect(width, height)
+    let zero = components.rect(board.x, grid_y(width, height), zero_width(width, height) - 4, row_height(width, height) * 3)
     if components.contains(zero, x, y):
-        if x >= 60:
-            let row =(y - grid_y()) / row_height()
+        if x >= zero.x + zero.width - 5:
+            let row =(y - grid_y(width, height)) / row_height(width, height)
             return roulette_rules.split(0, 3 - row, stake)
         return roulette_rules.straight(0, stake)
-    if components.contains(basket_rect(), x, y):
+    if components.contains(basket_rect(width, height), x, y):
         return roulette_rules.basket(stake)
     var index = 0
     while index < 6:
-        if components.contains(outside_rect(index, width), x, y):
+        if components.contains(outside_rect(index, width, height), x, y):
             if index == 0:
                 return roulette_rules.outside(roulette_model.Low(), stake)
             if index == 1:
@@ -109,25 +187,26 @@ pub fn mouse_bet(x: Int, y: Int, width: Int, stake: Int) -> Result[roulette_mode
         index = index + 1
     index = 0
     while index < 3:
-        if components.contains(dozen_rect(index, width), x, y):
+        if components.contains(dozen_rect(index, width, height), x, y):
             return roulette_rules.dozen(index + 1, stake)
-        if components.contains(column_rect(index, width), x, y):
+        if components.contains(column_rect(index, width, height), x, y):
             return roulette_rules.column(3 - index, stake)
         index = index + 1
-    let cell = cell_width(width)
-    if y >= grid_bottom() and y <= grid_bottom() + 20 and x >= grid_x() and x < grid_right(width):
-        let local_x = x - grid_x()
+    let cell = cell_width(width, height)
+    let row_size = row_height(width, height)
+    if y >= grid_bottom(width, height) and y <= grid_bottom(width, height) + 7 and x >= grid_x(width, height) and x < grid_right(width, height):
+        let local_x = x - grid_x(width, height)
         let column = local_x / cell
         if remainder(local_x, cell) < 5 and column > 0:
             return roulette_rules.six_line((column - 1) * 3 + 1, stake)
         return roulette_rules.street(column * 3 + 1, stake)
-    if x >= grid_x() and x < grid_right(width) and y >= grid_y() and y < grid_bottom():
-        let local_x = x - grid_x()
-        let local_y = y - grid_y()
+    if x >= grid_x(width, height) and x < grid_right(width, height) and y >= grid_y(width, height) and y < grid_bottom(width, height):
+        let local_x = x - grid_x(width, height)
+        let local_y = y - grid_y(width, height)
         let column = local_x / cell
-        let row = local_y / row_height()
+        let row = local_y / row_size
         let near_left = remainder(local_x, cell) < 5 and column > 0
-        let near_top = remainder(local_y, row_height()) < 5 and row > 0
+        let near_top = remainder(local_y, row_size) < 5 and row > 0
         if near_left and near_top:
             return roulette_rules.corner((column - 1) * 3 +(3 - row), stake)
         if near_left:
@@ -202,118 +281,234 @@ pub fn focus_bet(kind: Int, target: Int, stake: Int) -> Result[roulette_model.Be
         return roulette_rules.dozen(target + 1, stake)
     return roulette_rules.column(target + 1, stake)
 
-fn draw_numbers(window: rocket_raylib.Window, frame: rocket_raylib.Frame, width: Int) -> Result[Bool, String]:
-    let cell = cell_width(width)
-    rocket_raylib.draw_rectangle(frame, 24, grid_y(), 42, row_height() * 3, theme.emerald())?
-    rocket_raylib.draw_text(frame, "0", 38, grid_y() + 52, theme.heading_size(), theme.text())?
+fn number_center(number: Int, width: Int, height: Int) -> components.Rect:
+    if number == 0:
+        let board = board_rect(width, height)
+        return components.rect(board.x + zero_width(width, height) / 2, grid_y(width, height) + row_height(width, height) * 3 / 2, 1, 1)
+    let column =(number - 1) / 3
+    let position = number - column * 3
+    let row = 3 - position
+    return components.rect(grid_x(width, height) + column * cell_width(width, height) + cell_width(width, height) / 2, grid_y(width, height) + row * row_height(width, height) + row_height(width, height) / 2, 1, 1)
+
+fn bet_anchor(bet: roulette_model.Bet, width: Int, height: Int) -> components.Rect:
+    let code = roulette_rules.kind_code(bet.kind)
+    if code >= 6 and code <= 11:
+        var index = 0
+        if code == 9:
+            index = 1
+        if code == 6:
+            index = 2
+        if code == 7:
+            index = 3
+        if code == 8:
+            index = 4
+        if code == 11:
+            index = 5
+        let box = outside_rect(index, width, height)
+        return components.rect(box.x + box.width / 2, box.y + box.height / 2, 1, 1)
+    if code == 12:
+        let index =(bet.numbers[0] - 1) / 12
+        let box = dozen_rect(index, width, height)
+        return components.rect(box.x + box.width / 2, box.y + box.height / 2, 1, 1)
+    if code == 13:
+        let column = remainder(bet.numbers[0] - 1, 3)
+        let box = column_rect(2 - column, width, height)
+        return components.rect(box.x + box.width / 2, box.y + box.height / 2, 1, 1)
+    var x = 0
+    var y = 0
+    var index = 0
+    while index < collections.length(bet.numbers):
+        let center = number_center(bet.numbers[index], width, height)
+        x = x + center.x
+        y = y + center.y
+        index = index + 1
+    return components.rect(x / collections.length(bet.numbers), y / collections.length(bet.numbers), 1, 1)
+
+fn draw_bet_box(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, label: String, fill: rocket_raylib.Color, light_mode: Bool) -> Result[Bool, String]:
+    rocket_raylib.draw_rectangle(frame, value.x, value.y, value.width, value.height, fill)?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.04, 6, 1.0, rocket_raylib.color(245, 190, 82, 155))?
+    return components.type_centered(window, frame, resources, label, components.rect(value.x, value.y + value.height / 2 - 10, value.width, 22), components.type_caption(), rocket_raylib.color(255, 255, 255, 255))
+
+fn draw_board(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: roulette_model.Game, focus_kind: Int, focus_target: Int, light_mode: Bool) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let board = board_rect(width, height)
+    rocket_raylib.draw_rounded_rectangle(frame, board.x - 8, board.y, board.width + 8, board.height, 0.04, 8, rocket_raylib.color(4, 69, 53, 245))?
+    draw_bet_box(window, frame, resources, components.rect(board.x, grid_y(width, height), zero_width(width, height) - 4, row_height(width, height) * 3), "0", rocket_raylib.color(6, 122, 82, 255), light_mode)?
     var column = 0
     while column < 12:
         var row = 0
         while row < 3:
             let number = number_for_cell(column, row)
-            var fill = theme.card_dark()
+            var fill = rocket_raylib.color(20, 28, 43, 255)
             if roulette_rules.is_red(number):
-                fill = theme.danger()
-            let x = grid_x() + column * cell
-            let y = grid_y() + row * row_height()
-            rocket_raylib.draw_rectangle(frame, x, y, cell - 1, row_height() - 1, fill)?
-            rocket_raylib.draw_text(frame, string.from_int(number), x + 7, y + 12, theme.small_size(), theme.text())?
+                fill = rocket_raylib.color(185, 34, 66, 255)
+            draw_bet_box(window, frame, resources, components.rect(grid_x(width, height) + column * cell_width(width, height), grid_y(width, height) + row * row_height(width, height), cell_width(width, height), row_height(width, height)), string.from_int(number), fill, light_mode)?
             row = row + 1
         column = column + 1
-    var outside_names = ["1-18", "EVEN", "RED", "BLACK", "ODD", "19-36"]
+    let outside_names = ["1-18", "EVEN", "RED", "BLACK", "ODD", "19-36"]
     var index = 0
     while index < 6:
-        let box = outside_rect(index, width)
-        components.button(window, frame, box, outside_names[index], true, false, false)?
+        var fill = rocket_raylib.color(5, 92, 70, 255)
+        if index == 2:
+            fill = rocket_raylib.color(185, 34, 66, 255)
+        if index == 3:
+            fill = rocket_raylib.color(20, 28, 43, 255)
+        draw_bet_box(window, frame, resources, outside_rect(index, width, height), outside_names[index], fill, light_mode)?
         index = index + 1
     index = 0
     while index < 3:
-        let dozen_box = dozen_rect(index, width)
-        components.button(window, frame, dozen_box, string.concat(string.from_int(index + 1), "st 12"), true, false, false)?
-        let column_box = column_rect(index, width)
-        components.button(window, frame, column_box, string.concat("C", string.from_int(3 - index)), true, false, false)?
+        draw_bet_box(window, frame, resources, dozen_rect(index, width, height), string.concat(string.from_int(index + 1), "ST 12"), rocket_raylib.color(5, 92, 70, 255), light_mode)?
+        draw_bet_box(window, frame, resources, column_rect(index, width, height), "2:1", rocket_raylib.color(5, 92, 70, 255), light_mode)?
         index = index + 1
-    let basket = basket_rect()
-    components.button(window, frame, basket, "0-3", true, false, false)?
-    return Ok(true)
-
-fn draw_wheel(frame: rocket_raylib.Frame, game: roulette_model.Game, width: Int) -> Result[Bool, String]:
-    let center_x = width - 180
-    let center_y = 260
-    rocket_raylib.draw_circle(frame, center_x, center_y, 112.0, theme.border())?
-    rocket_raylib.draw_circle(frame, center_x, center_y, 92.0, theme.panel())?
-    rocket_raylib.draw_circle(frame, center_x, center_y, 54.0, theme.gold())?
-    let x_offsets = [0, 42, 72, 84, 72, 42, 0, -42, -72, -84, -72, -42]
-    let y_offsets = [-82, -70, -42, 0, 42, 70, 82, 70, 42, 0, -42, -70]
-    if roulette_engine.phase_code(game.phase) == 1:
-        let sector = game.pending_winner - game.pending_winner / 12 * 12
-        rocket_raylib.draw_circle(frame, center_x + x_offsets[sector], center_y + y_offsets[sector], 8.0, theme.text())?
-        rocket_raylib.draw_text(frame, "ENGINE RESULT LOCKED", center_x - 88, center_y + 132, theme.small_size(), theme.muted())?
-    if roulette_engine.phase_code(game.phase) == 2:
-        rocket_raylib.draw_text(frame, string.from_int(game.result.winning_number), center_x - 16, center_y - 16, theme.heading_size(), theme.background())?
-    return Ok(true)
-
-fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.overlay())?
-    let box = components.rect(width / 2 - 360, 88, 720, 500)
-    components.panel(frame, box)?
-    rocket_raylib.draw_text(frame, "EUROPEAN ROULETTE RULES", box.x + 30, box.y + 28, theme.heading_size(), theme.gold())?
-    let lines = ["Single zero: pockets 0-36. Zero loses outside even-money bets.", "Straight 35:1 | Split 17:1 | Street 11:1 | Corner/Basket 8:1", "Six-line 5:1 | Dozen/Column 2:1 | Even-money bets 1:1", "Mouse: centers, shared edges/intersections, street/six-line rail, outside boxes.", "Keyboard: Tab bet type | Left/Right target | Up/Down chip | Enter place.", "S spin | H undo | D clear | R repeat/rebet | P closes help.", "The engine selects the seeded result before the wheel animation starts.", "Credits are local play money with no monetary value."]
-    var index = 0
-    while index < collections.length(lines):
-        rocket_raylib.draw_text(frame, lines[index], box.x + 30, box.y + 92 + index * 42, theme.body_size(), theme.text())?
+    draw_bet_box(window, frame, resources, basket_rect(width, height), "0-3", rocket_raylib.color(6, 122, 82, 255), light_mode)?
+    index = 0
+    while index < collections.length(game.bets):
+        let anchor = bet_anchor(game.bets[index], width, height)
+        rocket_raylib.draw_ring_pixels(frame, anchor.x, anchor.y, 6, 11, 0.0, 360.0, 18, theme.highlight(light_mode))?
+        rocket_raylib.draw_circle_pixels(frame, anchor.x, anchor.y, 5, theme.violet(false))?
         index = index + 1
-    return Ok(true)
-
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: roulette_model.Game, focus_kind: Int, focus_target: Int, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_text(frame, "EUROPEAN ROULETTE", 32, 28, theme.heading_size(), theme.gold())?
-    rocket_raylib.draw_text(frame, game.message, 310, 36, theme.body_size(), theme.text())?
-    rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(game.balance)), width - 316, 34, theme.body_size(), theme.emerald())?
-    let help_button = help_rect(width)
-    components.button(window, frame, help_button, "Help [P]", true, components.contains(help_button, mouse_x, mouse_y), false)?
-    var chip_index = 0
-    while chip_index < 6:
-        let chip = chip_rect(chip_index, width)
-        components.button(window, frame, chip, string.from_int(chip_value(chip_index)), true, components.contains(chip, mouse_x, mouse_y), game.selected_chip == chip_value(chip_index))?
-        chip_index = chip_index + 1
-    draw_numbers(window, frame, width)?
-    draw_wheel(frame, game, width)?
     match focus_bet(focus_kind, focus_target, game.selected_chip):
         case Ok(focus):
-            rocket_raylib.draw_text(frame, string.concat("Keyboard target: ", roulette_rules.bet_name(focus)), 32, grid_bottom() + 128, theme.small_size(), theme.gold())?
+            let anchor = bet_anchor(focus, width, height)
+            rocket_raylib.draw_ring_pixels(frame, anchor.x, anchor.y, 12, 14, 0.0, 360.0, 20, theme.cyan(light_mode))?
         case Err(error):
             let expected = error
-    rocket_raylib.draw_text(frame, string.concat("Total wager ", string.from_int(roulette_engine.total_wager(game))), 32, grid_bottom() + 156, theme.body_size(), theme.text())?
-    var bet_index = 0
-    while bet_index < collections.length(game.bets) and bet_index < 6:
-        rocket_raylib.draw_text(frame, roulette_rules.bet_name(game.bets[bet_index]), width - 330, 404 + bet_index * 25, theme.small_size(), theme.muted())?
-        bet_index = bet_index + 1
+    return Ok(true)
+
+fn wheel_step(now: Float, end_time: Float, reduced_motion: Bool) -> Int:
+    if reduced_motion or end_time <= now:
+        return 0
+    let remaining = end_time - now
+    if remaining > 1.80:
+        return 1
+    if remaining > 1.60:
+        return 2
+    if remaining > 1.40:
+        return 3
+    if remaining > 1.20:
+        return 4
+    if remaining > 1.00:
+        return 5
+    if remaining > 0.82:
+        return 6
+    if remaining > 0.66:
+        return 7
+    if remaining > 0.52:
+        return 8
+    if remaining > 0.40:
+        return 9
+    if remaining > 0.30:
+        return 10
+    if remaining > 0.20:
+        return 11
+    return 0
+
+fn draw_wheel(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: roulette_model.Game, now: Float, spin_end: Float, reduced_motion: Bool, light_mode: Bool) -> Result[Bool, String]:
+    let value = interior(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+    let wheel_width = value.stage.width * 31 / 100
+    let center_x = value.stage.x + wheel_width / 2
+    let center_y = value.stage.y + value.stage.height / 2
+    var radius = wheel_width / 2 - 18
+    if radius > value.stage.height / 2 - 42:
+        radius = value.stage.height / 2 - 42
+    rocket_raylib.draw_circle_pixels(frame, center_x + 5, center_y + 8, radius + 9, rocket_raylib.color(2, 6, 23, 110))?
+    rocket_raylib.draw_ring_pixels(frame, center_x, center_y, radius * 76 / 100, radius, 0.0, 360.0, 72, rocket_raylib.color(115, 72, 25, 255))?
+    let starts = [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0, 210.0, 240.0, 270.0, 300.0, 330.0]
+    var index = 0
+    while index < 12:
+        var color = rocket_raylib.color(20, 28, 43, 255)
+        if remainder(index, 2) == 0:
+            color = rocket_raylib.color(185, 34, 66, 255)
+        rocket_raylib.draw_ring_pixels(frame, center_x, center_y, radius * 48 / 100, radius * 72 / 100, starts[index], starts[index] + 27.0, 12, color)?
+        index = index + 1
+    rocket_raylib.draw_ring_pixels(frame, center_x, center_y, radius * 31 / 100, radius * 46 / 100, 0.0, 360.0, 48, theme.highlight(light_mode))?
+    rocket_raylib.draw_circle_pixels(frame, center_x, center_y, radius * 29 / 100, rocket_raylib.color(63, 30, 91, 255))?
+    rocket_raylib.draw_ring_pixels(frame, center_x, center_y, radius * 12 / 100, radius * 22 / 100, 0.0, 360.0, 32, theme.highlight(light_mode))?
+    components.type_centered(window, frame, resources, "S2R", components.rect(center_x - 40, center_y - 12, 80, 24), components.type_label(), rocket_raylib.color(255, 255, 255, 255))?
+    let x_offsets = [0, 35, 61, 70, 61, 35, 0, -35, -61, -70, -61, -35]
+    let y_offsets = [-70, -61, -35, 0, 35, 61, 70, 61, 35, 0, -35, -61]
     let phase = roulette_engine.phase_code(game.phase)
-    if phase == 0:
-        let spin = spin_rect(height)
-        let undo = undo_rect(height)
-        let clear = clear_rect(height)
-        let repeat = repeat_rect(height)
-        components.button(window, frame, spin, "Spin [S]", collections.length(game.bets) > 0, components.contains(spin, mouse_x, mouse_y), true)?
-        components.button(window, frame, undo, "Undo [H]", collections.length(game.bets) > 0, components.contains(undo, mouse_x, mouse_y), false)?
-        components.button(window, frame, clear, "Clear [D]", collections.length(game.bets) > 0, components.contains(clear, mouse_x, mouse_y), false)?
-        components.button(window, frame, repeat, "Repeat [R]", collections.length(game.bets) == 0 and collections.length(game.previous_bets) > 0, components.contains(repeat, mouse_x, mouse_y), false)?
-        rocket_raylib.draw_text(frame, "B or Escape returns to lobby when no wager is live", 504, height - 56, theme.small_size(), theme.muted())?
     if phase == 1:
-        rocket_raylib.draw_text(frame, "Wheel animation follows the locked engine result...", 32, height - 56, theme.body_size(), theme.gold())?
+        let target = remainder(game.pending_winner, 12)
+        let slot = remainder(target + wheel_step(now, spin_end, reduced_motion), 12)
+        rocket_raylib.draw_circle_pixels(frame, center_x + x_offsets[slot] * radius / 92, center_y + y_offsets[slot] * radius / 92, 7, rocket_raylib.color(255, 255, 255, 255))?
+        components.pill(window, frame, resources, components.rect(center_x - 76, center_y + radius + 10, 152, 28), "RESULT LOCKED", false, light_mode)?
     if phase == 2:
-        rocket_raylib.draw_text(frame, string.concat("Return ", string.from_int(game.result.total_return)), 32, height - 100, theme.body_size(), theme.emerald())?
-        rocket_raylib.draw_text(frame, string.concat("Net ", string.from_int(game.result.net_change)), 190, height - 100, theme.body_size(), theme.text())?
-        let next = next_rect(height)
-        let rebet = rebet_rect(height)
-        let lobby = lobby_rect(height)
-        components.button(window, frame, next, "Next [N]", true, components.contains(next, mouse_x, mouse_y), true)?
-        components.button(window, frame, rebet, "Rebet [R]", true, components.contains(rebet, mouse_x, mouse_y), false)?
-        components.button(window, frame, lobby, "Lobby [B]", true, components.contains(lobby, mouse_x, mouse_y), false)?
+        components.type_centered(window, frame, resources, string.from_int(game.result.winning_number), components.rect(center_x - 40, center_y - 26, 80, 54), components.type_numeric(), theme.highlight(light_mode))?
+    return Ok(true)
+
+fn draw_history(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: roulette_model.Game, value: game_layout.Interior, light_mode: Bool) -> Result[Bool, String]:
+    components.type_text(window, frame, resources, "RECENT POCKETS", value.rail.x + 16, value.rail.y + 244, components.type_caption(), theme.secondary_text(light_mode))?
+    var index = 0
+    while index < collections.length(game.history) and index < 8:
+        let number = game.history[index]
+        var ink = theme.primary_text(light_mode)
+        if roulette_rules.is_red(number):
+            ink = theme.destructive(light_mode)
+        if number == 0:
+            ink = theme.success(light_mode)
+        let x = value.rail.x + 16 + remainder(index, 4) * 48
+        let y = value.rail.y + 272 +(index / 4) * 38
+        components.pill(window, frame, resources, components.rect(x, y, 40, 28), string.from_int(number), number == 0, light_mode)?
+        components.type_text(window, frame, resources, "", x, y, components.type_caption(), ink)?
+        index = index + 1
+    return Ok(true)
+
+fn draw_controls(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: roulette_model.Game, value: game_layout.Interior, mouse_x: Int, mouse_y: Int, light_mode: Bool) -> Result[Bool, String]:
+    components.modern_panel(frame, value.rail, light_mode, true)?
+    let phase = roulette_engine.phase_code(game.phase)
+    if value.compact:
+        components.badge(window, frame, resources, components.rect(value.dock.x + 16, value.dock.y + 12, 112, 28), "ROULETTE", light_mode)?
+        components.type_text(window, frame, resources, game.message, value.dock.x + 140, value.dock.y + 16, components.type_caption(), theme.primary_text(light_mode))?
+        game_components.metric(window, frame, resources, "TOTAL", string.from_int(roulette_engine.total_wager(game)), value.dock.x + value.dock.width - 94, value.dock.y + 8, 78, false, light_mode)?
+    else:
+        components.badge(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 16, 132, 28), "SINGLE ZERO", light_mode)?
+        game_components.status_banner(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 56, value.rail.width - 32, 54), game.message, light_mode)?
+        game_components.metric(window, frame, resources, "TOTAL WAGER", string.from_int(roulette_engine.total_wager(game)), value.rail.x + 16, value.rail.y + 348, 120, false, light_mode)?
+        game_components.metric(window, frame, resources, "SELECTED CHIP", string.from_int(game.selected_chip), value.rail.x + value.rail.width / 2, value.rail.y + 348, 120, false, light_mode)?
+        draw_history(window, frame, resources, game, value, light_mode)?
+    var chip_index = 0
+    while chip_index < 6:
+        let chip = chip_rect(chip_index, rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, chip, string.from_int(chip_value(chip_index)), components.button_secondary(), phase == 0, components.contains(chip, mouse_x, mouse_y), game.selected_chip == chip_value(chip_index), light_mode)?
+        chip_index = chip_index + 1
+    if phase == 0:
+        let spin = spin_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let undo = undo_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let clear = clear_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let repeat = repeat_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, spin, "SPIN [S]", components.button_primary(), collections.length(game.bets) > 0, components.contains(spin, mouse_x, mouse_y), true, light_mode)?
+        components.modern_button(window, frame, resources, undo, "UNDO", components.button_secondary(), collections.length(game.bets) > 0, components.contains(undo, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, clear, "CLEAR", components.button_secondary(), collections.length(game.bets) > 0, components.contains(clear, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, repeat, "REPEAT", components.button_secondary(), collections.length(game.bets) == 0 and collections.length(game.previous_bets) > 0, components.contains(repeat, mouse_x, mouse_y), false, light_mode)?
+    if phase == 1:
+        components.type_text(window, frame, resources, "The ball follows the engine-locked pocket.", value.rail.x + 16, value.rail.y + value.rail.height - 40, components.type_caption(), theme.highlight(light_mode))?
+    if phase == 2:
+        if not value.compact:
+            game_components.metric(window, frame, resources, "RETURN", string.from_int(game.result.total_return), value.rail.x + 16, value.rail.y + 420, 120, true, light_mode)?
+            game_components.metric(window, frame, resources, "NET", string.from_int(game.result.net_change), value.rail.x + value.rail.width / 2, value.rail.y + 420, 120, game.result.net_change > 0, light_mode)?
+        let next = next_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let rebet = rebet_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, next, "NEXT [N]", components.button_primary(), true, components.contains(next, mouse_x, mouse_y), true, light_mode)?
+        components.modern_button(window, frame, resources, rebet, "REBET [R]", components.button_secondary(), true, components.contains(rebet, mouse_x, mouse_y), false, light_mode)?
+    return Ok(true)
+
+fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, light_mode: Bool) -> Result[Bool, String]:
+    let lines = ["Single-zero wheel: pockets 0 through 36.", "Straight 35:1 | Split 17:1 | Street 11:1.", "Corner and Basket 8:1 | Six-line 5:1.", "Dozen and Column 2:1 | even-money bets 1:1.", "Mouse reaches centers, edges, intersections, and rails.", "Tab bet type | arrows target/chip | Enter places.", "S spin | H undo | D clear | R repeat or rebet.", "The seeded pocket is committed before the wheel moves.", "Credits are local play money with no monetary value."]
+    return game_components.help_overlay(window, frame, resources, "EUROPEAN ROULETTE GUIDE", lines, -1, light_mode)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: roulette_model.Game, focus_kind: Int, focus_target: Int, help: Bool, light_mode: Bool, reduced_motion: Bool, now: Float, spin_end: Float, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let value = interior(width, height)
+    game_components.ambient_stage(frame, resources, value.stage, 1, light_mode)?
+    components.type_text(window, frame, resources, "EUROPEAN TABLE", value.stage.x + 18, value.stage.y + 14, components.type_caption(), theme.secondary_text(light_mode))?
+    let help_button = help_rect(width, height)
+    components.modern_button(window, frame, resources, help_button, "RULES", components.button_quiet(), true, components.contains(help_button, mouse_x, mouse_y), false, light_mode)?
+    draw_wheel(window, frame, resources, game, now, spin_end, reduced_motion, light_mode)?
+    draw_board(window, frame, resources, game, focus_kind, focus_target, light_mode)?
+    draw_controls(window, frame, resources, game, value, mouse_x, mouse_y, light_mode)?
     if help:
-        draw_help(window, frame)?
+        draw_help(window, frame, resources, light_mode)?
     return Ok(true)

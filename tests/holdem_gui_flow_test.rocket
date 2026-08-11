@@ -1,4 +1,5 @@
 import src.app.application
+import src.app.holdem_view
 import src.app.shell_view
 import src.holdem.holdem_api
 import src.rocket_raylib
@@ -18,8 +19,9 @@ fn click(window: rocket_raylib.Window, x: Int, y: Int, state: application.State)
 fn finish_with_mouse(window: rocket_raylib.Window, source: application.State) -> application.State:
     var state = source
     var actions = 0
+    let call = holdem_view.call_rect(800, 600)
     while holdem_api.phase_code(state.holdem) == 1 and actions < 20:
-        state = click(window, 725, 336, state)
+        state = click(window, call.x + call.width / 2, call.y + call.height / 2, state)
         actions = actions + 1
     return state
 
@@ -45,7 +47,8 @@ fn run() -> Result[Int, String]:
                 return Ok(3)
             application.draw_for_test(window, state)?
             state = press(window, rocket_raylib.key_p(), state)
-            state = click(window, 680, 192, state)
+            let deal = holdem_view.deal_rect(800, 600)
+            state = click(window, deal.x + deal.width / 2, deal.y + deal.height / 2, state)
             if holdem_api.phase_code(state.holdem) != 1 or not holdem_api.human_turn(state.holdem):
                 return Ok(4)
             let public = holdem_api.public_table(state.holdem)
@@ -59,7 +62,8 @@ fn run() -> Result[Int, String]:
             if holdem_api.phase_code(state.holdem) != 2 or not file.exists(save_path):
                 return Ok(7)
             application.draw_for_test(window, state)?
-            state = click(window, 100, 558, state)
+            let next = holdem_view.next_rect(800, 600)
+            state = click(window, next.x + next.width / 2, next.y + next.height / 2, state)
             if state.holdem.game.hand_number != 2:
                 return Ok(8)
             if holdem_api.phase_code(state.holdem) == 1:
@@ -68,10 +72,12 @@ fn run() -> Result[Int, String]:
                 state = finish_with_mouse(window, state)
             if holdem_api.phase_code(state.holdem) != 2:
                 return Ok(9)
-            state = click(window, 680, 500, state)
+            let reset = holdem_view.reset_rect(800, 600)
+            state = click(window, reset.x + reset.width / 2, reset.y + reset.height / 2, state)
             if holdem_api.phase_code(state.holdem) != 0 or state.holdem.game.players[0].stack != 1000:
                 return Ok(10)
-            state = click(window, 240, 558, state)
+            let lobby = holdem_view.lobby_rect(800, 600)
+            state = click(window, lobby.x + lobby.width / 2, lobby.y + lobby.height / 2, state)
             if state.screen != 1 or state.settings.play_balance != 1000:
                 return Ok(11)
             let closed = rocket_raylib.close_window(window)

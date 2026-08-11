@@ -124,6 +124,64 @@ This file records the complete local acceptance pass performed on Windows x64 on
   Frozen Rocket remained clean. Nothing was pushed, deployed, published,
   released, signed, or purchased.
 
+## Native UI overhaul milestone 4 - first four game interiors
+
+- On 2026-08-11, the actual native executable was captured for Blackjack,
+  European Roulette, No-Limit Hold'em, and HiLo in dark and light themes at
+  800x600, 1024x768, 1280x720, and 1600x900. On the current 1920x1080 display,
+  the largest decorated native-window client is 1920x1055; both themes were
+  captured there, while deterministic rendering tests exercise the exact
+  1920x1080 client contract. Evidence remains ignored under
+  `out/visual-audit/milestone4/` with filenames containing game, theme, state,
+  and requested client size.
+- Minimum-size ready/active review confirms a dominant stage, separate compact
+  action dock, persistent shell, readable custom typography, 44-pixel controls,
+  reachable mouse/keyboard actions, visible disabled states, and no clipping or
+  overlap. Standard/wide/cinema review confirms a distinct action rail,
+  proportionate stage use, readable history/metrics, and theme-specific
+  surfaces rather than inversion. Representative active captures were reviewed
+  individually at 800x600, 1024x768, 1280x720, and 1600x900.
+- `game_layout.rocket` supplies the common stage/dock/rail contract.
+  `game_components.rocket` supplies cover-cropped original ambience with a
+  procedural fallback, premium felt, real procedural suit marks, card faces,
+  branded backs, chip stacks, metrics, status/help surfaces, and reduced-
+  motion-aware committed offsets. These modules receive presentation state and
+  own no casino decision.
+- Blackjack now shows its curved emerald/brass table, dealer and active-hand
+  hierarchy, AI seats, chip/wager state, real suits, settlement, legal-action
+  disabling, and explicit Next/New Table controls. Its global source-aware help
+  guide states 3:2, soft-17, split-ace, action, and safe-return rules without
+  changing engine contracts.
+- Roulette now shows a dimensional proportional wheel, locked-ball motion, the
+  complete single-zero 0-36 cloth, outside/dozen/column/basket regions, placed
+  chips, chip selector, focus, history, and settlement controls. Existing exact
+  center/edge/intersection/street/six-line mapping remains engine-validated.
+- Hold'em now shows an oval table with up to five opponent seats, branded hidden
+  cards, only eligible public showdown cards, human private cards, dealer/SB/BB/
+  fold/all-in state, board positions, pot, action history, raise-to sizing, and
+  legal-action disabling. The view still receives only `PublicTable`; it never
+  receives the deck or private opponent cards.
+- HiLo now shows a private deck, oversized current card, exact cards-left and
+  lower/equal/higher counts, a proportion bar, visible sequence, multiplier,
+  potential return, and a prominent `EQUAL RANK = LOSS` warning. Initial input
+  remains immediate; committed subsequent cards use the existing animation
+  clock, and reduced motion removes the offset.
+- The visual matrix found a 1024x768 Roulette defect: a fixed decorative ring
+  inset made the smallest standard-mode inner radius negative. The wheel bands
+  now scale proportionally, replacement dark/light captures pass, and
+  `ui_core_games_view_test.rocket` draws all four games in ready/active/settled
+  states, both themes, at all five exact target dimensions so that failure is
+  covered permanently.
+- All affected GUI flows use exported responsive hitboxes. The Roulette flow
+  still proves split/corner/street/six-line/basket mapping; Hold'em still proves
+  privacy and complete hand/reset/lobby flow; HiLo still proves private deck,
+  equal-loss, correct/cash-out, persistence, and animation behavior. Sequential
+  Debug and Release `scripts/validate.ps1` passes each completed the native
+  build, `rocketc check`, all 46 tests, and both formatting checks. No game rule,
+  deterministic result, persistence format, frozen Rocket contract, native ABI,
+  package, or website was changed. Nothing was pushed, deployed, published,
+  released, signed, or purchased.
+
 ## 0.2.0 expansion baseline
 
 Before expansion implementation, both Debug and Release

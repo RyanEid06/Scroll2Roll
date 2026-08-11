@@ -129,7 +129,14 @@ card sizes; non-overlap; resource-backed dark/light startup, lobby, settings,
 and help drawing; theme persistence; reduced motion; exact help return; safe
 Back; live-wager preservation; and explicit modal hitboxes. All eleven GUI flow
 tests now discover and activate games through the responsive lobby contract.
-The current suite passes 45/45 in Debug and Release.
+`ui_core_games_view_test.rocket` covers the accepted Blackjack, Roulette,
+Hold'em, and HiLo replacement group. It checks compact/standard/wide/cinema
+stage and rail bounds, 44-pixel controls, phase-specific non-overlap, and both-
+theme ready/active/settled drawing at 800x600, 1024x768, 1280x720, 1600x900,
+and 1920x1080. The Roulette GUI flow derives center, edge, corner, street,
+six-line, basket, chip, and action clicks from responsive view geometry;
+Hold'em and HiLo GUI flows likewise use exported responsive controls. The
+current suite passes 46/46 in Debug and Release.
 
 Functional drawing tests are necessary but not visual acceptance. Each visual
 milestone launches the actual native executable and records dark/light captures

@@ -1,0 +1,194 @@
+import src.app.components
+import src.app.game_layout
+import src.app.theme
+import src.app.ui_resources
+import src.rocket_raylib
+import std.collections
+import std.string
+
+fn atlas_ready(resources: ui_resources.UiResources, game_index: Int) -> Bool:
+    if ui_resources.atlas_index(game_index) == 0:
+        return resources.atlas_a_ready
+    return resources.atlas_b_ready
+
+fn atlas_texture(resources: ui_resources.UiResources, game_index: Int) -> rocket_raylib.Texture:
+    if ui_resources.atlas_index(game_index) == 0:
+        return resources.atlas_a
+    return resources.atlas_b
+
+fn draw_cover(frame: rocket_raylib.Frame, texture: rocket_raylib.Texture, cell: Int, value: components.Rect, alpha: Int) -> Result[Bool, String]:
+    var source_x = ui_resources.source_x(cell)
+    var source_y = ui_resources.source_y(cell)
+    var source_width = 512
+    var source_height = 512
+    if value.width > value.height:
+        source_height = 512 * value.height / value.width
+        source_y = source_y +(512 - source_height) / 2
+    else:
+        source_width = 512 * value.width / value.height
+        source_x = source_x +(512 - source_width) / 2
+    return rocket_raylib.draw_texture_region(frame, texture, source_x, source_y, source_width, source_height, value.x, value.y, value.width, value.height, rocket_raylib.color(255, 255, 255, alpha))
+
+fn fallback_ambient(frame: rocket_raylib.Frame, value: components.Rect, game_index: Int, light_mode: Bool) -> Result[Bool, String]:
+    let center_x = value.x + value.width * 3 / 4
+    let center_y = value.y + value.height / 3
+    var scale = value.height / 7
+    if scale < 18:
+        scale = 18
+    if game_index == 0:
+        rocket_raylib.draw_rounded_rectangle(frame, center_x - scale * 2, center_y - scale, scale * 2, scale * 3, 0.12, 8, rocket_raylib.color(248, 246, 238, 210))?
+        rocket_raylib.draw_rounded_rectangle(frame, center_x + scale / 2, center_y - scale * 2, scale * 2, scale * 3, 0.12, 8, rocket_raylib.color(248, 246, 238, 210))?
+        rocket_raylib.draw_ring_pixels(frame, center_x - scale * 2, center_y + scale * 2, scale / 2, scale, 0.0, 360.0, 24, theme.highlight(light_mode))?
+    if game_index == 1:
+        rocket_raylib.draw_ring_pixels(frame, center_x, center_y, scale, scale * 2, 0.0, 360.0, 48, theme.violet(light_mode))?
+        rocket_raylib.draw_ring_pixels(frame, center_x, center_y, scale / 2, scale, 0.0, 360.0, 48, theme.highlight(light_mode))?
+        rocket_raylib.draw_circle_pixels(frame, center_x + scale, center_y + scale, scale / 5, rocket_raylib.color(255, 255, 255, 255))?
+    if game_index == 5:
+        rocket_raylib.draw_ring_pixels(frame, center_x, center_y, scale, scale * 2, 0.0, 360.0, 48, theme.success(light_mode))?
+        rocket_raylib.draw_rounded_rectangle(frame, center_x - scale, center_y - scale / 2, scale * 2, scale, 0.18, 8, theme.highlight(light_mode))?
+    if game_index == 8:
+        rocket_raylib.draw_rounded_rectangle(frame, center_x - scale * 2, center_y - scale, scale * 2, scale * 3, 0.12, 8, rocket_raylib.color(248, 246, 238, 210))?
+        rocket_raylib.draw_rounded_rectangle(frame, center_x + scale / 2, center_y - scale * 2, scale * 2, scale * 3, 0.12, 8, rocket_raylib.color(248, 246, 238, 210))?
+        rocket_raylib.draw_triangle(frame, center_x - scale / 3, center_y, center_x + scale / 3, center_y - scale / 2, center_x + scale / 3, center_y + scale / 2, theme.cyan(light_mode))?
+    return Ok(true)
+
+pub fn ambient_stage(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, game_index: Int, light_mode: Bool) -> Result[Bool, String]:
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.04, 12, theme.surface(light_mode))?
+    rocket_raylib.begin_scissor(frame, value.x, value.y, value.width, value.height)?
+    if atlas_ready(resources, game_index):
+        draw_cover(frame, atlas_texture(resources, game_index), ui_resources.atlas_cell(game_index), value, 126)?
+    else:
+        fallback_ambient(frame, value, game_index, light_mode)?
+    var veil = rocket_raylib.color(8, 12, 28, 188)
+    if light_mode:
+        veil = rocket_raylib.color(238, 242, 250, 212)
+    rocket_raylib.draw_rectangle(frame, value.x, value.y, value.width, value.height, veil)?
+    rocket_raylib.end_scissor(frame)?
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.04, 12, 1.0, theme.subtle_border(light_mode))
+
+pub fn felt_table(frame: rocket_raylib.Frame, value: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y + 7, value.width, value.height, 0.34, 40, rocket_raylib.color(2, 6, 23, 90))?
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.34, 40, rocket_raylib.color(103, 67, 28, 255))?
+    let inner = game_layout.inset(value, 12)
+    var felt = rocket_raylib.color(5, 73, 58, 255)
+    if light_mode:
+        felt = rocket_raylib.color(8, 112, 82, 255)
+    rocket_raylib.draw_rounded_rectangle(frame, inner.x, inner.y, inner.width, inner.height, 0.34, 40, felt)?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, inner.x, inner.y, inner.width, inner.height, 0.34, 40, 2.0, rocket_raylib.color(245, 186, 71, 145))?
+    return Ok(true)
+
+fn suit_mark(frame: rocket_raylib.Frame, center_x: Int, center_y: Int, size: Int, suit: Int, color: rocket_raylib.Color) -> Result[Bool, String]:
+    if suit == 1:
+        rocket_raylib.draw_circle_pixels(frame, center_x - size / 3, center_y - size / 4, size / 2, color)?
+        rocket_raylib.draw_circle_pixels(frame, center_x + size / 3, center_y - size / 4, size / 2, color)?
+        return rocket_raylib.draw_triangle(frame, center_x - size, center_y, center_x + size, center_y, center_x, center_y + size, color)
+    if suit == 2:
+        rocket_raylib.draw_triangle(frame, center_x, center_y - size, center_x - size, center_y, center_x + size, center_y, color)?
+        return rocket_raylib.draw_triangle(frame, center_x - size, center_y, center_x + size, center_y, center_x, center_y + size, color)
+    if suit == 3:
+        rocket_raylib.draw_circle_pixels(frame, center_x, center_y - size / 2, size / 2, color)?
+        rocket_raylib.draw_circle_pixels(frame, center_x - size / 2, center_y, size / 2, color)?
+        rocket_raylib.draw_circle_pixels(frame, center_x + size / 2, center_y, size / 2, color)?
+        return rocket_raylib.draw_rounded_rectangle(frame, center_x - size / 5, center_y, size * 2 / 5, size, 0.2, 6, color)
+    rocket_raylib.draw_circle_pixels(frame, center_x - size / 3, center_y + size / 5, size / 2, color)?
+    rocket_raylib.draw_circle_pixels(frame, center_x + size / 3, center_y + size / 5, size / 2, color)?
+    rocket_raylib.draw_triangle(frame, center_x - size, center_y + size / 4, center_x + size, center_y + size / 4, center_x, center_y - size, color)?
+    return rocket_raylib.draw_rounded_rectangle(frame, center_x - size / 5, center_y + size / 4, size * 2 / 5, size, 0.2, 6, color)
+
+pub fn playing_card(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, rank: String, suit: Int, hidden: Bool, active: Bool, light_mode: Bool) -> Result[Bool, String]:
+    rocket_raylib.draw_rounded_rectangle(frame, value.x + 4, value.y + 6, value.width, value.height, 0.12, 10, rocket_raylib.color(2, 6, 23, 90))?
+    if hidden:
+        rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.12, 10, theme.violet(false))?
+        let inset = game_layout.inset(value, 7)
+        rocket_raylib.draw_rounded_rectangle_lines(frame, inset.x, inset.y, inset.width, inset.height, 0.12, 10, 2.0, rocket_raylib.color(255, 255, 255, 145))?
+        rocket_raylib.draw_ring_pixels(frame, value.x + value.width / 2, value.y + value.height / 2, value.width / 7, value.width / 4, 20.0, 320.0, 24, theme.highlight(false))?
+        components.type_centered(window, frame, resources, "S2R", components.rect(value.x, value.y + value.height / 2 - 10, value.width, 24), components.type_caption(), rocket_raylib.color(255, 255, 255, 255))?
+    else:
+        rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.12, 10, rocket_raylib.color(251, 249, 242, 255))?
+        var ink = rocket_raylib.color(19, 27, 42, 255)
+        if suit == 1 or suit == 2:
+            ink = rocket_raylib.color(205, 43, 77, 255)
+        var role = components.type_label()
+        if value.width >= 72:
+            role = components.type_heading()
+        components.type_text(window, frame, resources, rank, value.x + 9, value.y + 6, role, ink)?
+        var mark_size = value.width / 7
+        if mark_size < 5:
+            mark_size = 5
+        suit_mark(frame, value.x + value.width / 2, value.y + value.height / 2 + 6, mark_size, suit, ink)?
+        let rank_width = components.type_measure(window, resources, rank, components.type_caption())?
+        components.type_text(window, frame, resources, rank, value.x + value.width - rank_width - 8, value.y + value.height - 24, components.type_caption(), ink)?
+    var outline = theme.subtle_border(light_mode)
+    if active:
+        outline = theme.highlight(light_mode)
+    rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.12, 10, 2.0, outline)?
+    if active:
+        rocket_raylib.draw_rounded_rectangle_lines(frame, value.x - 3, value.y - 3, value.width + 6, value.height + 6, 0.12, 10, 2.0, theme.cyan(light_mode))?
+    return Ok(true)
+
+pub fn chip_stack(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, x: Int, y: Int, amount: Int, accent: rocket_raylib.Color, light_mode: Bool) -> Result[Bool, String]:
+    var layers = amount / 20 + 1
+    if layers > 5:
+        layers = 5
+    var index = layers - 1
+    while index >= 0:
+        rocket_raylib.draw_rounded_rectangle(frame, x, y - index * 6, 44, 12, 0.5, 12, accent)?
+        rocket_raylib.draw_rounded_rectangle_lines(frame, x, y - index * 6, 44, 12, 0.5, 12, 1.0, theme.primary_text(light_mode))?
+        index = index - 1
+    return components.type_centered(window, frame, resources, string.from_int(amount), components.rect(x - 10, y + 15, 64, 22), components.type_caption(), theme.primary_text(light_mode))
+
+pub fn metric(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, label: String, value: String, x: Int, y: Int, width: Int, positive: Bool, light_mode: Bool) -> Result[Bool, String]:
+    components.type_text(window, frame, resources, label, x, y, components.type_caption(), theme.secondary_text(light_mode))?
+    var ink = theme.primary_text(light_mode)
+    if positive:
+        ink = theme.success(light_mode)
+    return components.type_text(window, frame, resources, value, x, y + 20, components.type_label(), ink)
+
+pub fn status_banner(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, message: String, light_mode: Bool) -> Result[Bool, String]:
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.18, 10, theme.elevated(light_mode))?
+    rocket_raylib.draw_circle_pixels(frame, value.x + 20, value.y + value.height / 2, 5, theme.cyan(light_mode))?
+    return components.type_text(window, frame, resources, message, value.x + 34, value.y + 12, components.type_caption(), theme.primary_text(light_mode))
+
+pub fn help_overlay(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, title: String, lines: Array[String], danger_line: Int, light_mode: Bool) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, rocket_raylib.color(3, 6, 20, 202))?
+    let box = game_layout.help_box(width, height)
+    components.modern_panel(frame, box, light_mode, true)?
+    components.type_text(window, frame, resources, title, box.x + 28, box.y + 24, components.type_heading(), theme.primary_text(light_mode))?
+    rocket_raylib.draw_line(frame, box.x + 28, box.y + 66, box.x + box.width - 28, box.y + 66, 1.0, theme.subtle_border(light_mode))?
+    var index = 0
+    while index < collections.length(lines):
+        var ink = theme.primary_text(light_mode)
+        if index == danger_line:
+            ink = theme.destructive(light_mode)
+        rocket_raylib.draw_circle_pixels(frame, box.x + 34, box.y + 94 + index * 36, 3, theme.highlight(light_mode))?
+        components.type_text(window, frame, resources, lines[index], box.x + 48, box.y + 84 + index * 36, components.type_label(), ink)?
+        index = index + 1
+    return components.type_text(window, frame, resources, "P or Back closes this guide", box.x + 28, box.y + box.height - 34, components.type_caption(), theme.secondary_text(light_mode))
+
+pub fn motion_offset(now: Float, end_time: Float, reduced_motion: Bool, maximum: Int) -> Int:
+    if reduced_motion or end_time <= now:
+        return 0
+    let remaining = end_time - now
+    if remaining > 0.30:
+        return maximum
+    if remaining > 0.27:
+        return maximum * 9 / 10
+    if remaining > 0.24:
+        return maximum * 8 / 10
+    if remaining > 0.21:
+        return maximum * 7 / 10
+    if remaining > 0.18:
+        return maximum * 6 / 10
+    if remaining > 0.15:
+        return maximum * 5 / 10
+    if remaining > 0.12:
+        return maximum * 4 / 10
+    if remaining > 0.09:
+        return maximum * 3 / 10
+    if remaining > 0.06:
+        return maximum * 2 / 10
+    if remaining > 0.03:
+        return maximum / 10
+    return 0

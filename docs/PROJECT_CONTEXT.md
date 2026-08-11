@@ -311,11 +311,29 @@ selection while preserving the exact variable source. Actual native captures
 at every required viewport and maximized passed review. Focused shell tests and
 all accepted regressions bring the suite to 45/45 in Debug and Release.
 
-The eleven game interiors still render through compatibility-era views and
-remain visually rejected. No visual-completion claim is valid until every
-interior, the aligned website, the real asset-bearing package, and the final
-acceptance matrix pass. `docs/UI_OVERHAUL_FOUNDATION.md` is the audit and
-acceptance ledger.
+Milestone 4 is complete. A shared responsive interior contract now supplies a
+dominant stage plus compact dock or wide action rail, original atlas ambience,
+premium felt, procedural playing cards and suits, branded card backs, chips,
+metrics, exact-rule overlays, and reduced-motion-aware committed animation.
+Blackjack now presents a curved emerald table with dealer/player hierarchy,
+legal actions, settlement, AI seats, and round-safe controls. Roulette presents
+a proportional wheel and complete single-zero 0-36 betting cloth, mouse edge/
+intersection/rail precision, selected chips, locked-ball motion, and history.
+Hold'em presents an oval table, privacy-safe hidden rivals, exposed eligible
+showdown cards, blind/dealer/fold/all-in markers, community cards, pot display,
+raise-to sizing, and recent actions. HiLo presents a private deck, oversized
+current card, exact lower/equal/higher counts, a prominent equal-rank-loss
+warning, sequence, multiplier, and cash-out state. Actual dark/light native
+captures cover every required size, with a 1920x1055 maximum client on the
+current 1920x1080 display; deterministic view tests exercise exact 1920x1080.
+All 46 tests pass in Debug and Release.
+
+The remaining Plinko, Coop Climb, Midnight Crossing, Mines, Dice, Crash, and
+Slots interiors still render through compatibility-era views and remain
+visually rejected. No visual-completion claim is valid until those interiors,
+the aligned website, the real asset-bearing package, and the final acceptance
+matrix pass. `docs/UI_OVERHAUL_FOUNDATION.md` is the audit and acceptance
+ledger.
 
 ## Milestones
 
@@ -390,6 +408,12 @@ acceptance ledger.
   themes, settings/help/explicit modals, the illustrated responsive eleven-card
   lobby, static Manrope Medium rendering, actual native visual review at every
   required viewport, and passing 45/45 Debug and Release gates.
+- Completed: native UI overhaul milestone 4, including the shared responsive
+  game-interior composition, procedural premium table/card/chip vocabulary,
+  complete Blackjack/European Roulette/No-Limit Hold'em/HiLo replacements,
+  exact-rule guides, privacy-safe projections, committed/reduced motion,
+  actual dark/light native review across the target matrix, and passing 46/46
+  Debug and Release gates.
 
 ## Major decisions
 
@@ -421,6 +445,10 @@ acceptance ledger.
 - Use `scroll2roll-save-4` only for the two approved UI preferences. Migrate
   valid save-v1/v2/v3 values with dark theme and full motion defaults; never
   persist live wagers, private outcomes, or generated resource handles.
+- Derive every replacement game interior from `game_layout.rocket` and
+  `game_components.rocket`: compact viewports use a bottom dock, larger
+  viewports use an action rail, and all rule/state meaning continues to come
+  from the existing engine or privacy-safe public projection.
 
 ## Files that must remain out of Git
 
@@ -433,13 +461,13 @@ Read `AGENTS.md`, `UI_OVERHAUL.md`, `docs/MASTER_PLAN.md`,
 `docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
 status and preserve user changes. The accepted 0.2.0 baseline remains intact;
 Mines, Dice, HiLo, Crash, Slots, and the accepted save-v3 behavior baseline are
-complete. The UI-overhaul suite currently passes 45/45. The
+complete. The UI-overhaul suite currently passes 46/46. The
 verified local 0.3.0 archive is 1,919,372 bytes with SHA-256
 `FD2B4EC31734DCB6E51707C862A439966E5771CBDA136DCD4F6B09726082688B`;
 source/staged website and responsive browser checks pass. Keep using frozen Rocket 2.0
 and the pinned raylib integration with custom frame control forced off. Do not
 push, publish, deploy, sign, or add an unapproved game without owner approval.
-UI overhaul milestones 1 through 3 pass 45/45 in Debug and Release. Continue
-with the Blackjack, European Roulette, No-Limit Hold'em, and HiLo interior
-replacement group. Do not mistake the compatibility-rendered old game views
-for accepted UI.
+UI overhaul milestones 1 through 4 pass 46/46 in Debug and Release. Blackjack,
+European Roulette, No-Limit Hold'em, and HiLo are visually accepted. Continue
+with Plinko, Coop Climb, Midnight Crossing, Mines, Dice, Crash, and Slots. Do
+not mistake those compatibility-rendered old game views for accepted UI.

@@ -59,10 +59,18 @@ degraded-mode glyph if its atlas cannot load.
 Keyboard focus, disabled states, hover/pressed states, readable hand totals, suit differentiation, and resolution-aware layout are required. Motion must never obscure legal actions or round state.
 
 The implemented and visually accepted startup, responsive lobby, global shell,
-settings, help, and exit confirmation use the same token system. Their actual
-native dark/light captures pass at the five required viewport sizes and
-maximized. The game-interior descriptions below remain acceptance targets until
-their implementation groups pass. Roulette adds a readable
+settings, help, exit confirmation, Blackjack, European Roulette, No-Limit
+Hold'em, and HiLo use the same token system. Their actual native dark/light
+captures pass across the five required viewport contracts and the current
+display maximum. The remaining game-interior descriptions below remain
+acceptance targets until their implementation groups pass. Blackjack uses a
+curved emerald felt table and brass padded rail, procedural real-suit cards,
+branded backs, dealer/player hierarchy, AI seats, chip stacks, active-hand
+focus, settlement, and phase-specific wager/action controls. Its card/chip
+motion consumes only committed engine state and reduced motion removes the
+offset without changing timing or rules.
+
+Roulette adds a readable
 red/black/emerald number grid, outside-bet regions, gold keyboard focus and
 chips, an original procedural wheel, engine-locked ball position, help overlay,
 and result history without copying a casino-provider layout. The website

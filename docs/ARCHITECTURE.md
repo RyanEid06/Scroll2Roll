@@ -142,6 +142,15 @@ and delegates Back eligibility to each existing engine/session boundary. The
 adapter calls raylib `SetExitKey(KEY_NULL)` after window creation so Escape is
 ordinary input and cannot bypass Rocket-owned active-wager protection.
 
+`src/app/game_layout.rocket` is the shared interior geometry boundary. It
+derives a dominant stage and either a compact bottom dock or a standard/wide
+action rail from `layout.rocket`; individual games derive only local positive
+regions. `src/app/game_components.rocket` owns original atlas ambience and
+procedural felt, playing-card, suit, card-back, chip, metric, status, help, and
+committed-motion presentation. It accepts already-public game state and owns no
+rule, payout, deck, outcome, privacy, or settlement decision. Blackjack,
+Roulette, Hold'em, and HiLo are the first accepted consumers.
+
 Narrow additions to `native/rocket_raylib_adapter.*` may expose only primitive
 rendering, custom-font measurement, scissoring, mouse-wheel input, and resource
 lifetime facts required by the reviewed UI. The adapter cannot own themes,

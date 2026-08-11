@@ -1,0 +1,44 @@
+import src.app.components
+import src.app.layout
+import src.app.theme
+
+pub struct Interior:
+    stage: components.Rect
+    rail: components.Rect
+    dock: components.Rect
+    compact: Bool
+
+pub fn interior(width: Int, height: Int) -> Interior:
+    let margin = layout.safe_margin(width)
+    let x = layout.content_x(width)
+    let y = layout.top_bar_height(width) + margin
+    let content_width = layout.content_width(width)
+    let bottom = height - margin
+    if layout.mode(width) == 0:
+        let dock_height = layout.action_dock_height(width, height)
+        let stage_height = bottom - y - dock_height - theme.space_md()
+        let stage = components.rect(x, y, content_width, stage_height)
+        let dock = components.rect(x, bottom - dock_height, content_width, dock_height)
+        return Interior(stage, dock, dock, true)
+    let rail_width = layout.action_rail_width(width)
+    let stage_width = content_width - rail_width - theme.space_md()
+    let stage = components.rect(x, y, stage_width, bottom - y)
+    let rail = components.rect(x + stage_width + theme.space_md(), y, rail_width, bottom - y)
+    return Interior(stage, rail, rail, false)
+
+pub fn help_box(width: Int, height: Int) -> components.Rect:
+    let margin = layout.safe_margin(width)
+    let x = layout.content_x(width)
+    let y = layout.top_bar_height(width) + margin
+    let available_width = layout.content_width(width)
+    var box_width = available_width
+    if box_width > 880:
+        box_width = 880
+    return components.rect(x +(available_width - box_width) / 2, y, box_width, height - y - margin)
+
+pub fn inset(value: components.Rect, amount: Int) -> components.Rect:
+    return components.rect(value.x + amount, value.y + amount, value.width - amount * 2, value.height - amount * 2)
+
+pub fn split_horizontal(value: components.Rect, index: Int, count: Int, gap: Int) -> components.Rect:
+    let width =(value.width -(count - 1) * gap) / count
+    return components.rect(value.x + index *(width + gap), value.y, width, value.height)

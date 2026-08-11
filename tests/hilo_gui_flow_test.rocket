@@ -50,15 +50,15 @@ fn press_prediction(window: rocket_raylib.Window, code: Int, state: application.
     return press(window, rocket_raylib.key_h(), state)
 
 fn click_prediction(window: rocket_raylib.Window, code: Int, state: application.State) -> application.State:
-    var box = hilo_view.lower_rect()
+    var box = hilo_view.lower_rect(800, 600)
     if code == 1:
-        box = hilo_view.higher_rect()
+        box = hilo_view.higher_rect(800, 600)
     return click(window, box.x + 20, box.y + 20, state)
 
 fn click_next_when_ready(window: rocket_raylib.Window, source: application.State) -> Result[application.State, String]:
     var state = source
     var guard = 0
-    let box = hilo_view.next_rect(600)
+    let box = hilo_view.next_rect(800, 600)
     while hilo_api.phase_code(state.hilo) == 2 and guard < 500:
         application.draw_for_test(window, state)?
         state = click(window, box.x + 20, box.y + 20, state)
@@ -70,7 +70,7 @@ fn click_next_when_ready(window: rocket_raylib.Window, source: application.State
 fn click_lobby_when_ready(window: rocket_raylib.Window, source: application.State) -> Result[application.State, String]:
     var state = source
     var guard = 0
-    let box = hilo_view.lobby_rect(600)
+    let box = hilo_view.lobby_rect(800, 600)
     while state.screen == 11 and guard < 500:
         application.draw_for_test(window, state)?
         state = click(window, box.x + 20, box.y + 20, state)
@@ -141,7 +141,7 @@ fn run() -> Result[Int, String]:
             if state.hilo.game.draw_index != after_draw:
                 return Ok(13)
             state = wait_frames(window, state, 60)?
-            let cash = hilo_view.cash_out_rect(800)
+            let cash = hilo_view.cash_out_rect(800, 600)
             state = click(window, cash.x + 20, cash.y + 20, state)
             if hilo_api.phase_code(state.hilo) != 2:
                 return Ok(14)
@@ -152,7 +152,7 @@ fn run() -> Result[Int, String]:
             state = click_next_when_ready(window, state)?
             if hilo_api.phase_code(state.hilo) != 0:
                 return Ok(15)
-            let deal = hilo_view.start_rect(800)
+            let deal = hilo_view.start_rect(800, 600)
             state = click(window, deal.x + 20, deal.y + 20, state)
             if hilo_api.phase_code(state.hilo) != 1:
                 return Ok(16)

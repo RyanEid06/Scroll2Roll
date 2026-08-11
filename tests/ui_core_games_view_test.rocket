@@ -1,0 +1,155 @@
+import src.app.blackjack_view
+import src.app.components
+import src.app.game_layout
+import src.app.hilo_view
+import src.app.holdem_view
+import src.app.roulette_view
+import src.app.ui_resources
+import src.blackjack.blackjack_engine
+import src.blackjack.blackjack_model
+import src.hilo.hilo_api
+import src.hilo.hilo_cards
+import src.holdem.holdem_api
+import src.roulette.roulette_api
+import src.rocket_raylib
+import src.rocket_raylib_testing
+import std.collections
+
+fn overlap(first: components.Rect, second: components.Rect) -> Bool:
+    return first.x < second.x + second.width and first.x + first.width > second.x and first.y < second.y + second.height and first.y + first.height > second.y
+
+fn target_valid(value: components.Rect, width: Int, height: Int) -> Bool:
+    return value.width >= 44 and value.height >= 44 and value.x >= 0 and value.y >= 0 and value.x + value.width <= width and value.y + value.height <= height
+
+fn set_valid(values: Array[components.Rect], width: Int, height: Int) -> Bool:
+    var index = 0
+    while index < collections.length(values):
+        if not target_valid(values[index], width, height):
+            return false
+        var other = index + 1
+        while other < collections.length(values):
+            if overlap(values[index], values[other]):
+                return false
+            other = other + 1
+        index = index + 1
+    return true
+
+fn layout_valid(width: Int, height: Int) -> Bool:
+    let value = game_layout.interior(width, height)
+    if value.stage.x < 0 or value.stage.y < 64 or value.stage.width < 300 or value.stage.height < 180 or value.stage.x + value.stage.width > width or value.stage.y + value.stage.height > height:
+        print("core layout: stage")
+        return false
+    if value.rail.x < 0 or value.rail.y < 64 or value.rail.width < 250 or value.rail.height < 120 or value.rail.x + value.rail.width > width or value.rail.y + value.rail.height > height:
+        print("core layout: rail")
+        return false
+    let blackjack_betting = [blackjack_view.bet_minus_rect(width, height), blackjack_view.bet_plus_rect(width, height), blackjack_view.deal_rect(width, height)]
+    let blackjack_actions = [blackjack_view.action_rect(0, width, height), blackjack_view.action_rect(1, width, height), blackjack_view.action_rect(2, width, height), blackjack_view.action_rect(3, width, height), blackjack_view.action_rect(4, width, height)]
+    let blackjack_settled = [blackjack_view.next_rect(width, height), blackjack_view.restart_rect(width, height)]
+    if not set_valid(blackjack_betting, width, height) or not set_valid(blackjack_actions, width, height) or not set_valid(blackjack_settled, width, height):
+        print("core layout: blackjack")
+        return false
+    let roulette_ready = [roulette_view.chip_rect(0, width, height), roulette_view.chip_rect(1, width, height), roulette_view.chip_rect(2, width, height), roulette_view.chip_rect(3, width, height), roulette_view.chip_rect(4, width, height), roulette_view.chip_rect(5, width, height), roulette_view.spin_rect(width, height), roulette_view.undo_rect(width, height), roulette_view.clear_rect(width, height), roulette_view.repeat_rect(width, height)]
+    let roulette_settled = [roulette_view.next_rect(width, height), roulette_view.rebet_rect(width, height)]
+    if not set_valid(roulette_ready, width, height) or not set_valid(roulette_settled, width, height) or not target_valid(roulette_view.help_rect(width, height), width, height):
+        print("core layout: roulette")
+        return false
+    let holdem_ready = [holdem_view.deal_rect(width, height), holdem_view.reset_rect(width, height)]
+    let holdem_actions = [holdem_view.target_minus_rect(width, height), holdem_view.target_plus_rect(width, height), holdem_view.fold_rect(width, height), holdem_view.call_rect(width, height), holdem_view.raise_rect(width, height), holdem_view.all_in_rect(width, height)]
+    let holdem_settled = [holdem_view.next_rect(width, height), holdem_view.reset_rect(width, height)]
+    if not set_valid(holdem_ready, width, height) or not set_valid(holdem_actions, width, height) or not set_valid(holdem_settled, width, height) or not target_valid(holdem_view.help_rect(width, height), width, height):
+        print("core layout: holdem")
+        return false
+    let hilo_ready = [hilo_view.bet_minus_rect(width, height), hilo_view.bet_plus_rect(width, height), hilo_view.start_rect(width, height), hilo_view.restart_rect(width, height)]
+    let hilo_active = [hilo_view.lower_rect(width, height), hilo_view.higher_rect(width, height), hilo_view.cash_out_rect(width, height)]
+    let hilo_settled = [hilo_view.next_rect(width, height), hilo_view.restart_rect(width, height)]
+    if not set_valid(hilo_ready, width, height) or not set_valid(hilo_active, width, height) or not set_valid(hilo_settled, width, height) or not target_valid(hilo_view.help_rect(width, height), width, height):
+        print("core layout: hilo")
+        return false
+    return true
+
+fn settle_blackjack(source: blackjack_model.Game) -> Result[blackjack_model.Game, String]:
+    var game = source
+    var guard = 0
+    while blackjack_engine.phase_code(game.phase) != 3 and guard < 64:
+        if blackjack_engine.phase_code(game.phase) == 1:
+            game = blackjack_engine.apply_action(game, blackjack_model.Stand())?
+        if blackjack_engine.phase_code(game.phase) == 2:
+            game = blackjack_engine.dealer_step(game)?
+        guard = guard + 1
+    if blackjack_engine.phase_code(game.phase) != 3:
+        return Err("Blackjack view fixture did not settle")
+    return Ok(game)
+
+fn draw_states(window: rocket_raylib.Window, light_mode: Bool) -> Result[Bool, String]:
+    let resources = ui_resources.empty()
+    var blackjack_ready = blackjack_engine.new_game("Player", 1000, 3, 20260841)?
+    blackjack_ready = blackjack_engine.set_bet(blackjack_ready, 0, 10)?
+    let blackjack_active = blackjack_engine.start_round(blackjack_ready)?
+    let blackjack_settled = settle_blackjack(blackjack_active)?
+
+    let roulette_ready_session = roulette_api.new_session(1000, 20260842)?
+    let roulette_bet_session = roulette_api.with_bet(roulette_ready_session, roulette_api.straight(17, 10)?)?
+    let roulette_spinning = roulette_api.with_spin(roulette_bet_session)?
+    let roulette_settled = roulette_api.with_settlement(roulette_spinning)?
+
+    let holdem_ready = holdem_api.new_session(1000, 3, 20260843)?
+    let holdem_active = holdem_api.with_deal(holdem_ready)?
+    var holdem_settled = holdem_active
+    if holdem_api.phase_code(holdem_active) == 1 and holdem_api.human_turn(holdem_active):
+        holdem_settled = holdem_api.with_human_action(holdem_active, 0, 0)?
+
+    let hilo_ready = hilo_api.new_session(1000, 20260844)?
+    let hilo_active = hilo_api.with_start(hilo_ready)?
+    let current = hilo_cards.rank_value(hilo_active.game.current_card)
+    let next = hilo_cards.rank_value(hilo_active.game.deck[hilo_active.game.draw_index])
+    var wrong_code = 0
+    if next < current:
+        wrong_code = 1
+    let hilo_settled = hilo_api.with_prediction_code(hilo_active, wrong_code)?
+
+    let frame = rocket_raylib.begin_frame(window)?
+    rocket_raylib.clear(frame, rocket_raylib.black())?
+    blackjack_view.draw(window, frame, resources, blackjack_ready, 10, light_mode, false, 0.0, 0.0, -100, -100)?
+    blackjack_view.draw(window, frame, resources, blackjack_active, 10, light_mode, false, 0.0, 0.3, -100, -100)?
+    blackjack_view.draw(window, frame, resources, blackjack_settled, 10, light_mode, true, 1.0, 0.0, -100, -100)?
+    roulette_view.draw(window, frame, resources, roulette_bet_session.game, 0, 17, false, light_mode, false, 0.0, 0.0, -100, -100)?
+    roulette_view.draw(window, frame, resources, roulette_spinning.game, 0, 17, false, light_mode, false, 0.0, 0.6, -100, -100)?
+    roulette_view.draw(window, frame, resources, roulette_settled.game, 0, 17, light_mode, light_mode, true, 1.0, 0.0, -100, -100)?
+    let active_table = holdem_api.public_table(holdem_active)
+    let settled_table = holdem_api.public_table(holdem_settled)
+    holdem_view.draw(window, frame, resources, holdem_api.public_table(holdem_ready), 10, false, false, false, false, false, light_mode, false, 0.0, 0.0, -100, -100)?
+    holdem_view.draw(window, frame, resources, active_table, holdem_api.minimum_target(holdem_active), holdem_api.can_action(holdem_active, 0, 0), holdem_api.can_action(holdem_active, 1, 0) or holdem_api.can_action(holdem_active, 2, 0), holdem_api.can_action(holdem_active, 3, holdem_api.minimum_target(holdem_active)), holdem_api.can_action(holdem_active, 4, 0), false, light_mode, false, 0.0, 0.3, -100, -100)?
+    holdem_view.draw(window, frame, resources, settled_table, 10, false, false, false, false, light_mode, light_mode, true, 1.0, 0.0, -100, -100)?
+    hilo_view.draw(window, frame, resources, hilo_api.public_table(hilo_ready)?, false, light_mode, false, 0.0, 0.0, -100, -100)?
+    hilo_view.draw(window, frame, resources, hilo_api.public_table(hilo_active)?, false, light_mode, false, 0.0, 0.3, -100, -100)?
+    hilo_view.draw(window, frame, resources, hilo_api.public_table(hilo_settled)?, light_mode, light_mode, true, 1.0, 0.0, -100, -100)?
+    if rocket_raylib_testing.scissor_active() or rocket_raylib_testing.draw_count() < 500:
+        return Ok(false)
+    rocket_raylib.end_frame(frame)?
+    return Ok(true)
+
+fn run() -> Result[Int, String]:
+    if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
+        return Ok(1)
+    let widths = [800, 1024, 1280, 1600, 1920]
+    let heights = [600, 768, 720, 900, 1080]
+    var index = 0
+    while index < collections.length(widths):
+        if not layout_valid(widths[index], heights[index]):
+            return Ok(2 + index)
+        let window = rocket_raylib.open_window(widths[index], heights[index], "Core game interior states")?
+        if not draw_states(window, false)? or not draw_states(window, true)?:
+            return Ok(10 + index)
+        rocket_raylib.close_window(window)?
+        index = index + 1
+    if rocket_raylib_testing.buffer_live_count() != 0:
+        return Ok(20)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

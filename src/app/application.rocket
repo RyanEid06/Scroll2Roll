@@ -143,8 +143,8 @@ fn with_crossing(state: State, session: crossing_api.Session, accumulator: Float
 fn crossing_help(state: State, visible: Bool) -> State:
     return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, visible, state.crossing_accumulator, state.holdem, state.holdem_help, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end, state.hilo, state.hilo_help, state.hilo_animation_end, state.crash, state.crash_help, state.crash_accumulator, state.slots, state.slots_help, state.slots_reel_stage, state.slots_animation_end)
 
-fn with_holdem(state: State, session: holdem_api.Session, target: Int) -> State:
-    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, session, state.holdem_help, target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end, state.hilo, state.hilo_help, state.hilo_animation_end, state.crash, state.crash_help, state.crash_accumulator, state.slots, state.slots_help, state.slots_reel_stage, state.slots_animation_end)
+fn with_holdem(state: State, session: holdem_api.Session, target: Int, animation_end: Float) -> State:
+    return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, "", state.exit_prompt, state.running, animation_end, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, session, state.holdem_help, target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end, state.hilo, state.hilo_help, state.hilo_animation_end, state.crash, state.crash_help, state.crash_accumulator, state.slots, state.slots_help, state.slots_reel_stage, state.slots_animation_end)
 
 fn holdem_help(state: State, visible: Bool) -> State:
     return State(state.screen, state.game, state.roulette, state.selected_bet, state.settings, state.save_path, state.notice, state.error, state.exit_prompt, state.running, state.next_step, state.saved_round, state.roulette_kind, state.roulette_target, state.roulette_help, state.roulette_spin_end, state.plinko, state.plinko_help, state.plinko_stage, state.plinko_next_step, state.chicken, state.chicken_help, state.crossing, state.crossing_help, state.crossing_accumulator, state.holdem, visible, state.holdem_target, state.mines, state.mines_help, state.mines_selected, state.mines_animation_end, state.dice, state.dice_help, state.dice_animation_end, state.hilo, state.hilo_help, state.hilo_animation_end, state.crash, state.crash_help, state.crash_accumulator, state.slots, state.slots_help, state.slots_reel_stage, state.slots_animation_end)
@@ -225,7 +225,7 @@ fn enter_holdem(state: State, seed: Int) -> State:
     match holdem_api.new_session(state.settings.play_balance, holdem_ai_count(state.settings), seed):
         case Ok(session):
             let entered = rebuild(state, 8, state.game, state.selected_bet, state.settings, "No-Limit Hold'em table ready", "", false, true, state.next_step, state.saved_round)
-            return with_holdem(entered, session, 10)
+            return with_holdem(entered, session, 10, 0.0)
         case Err(error):
             return with_error(state, error)
 
@@ -461,13 +461,14 @@ fn update_settings(state: State, window: rocket_raylib.Window, clicked: Bool, mo
 
 fn update_game(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int, now: Float) -> State:
     let phase = blackjack_engine.phase_code(state.game.phase)
+    let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     if phase == 0:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(blackjack_view.bet_minus_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(blackjack_view.bet_minus_rect(width, height), mouse_x, mouse_y):
             return change_bet(state, 10 - 20)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(blackjack_view.bet_plus_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(blackjack_view.bet_plus_rect(width, height), mouse_x, mouse_y):
             return change_bet(state, 10)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(blackjack_view.deal_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(blackjack_view.deal_rect(width, height), mouse_x, mouse_y):
             return deal(state, now)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()):
             return return_to_lobby(state)
@@ -485,7 +486,7 @@ fn update_game(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_
         if clicked:
             var code = 0
             while code < 5:
-                if components.contains(blackjack_view.action_rect(code, height), mouse_x, mouse_y):
+                if components.contains(blackjack_view.action_rect(code, width, height), mouse_x, mouse_y):
                     return apply_action_code(state, code, now)
                 code = code + 1
     if phase == 1 and not blackjack_engine.active_player_is_human(state.game) and now >= state.next_step:
@@ -505,11 +506,11 @@ fn update_game(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_
         if state.saved_round != state.game.round_number:
             let settings = persistence.with_balance(state.settings, state.game.players[0].balance)
             settled_state = save_settings(rebuild(state, state.screen, state.game, state.selected_bet, settings, "Round progress saved", "", state.exit_prompt, state.running, state.next_step, state.game.round_number), settings)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(blackjack_view.next_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(blackjack_view.next_rect(width, height), mouse_x, mouse_y):
             return next_round(settled_state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(blackjack_view.restart_rect(width, height), mouse_x, mouse_y):
             return restart_table(settled_state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(blackjack_view.lobby_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(blackjack_view.lobby_rect(width, height), mouse_x, mouse_y):
             return return_to_lobby(settled_state)
         return settled_state
     return state
@@ -564,8 +565,8 @@ fn roulette_place_focus(state: State) -> State:
         case Err(error):
             return with_error(state, error)
 
-fn roulette_place_mouse(state: State, mouse_x: Int, mouse_y: Int, width: Int) -> State:
-    match roulette_view.mouse_bet(mouse_x, mouse_y, width, state.roulette.game.selected_chip):
+fn roulette_place_mouse(state: State, mouse_x: Int, mouse_y: Int, width: Int, height: Int) -> State:
+    match roulette_view.mouse_bet(mouse_x, mouse_y, width, height, state.roulette.game.selected_chip):
         case Ok(bet):
             match roulette_api.with_bet(state.roulette, bet):
                 case Ok(session):
@@ -584,7 +585,7 @@ fn roulette_return_to_lobby(state: State) -> State:
 fn update_roulette(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int, now: Float) -> State:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
-    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(roulette_view.help_rect(width), mouse_x, mouse_y):
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(roulette_view.help_rect(width, height), mouse_x, mouse_y):
         return roulette_help(state, not state.roulette_help)
     if state.roulette_help:
         return state
@@ -602,25 +603,25 @@ fn update_roulette(state: State, window: rocket_raylib.Window, clicked: Bool, mo
             return roulette_select_chip(state, roulette_chip(state.roulette.game.selected_chip, -1))
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()):
             return roulette_place_focus(state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()) or clicked and components.contains(roulette_view.undo_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()) or clicked and components.contains(roulette_view.undo_rect(width, height), mouse_x, mouse_y):
             match roulette_api.with_undo(state.roulette):
                 case Ok(session):
                     return with_roulette(state, session, state.roulette_spin_end)
                 case Err(error):
                     return with_error(state, error)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_d()) or clicked and components.contains(roulette_view.clear_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_d()) or clicked and components.contains(roulette_view.clear_rect(width, height), mouse_x, mouse_y):
             match roulette_api.with_clear(state.roulette):
                 case Ok(session):
                     return with_roulette(state, session, state.roulette_spin_end)
                 case Err(error):
                     return with_error(state, error)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(roulette_view.repeat_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(roulette_view.repeat_rect(width, height), mouse_x, mouse_y):
             match roulette_api.with_repeat(state.roulette):
                 case Ok(session):
                     return with_roulette(state, session, state.roulette_spin_end)
                 case Err(error):
                     return with_error(state, error)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(roulette_view.spin_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(roulette_view.spin_rect(width, height), mouse_x, mouse_y):
             match roulette_api.with_spin(state.roulette):
                 case Ok(session):
                     return with_roulette(state, session, now + 2.0)
@@ -631,11 +632,11 @@ fn update_roulette(state: State, window: rocket_raylib.Window, clicked: Bool, mo
         if clicked:
             var chip_index = 0
             while chip_index < 6:
-                if components.contains(roulette_view.chip_rect(chip_index, width), mouse_x, mouse_y):
+                if components.contains(roulette_view.chip_rect(chip_index, width, height), mouse_x, mouse_y):
                     return roulette_select_chip(state, roulette_view.chip_value(chip_index))
                 chip_index = chip_index + 1
-            if roulette_view.is_bet_target(mouse_x, mouse_y, width):
-                return roulette_place_mouse(state, mouse_x, mouse_y, width)
+            if roulette_view.is_bet_target(mouse_x, mouse_y, width, height):
+                return roulette_place_mouse(state, mouse_x, mouse_y, width, height)
     if phase == 1 and now >= state.roulette_spin_end:
         match roulette_api.with_settlement(state.roulette):
             case Ok(session):
@@ -644,19 +645,19 @@ fn update_roulette(state: State, window: rocket_raylib.Window, clicked: Bool, mo
             case Err(error):
                 return with_error(state, error)
     if phase == 2:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(roulette_view.next_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(roulette_view.next_rect(width, height), mouse_x, mouse_y):
             match roulette_api.with_next_round(state.roulette):
                 case Ok(session):
                     return with_roulette(state, session, 0.0)
                 case Err(error):
                     return with_error(state, error)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(roulette_view.rebet_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(roulette_view.rebet_rect(width, height), mouse_x, mouse_y):
             match roulette_api.with_rebet(state.roulette):
                 case Ok(session):
                     return with_roulette(state, session, 0.0)
                 case Err(error):
                     return with_error(state, error)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or clicked and components.contains(roulette_view.lobby_rect(height), mouse_x, mouse_y) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or clicked and components.contains(roulette_view.lobby_rect(width, height), mouse_x, mouse_y) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()):
             return roulette_return_to_lobby(state)
     return state
 
@@ -987,46 +988,46 @@ fn holdem_target_for(session: holdem_api.Session, requested: Int) -> Int:
         target = maximum
     return target
 
-fn holdem_save_settlement(state: State, session: holdem_api.Session) -> State:
+fn holdem_save_settlement(state: State, session: holdem_api.Session, animation_end: Float) -> State:
     let settings = persistence.with_balance(state.settings, holdem_api.human_balance(session))
-    return save_settings(with_holdem(state, session, holdem_target_for(session, state.holdem_target)), settings)
+    return save_settings(with_holdem(state, session, holdem_target_for(session, state.holdem_target), animation_end), settings)
 
-fn holdem_deal(state: State) -> State:
+fn holdem_deal(state: State, now: Float) -> State:
     match holdem_api.with_deal(state.holdem):
         case Ok(session):
-            return with_holdem(state, session, holdem_target_for(session, 20))
+            return with_holdem(state, session, holdem_target_for(session, 20), now + 0.33)
         case Err(error):
             return with_error(state, error)
 
-fn holdem_action(state: State, action: Int) -> State:
+fn holdem_action(state: State, action: Int, now: Float) -> State:
     var target = 0
     if action == 3:
         target = state.holdem_target
     match holdem_api.with_human_action(state.holdem, action, target):
         case Ok(session):
             if holdem_api.phase_code(session) == 2:
-                return holdem_save_settlement(state, session)
-            return with_holdem(state, session, holdem_target_for(session, state.holdem_target))
+                return holdem_save_settlement(state, session, now + 0.33)
+            return with_holdem(state, session, holdem_target_for(session, state.holdem_target), now + 0.33)
         case Err(error):
             return with_error(state, error)
 
 fn holdem_change_target(state: State, delta: Int) -> State:
-    return with_holdem(state, state.holdem, holdem_target_for(state.holdem, state.holdem_target + delta))
+    return with_holdem(state, state.holdem, holdem_target_for(state.holdem, state.holdem_target + delta), state.next_step)
 
-fn holdem_reset(state: State) -> State:
+fn holdem_reset(state: State, now: Float) -> State:
     match holdem_api.with_reset_table(state.holdem):
         case Ok(session):
             let settings = persistence.with_balance(state.settings, holdem_api.human_balance(session))
-            return save_settings(with_holdem(state, session, 10), settings)
+            return save_settings(with_holdem(state, session, 10, now + 0.33), settings)
         case Err(error):
             return with_error(state, error)
 
-fn holdem_next(state: State) -> State:
+fn holdem_next(state: State, now: Float) -> State:
     match holdem_api.with_next_hand(state.holdem):
         case Ok(session):
             if holdem_api.phase_code(session) == 2:
-                return holdem_save_settlement(state, session)
-            return with_holdem(state, session, holdem_target_for(session, 20))
+                return holdem_save_settlement(state, session, now + 0.33)
+            return with_holdem(state, session, holdem_target_for(session, 20), now + 0.33)
         case Err(error):
             return with_error(state, error)
 
@@ -1039,39 +1040,40 @@ fn holdem_return_to_lobby(state: State) -> State:
 fn update_holdem(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int) -> State:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
-    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(holdem_view.help_rect(width), mouse_x, mouse_y):
+    let now = rocket_raylib.elapsed_time(window)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(holdem_view.help_rect(width, height), mouse_x, mouse_y):
         return holdem_help(state, not state.holdem_help)
     if state.holdem_help:
         return state
     let phase = holdem_api.phase_code(state.holdem)
     if phase == 0:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(holdem_view.deal_rect(width), mouse_x, mouse_y):
-            return holdem_deal(state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(holdem_view.reset_rect(width), mouse_x, mouse_y):
-            return holdem_reset(state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(holdem_view.lobby_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(holdem_view.deal_rect(width, height), mouse_x, mouse_y):
+            return holdem_deal(state, now)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(holdem_view.reset_rect(width, height), mouse_x, mouse_y):
+            return holdem_reset(state, now)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(holdem_view.lobby_rect(width, height), mouse_x, mouse_y):
             return holdem_return_to_lobby(state)
     if phase == 1 and holdem_api.human_turn(state.holdem):
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(holdem_view.target_minus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(holdem_view.target_minus_rect(width, height), mouse_x, mouse_y):
             return holdem_change_target(state, -10)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(holdem_view.target_plus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(holdem_view.target_plus_rect(width, height), mouse_x, mouse_y):
             return holdem_change_target(state, 10)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_d()) or clicked and components.contains(holdem_view.fold_rect(width), mouse_x, mouse_y):
-            return holdem_action(state, 0)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(holdem_view.call_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_d()) or clicked and components.contains(holdem_view.fold_rect(width, height), mouse_x, mouse_y):
+            return holdem_action(state, 0, now)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(holdem_view.call_rect(width, height), mouse_x, mouse_y):
             if holdem_api.call_amount(state.holdem) > 0:
-                return holdem_action(state, 2)
-            return holdem_action(state, 1)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(holdem_view.raise_rect(width), mouse_x, mouse_y):
-            return holdem_action(state, 3)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()) or clicked and components.contains(holdem_view.all_in_rect(width), mouse_x, mouse_y):
-            return holdem_action(state, 4)
+                return holdem_action(state, 2, now)
+            return holdem_action(state, 1, now)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(holdem_view.raise_rect(width, height), mouse_x, mouse_y):
+            return holdem_action(state, 3, now)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()) or clicked and components.contains(holdem_view.all_in_rect(width, height), mouse_x, mouse_y):
+            return holdem_action(state, 4, now)
     if phase == 2:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(holdem_view.next_rect(height), mouse_x, mouse_y):
-            return holdem_next(state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(holdem_view.reset_rect(width), mouse_x, mouse_y):
-            return holdem_reset(state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(holdem_view.lobby_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(holdem_view.next_rect(width, height), mouse_x, mouse_y):
+            return holdem_next(state, now)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(holdem_view.reset_rect(width, height), mouse_x, mouse_y):
+            return holdem_reset(state, now)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(holdem_view.lobby_rect(width, height), mouse_x, mouse_y):
             return holdem_return_to_lobby(state)
     return state
 
@@ -1369,7 +1371,8 @@ fn hilo_configure_bet(state: State, delta: Int) -> State:
         case Err(error):
             return with_error(state, error)
 
-fn hilo_start(state: State) -> State:
+fn hilo_start(state: State, now: Float) -> State:
+    let expected = now
     match hilo_api.with_start(state.hilo):
         case Ok(session):
             return with_hilo(state, session, 0.0)
@@ -1419,7 +1422,7 @@ fn hilo_return_to_lobby(state: State) -> State:
 fn update_hilo(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int, now: Float) -> State:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
-    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(hilo_view.help_rect(width), mouse_x, mouse_y):
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(hilo_view.help_rect(width, height), mouse_x, mouse_y):
         return hilo_help(state, not state.hilo_help)
     if state.hilo_help:
         return state
@@ -1427,24 +1430,24 @@ fn update_hilo(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_
         return state
     let phase = hilo_api.phase_code(state.hilo)
     if phase == 0:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(hilo_view.bet_minus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(hilo_view.bet_minus_rect(width, height), mouse_x, mouse_y):
             return hilo_configure_bet(state, -5)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(hilo_view.bet_plus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(hilo_view.bet_plus_rect(width, height), mouse_x, mouse_y):
             return hilo_configure_bet(state, 5)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(hilo_view.start_rect(width), mouse_x, mouse_y):
-            return hilo_start(state)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(hilo_view.start_rect(width, height), mouse_x, mouse_y):
+            return hilo_start(state, now)
     if phase == 1:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_l()) or clicked and components.contains(hilo_view.lower_rect(), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_l()) or clicked and components.contains(hilo_view.lower_rect(width, height), mouse_x, mouse_y):
             return hilo_predict(state, 0, now)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()) or clicked and components.contains(hilo_view.higher_rect(), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_h()) or clicked and components.contains(hilo_view.higher_rect(width, height), mouse_x, mouse_y):
             return hilo_predict(state, 1, now)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(hilo_view.cash_out_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(hilo_view.cash_out_rect(width, height), mouse_x, mouse_y):
             return hilo_cash_out(state, now)
-    if phase == 2 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(hilo_view.next_rect(height), mouse_x, mouse_y)):
+    if phase == 2 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(hilo_view.next_rect(width, height), mouse_x, mouse_y)):
         return hilo_next(state)
-    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(hilo_view.restart_rect(height), mouse_x, mouse_y)):
+    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(hilo_view.restart_rect(width, height), mouse_x, mouse_y)):
         return hilo_restart(state)
-    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(hilo_view.lobby_rect(height), mouse_x, mouse_y)):
+    if phase != 1 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(hilo_view.lobby_rect(width, height), mouse_x, mouse_y)):
         return hilo_return_to_lobby(state)
     return state
 
@@ -1878,11 +1881,11 @@ fn draw(window: rocket_raylib.Window, state: State, resources: ui_resources.UiRe
     if shell_view.is_lobby_screen(state.screen):
         shell_view.draw_lobby(window, frame, resources, shell_view.lobby_focus(state.screen), state.notice, state.settings.light_mode, mouse_x, mouse_y)?
     if state.screen == 2:
-        blackjack_view.draw(window, frame, state.game, state.selected_bet, mouse_x, mouse_y)?
+        blackjack_view.draw(window, frame, resources, state.game, state.selected_bet, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.next_step, mouse_x, mouse_y)?
     if state.screen == 3:
         shell_view.draw_settings(window, frame, resources, state.settings, state.settings.light_mode, mouse_x, mouse_y)?
     if state.screen == 4:
-        roulette_view.draw(window, frame, state.roulette.game, state.roulette_kind, state.roulette_target, state.roulette_help, mouse_x, mouse_y)?
+        roulette_view.draw(window, frame, resources, state.roulette.game, state.roulette_kind, state.roulette_target, state.roulette_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.roulette_spin_end, mouse_x, mouse_y)?
     if state.screen == 5:
         plinko_view.draw(window, frame, state.plinko.game, state.plinko_stage, state.plinko_help, mouse_x, mouse_y)?
     if state.screen == 6:
@@ -1895,14 +1898,14 @@ fn draw(window: rocket_raylib.Window, state: State, resources: ui_resources.UiRe
         let can_call_check = holdem_api.can_action(state.holdem, 1, 0) or holdem_api.can_action(state.holdem, 2, 0)
         let can_raise = holdem_api.can_action(state.holdem, 3, state.holdem_target)
         let can_all_in = holdem_api.can_action(state.holdem, 4, 0)
-        holdem_view.draw(window, frame, table, state.holdem_target, can_fold, can_call_check, can_raise, can_all_in, state.holdem_help, mouse_x, mouse_y)?
+        holdem_view.draw(window, frame, resources, table, state.holdem_target, can_fold, can_call_check, can_raise, can_all_in, state.holdem_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.next_step, mouse_x, mouse_y)?
     if state.screen == 9:
         mines_view.draw(window, frame, state.mines, state.mines_selected, state.mines_help, mouse_x, mouse_y)?
     if state.screen == 10:
         dice_view.draw(window, frame, state.dice, state.dice_help, mouse_x, mouse_y)?
     if state.screen == 11:
         let table = hilo_api.public_table(state.hilo)?
-        hilo_view.draw(window, frame, table, state.hilo_help, mouse_x, mouse_y)?
+        hilo_view.draw(window, frame, resources, table, state.hilo_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.hilo_animation_end, mouse_x, mouse_y)?
     if state.screen == 12:
         let table = crash_api.public_table(state.crash)
         crash_view.draw(window, frame, table, state.crash_help, mouse_x, mouse_y)?

@@ -26,12 +26,18 @@ fn run() -> Result[Int, String]:
         return Ok(1)
     let temporary = testing.temp_directory("scroll2roll-roulette-gui")?
     let save_path = testing.fixture_path(temporary, "settings.s2r")?
-    let horizontal_split = roulette_view.mouse_bet(140, 150, 1280, 10)?
-    let vertical_split = roulette_view.mouse_bet(102, 176, 1280, 10)?
-    let corner = roulette_view.mouse_bet(140, 176, 1280, 10)?
-    let street = roulette_view.mouse_bet(102, 270, 1280, 10)?
-    let six_line = roulette_view.mouse_bet(140, 270, 1280, 10)?
-    let basket = roulette_view.mouse_bet(40, 300, 1280, 10)?
+    let six = roulette_view.number_rect(6, 1280, 720)
+    let two = roulette_view.number_rect(2, 1280, 720)
+    let five = roulette_view.number_rect(5, 1280, 720)
+    let street_rail = roulette_view.street_rail_rect(0, 1280, 720)
+    let six_line_rail = roulette_view.six_line_rail_rect(1, 1280, 720)
+    let basket_box = roulette_view.basket_rect(1280, 720)
+    let horizontal_split = roulette_view.mouse_bet(six.x + 1, six.y + six.height / 2, 1280, 720, 10)?
+    let vertical_split = roulette_view.mouse_bet(two.x + two.width / 2, two.y + 1, 1280, 720, 10)?
+    let corner = roulette_view.mouse_bet(five.x + 1, five.y + 1, 1280, 720, 10)?
+    let street = roulette_view.mouse_bet(street_rail.x + street_rail.width / 2, street_rail.y + 1, 1280, 720, 10)?
+    let six_line = roulette_view.mouse_bet(six_line_rail.x + 1, six_line_rail.y + 1, 1280, 720, 10)?
+    let basket = roulette_view.mouse_bet(basket_box.x + basket_box.width / 2, basket_box.y + basket_box.height / 2, 1280, 720, 10)?
     if roulette_rules.kind_code(horizontal_split.kind) != 1 or horizontal_split.numbers[0] != 3 or horizontal_split.numbers[1] != 6:
         return Ok(19)
     if roulette_rules.kind_code(vertical_split.kind) != 1 or vertical_split.numbers[0] != 2 or vertical_split.numbers[1] != 3:
@@ -73,11 +79,14 @@ fn run() -> Result[Int, String]:
             state = press(window, rocket_raylib.key_h(), state)
             if collections.length(state.roulette.game.bets) != 1:
                 return Ok(8)
-            state = click(window, 1058, 94, state)
+            let chip = roulette_view.chip_rect(2, 1280, 720)
+            state = click(window, chip.x + chip.width / 2, chip.y + chip.height / 2, state)
             if state.roulette.game.selected_chip != 25:
                 return Ok(9)
-            state = click(window, 102, 150, state)
-            state = click(window, 380, 310, state)
+            let zero = roulette_view.number_rect(0, 1280, 720)
+            let seventeen = roulette_view.number_rect(17, 1280, 720)
+            state = click(window, zero.x + zero.width / 2, zero.y + zero.height / 2, state)
+            state = click(window, seventeen.x + seventeen.width / 2, seventeen.y + seventeen.height / 2, state)
             if collections.length(state.roulette.game.bets) != 3:
                 return Ok(10)
             let wager = roulette_engine.total_wager(state.roulette.game)

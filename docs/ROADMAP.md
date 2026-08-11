@@ -42,7 +42,10 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
   ownership, theme migration, reduced motion, and the shared component system.
 - [x] Replace startup, global shell, settings, help/modals, and the eleven-card
   lobby; validate dark/light rendering at every target desktop size.
-- [ ] Replace all eleven game interiors in reviewable groups while preserving
-  every accepted deterministic engine and complete input flow.
+- [x] Replace Blackjack, European Roulette, No-Limit Hold'em, and HiLo with
+  responsive, art-directed interiors while preserving every accepted engine,
+  privacy boundary, and complete input flow.
+- [ ] Replace Plinko, Coop Climb, Midnight Crossing, Mines, Dice, Crash, and
+  Slots in reviewable groups with the same functional and visual gates.
 - [ ] Align the website, build and relocation-test the real asset-bearing
   package, and complete final functional, visual, Git, and frozen-Rocket audits.

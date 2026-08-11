@@ -1,5 +1,9 @@
 import src.app.components
+import src.app.game_components
+import src.app.game_layout
+import src.app.shell_view
 import src.app.theme
+import src.app.ui_resources
 import src.blackjack.blackjack_cards
 import src.blackjack.blackjack_engine
 import src.blackjack.blackjack_model
@@ -8,23 +12,50 @@ import src.rocket_raylib
 import std.collections
 import std.string
 
-pub fn action_rect(code: Int, height: Int) -> components.Rect:
-    return components.rect(32 + code * 132, height - 76, 120, 44)
+fn interior(width: Int, height: Int) -> game_layout.Interior:
+    return game_layout.interior(width, height)
 
-pub fn bet_minus_rect(height: Int) -> components.Rect:
-    return components.rect(32, height - 76, 54, 44)
+pub fn action_rect(code: Int, width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        let gap = 8
+        let button_width =(value.dock.width - 32 - gap * 4) / 5
+        return components.rect(value.dock.x + 16 + code *(button_width + gap), value.dock.y + value.dock.height - 60, button_width, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + 150 + code * 58, value.rail.width - 32, 48)
 
-pub fn bet_plus_rect(height: Int) -> components.Rect:
-    return components.rect(96, height - 76, 54, 44)
+pub fn bet_minus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + value.dock.height - 60, 48, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + 154, 48, 48)
 
-pub fn deal_rect(height: Int) -> components.Rect:
-    return components.rect(170, height - 76, 148, 44)
+pub fn bet_plus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 72, value.dock.y + value.dock.height - 60, 48, 48)
+    return components.rect(value.rail.x + value.rail.width - 64, value.rail.y + 154, 48, 48)
 
-pub fn next_rect(height: Int) -> components.Rect:
-    return components.rect(32, height - 76, 170, 44)
+pub fn deal_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 136, value.dock.y + value.dock.height - 60, value.dock.width - 152, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + 218, value.rail.width - 32, 50)
 
-pub fn lobby_rect(height: Int) -> components.Rect:
-    return components.rect(214, height - 76, 170, 44)
+pub fn next_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + value.dock.height - 60, value.dock.width * 2 / 3 - 20, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 124, value.rail.width - 32, 50)
+
+pub fn restart_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + value.dock.width * 2 / 3 + 4, value.dock.y + value.dock.height - 60, value.dock.width / 3 - 20, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 64, value.rail.width - 32, 44)
+
+pub fn lobby_rect(width: Int, height: Int) -> components.Rect:
+    let expected = height
+    return shell_view.back_rect(width)
 
 fn action_available(game: blackjack_model.Game, code: Int) -> Bool:
     let actions = blackjack_engine.available_actions(game)
@@ -35,117 +66,167 @@ fn action_available(game: blackjack_model.Game, code: Int) -> Bool:
         index = index + 1
     return false
 
-fn draw_card(frame: rocket_raylib.Frame, card: blackjack_model.Card, x: Int, y: Int, hidden: Bool, active: Bool) -> Result[Bool, String]:
-    let width = 64
-    let height = 88
-    var border = theme.border()
-    if active:
-        border = theme.gold()
-    rocket_raylib.draw_rectangle(frame, x - 2, y - 2, width + 4, height + 4, border)?
-    if hidden:
-        rocket_raylib.draw_rectangle(frame, x, y, width, height, theme.card_dark())?
-        rocket_raylib.draw_rectangle(frame, x + 9, y + 9, width - 18, height - 18, theme.border())?
-        return rocket_raylib.draw_text(frame, "S2R", x + 15, y + 34, 16, theme.gold())
-    rocket_raylib.draw_rectangle(frame, x, y, width, height, theme.card_light())?
-    var ink = theme.card_dark()
-    if blackjack_cards.is_red(card):
-        ink = theme.danger()
-    rocket_raylib.draw_text(frame, blackjack_cards.rank_name(card.rank), x + 8, y + 8, 23, ink)?
-    return rocket_raylib.draw_text(frame, blackjack_cards.suit_name(card.suit), x + 9, y + 52, 20, ink)
+fn phase_name(phase: Int) -> String:
+    if phase == 0:
+        return "BETTING"
+    if phase == 1:
+        return "PLAYER TURN"
+    if phase == 2:
+        return "DEALER"
+    return "SETTLED"
 
-fn draw_hand(frame: rocket_raylib.Frame, hand: blackjack_model.Hand, x: Int, y: Int, active: Bool) -> Result[Bool, String]:
-    var index = 0
-    while index < collections.length(hand.cards):
-        draw_card(frame, hand.cards[index], x + index * 46, y, false, active)?
-        index = index + 1
+fn hand_summary(hand: blackjack_model.Hand) -> String:
     let value = blackjack_cards.value(hand)
-    var summary = string.concat("Total ", string.from_int(value.total))
+    var summary = string.concat("TOTAL ", string.from_int(value.total))
     if value.soft:
-        summary = string.concat(summary, " soft")
+        summary = string.concat(summary, "  SOFT")
     if value.busted:
-        summary = string.concat(summary, " | BUST")
+        summary = string.concat(summary, "  BUST")
     if value.blackjack:
-        summary = string.concat(summary, " | BLACKJACK")
-    return rocket_raylib.draw_text(frame, summary, x, y + 98, theme.small_size(), theme.text())
+        summary = "BLACKJACK"
+    return summary
 
-fn draw_dealer(frame: rocket_raylib.Frame, game: blackjack_model.Game, width: Int) -> Result[Bool, String]:
-    rocket_raylib.draw_text(frame, "DEALER", 40, 92, theme.small_size(), theme.muted())?
+fn draw_cards(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, cards: Array[blackjack_model.Card], x: Int, y: Int, card_width: Int, card_height: Int, hide_hole: Bool, active: Bool, offset: Int, light_mode: Bool) -> Result[Bool, String]:
     var index = 0
-    let hide_hole = blackjack_engine.phase_code(game.phase) == 1
-    while index < collections.length(game.dealer_hand.cards):
-        draw_card(frame, game.dealer_hand.cards[index], 40 + index * 74, 118, hide_hole and index == 1, false)?
-        index = index + 1
-    if not hide_hole:
-        let value = blackjack_cards.value(game.dealer_hand)
-        rocket_raylib.draw_text(frame, string.concat("Total ", string.from_int(value.total)), 40, 216, theme.body_size(), theme.text())?
-    return rocket_raylib.draw_text(frame, "Dealer stands on soft 17", width - 254, 96, theme.small_size(), theme.muted())
-
-fn draw_ai(frame: rocket_raylib.Frame, game: blackjack_model.Game, width: Int) -> Result[Bool, String]:
-    var index = 1
-    var x = 260
-    while index < collections.length(game.players):
-        let player = game.players[index]
-        let active = blackjack_engine.phase_code(game.phase) == 1 and game.active_player == index
-        var ink = theme.muted()
-        if active:
-            ink = theme.gold()
-        rocket_raylib.draw_text(frame, player.name, x, 120, theme.small_size(), ink)?
-        rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(player.balance)), x, 144, theme.small_size(), theme.text())?
-        if collections.length(player.hands) > 0:
-            rocket_raylib.draw_text(frame, string.concat("Hands ", string.from_int(collections.length(player.hands))), x, 168, theme.small_size(), theme.muted())?
-        x = x +(width - 300) / 5
+    while index < collections.length(cards):
+        let card = cards[index]
+        let hidden = hide_hole and index == 1
+        let card_x = x + index *(card_width * 3 / 5)
+        var card_y = y
+        if index == collections.length(cards) - 1:
+            card_y = card_y - offset
+        game_components.playing_card(window, frame, resources, components.rect(card_x, card_y, card_width, card_height), blackjack_cards.rank_name(card.rank), card.suit, hidden, active and index == collections.length(cards) - 1, light_mode)?
         index = index + 1
     return Ok(true)
 
-fn draw_results(frame: rocket_raylib.Frame, game: blackjack_model.Game, x: Int, y: Int) -> Result[Bool, String]:
+fn draw_ai_seats(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, table: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    let opponents = collections.length(game.players) - 1
+    if opponents <= 0:
+        return Ok(true)
+    let seat_width =(table.width - 40) / opponents
+    var index = 1
+    while index < collections.length(game.players):
+        let player = game.players[index]
+        let x = table.x + 20 +(index - 1) * seat_width
+        var ink = theme.secondary_text(light_mode)
+        if blackjack_engine.phase_code(game.phase) == 1 and game.active_player == index:
+            ink = theme.highlight(light_mode)
+        components.type_text(window, frame, resources, player.name, x, table.y + 12, components.type_caption(), ink)?
+        game_components.chip_stack(window, frame, resources, x, table.y + 48, player.pending_bet, theme.violet(light_mode), light_mode)?
+        index = index + 1
+    return Ok(true)
+
+fn draw_dealer(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, table: components.Rect, card_width: Int, card_height: Int, offset: Int, light_mode: Bool) -> Result[Bool, String]:
+    let hide_hole = blackjack_engine.phase_code(game.phase) == 1
+    let x = table.x + table.width / 2 -(card_width + card_width * collections.length(game.dealer_hand.cards) * 3 / 10)
+    let y = table.y + 56
+    components.badge(window, frame, resources, components.rect(table.x + table.width / 2 - 48, table.y + 14, 96, 28), "DEALER", light_mode)?
+    draw_cards(window, frame, resources, game.dealer_hand.cards, x, y, card_width, card_height, hide_hole, false, offset, light_mode)?
+    if not hide_hole and collections.length(game.dealer_hand.cards) > 0:
+        let value = blackjack_cards.value(game.dealer_hand)
+        components.pill(window, frame, resources, components.rect(table.x + table.width / 2 - 48, y + card_height + 8, 96, 28), string.concat("TOTAL ", string.from_int(value.total)), false, light_mode)?
+    return Ok(true)
+
+fn draw_player_hands(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, table: components.Rect, card_width: Int, card_height: Int, offset: Int, light_mode: Bool) -> Result[Bool, String]:
+    let hand_count = collections.length(game.players[0].hands)
+    if hand_count <= 0:
+        components.type_centered(window, frame, resources, "PLACE A WAGER TO OPEN THE TABLE", components.rect(table.x, table.y + table.height * 2 / 3, table.width, 30), components.type_label(), rocket_raylib.color(255, 255, 255, 190))?
+        return Ok(true)
+    let hand_width =(table.width - 40) / hand_count
+    var hand_index = 0
+    while hand_index < hand_count:
+        let hand = game.players[0].hands[hand_index]
+        let active = blackjack_engine.phase_code(game.phase) == 1 and game.active_player == 0 and game.players[0].active_hand == hand_index
+        let x = table.x + 20 + hand_index * hand_width +(hand_width - card_width * 2) / 2
+        let y = table.y + table.height - card_height - 54
+        draw_cards(window, frame, resources, hand.cards, x, y, card_width, card_height, false, active, offset, light_mode)?
+        var pill_width = 116
+        if hand_width < 150:
+            pill_width = hand_width - 8
+        var label = hand_summary(hand)
+        if hand_count > 1:
+            label = string.concat(string.concat("HAND ", string.from_int(hand_index + 1)), string.concat("  ", label))
+        components.pill(window, frame, resources, components.rect(table.x + 20 + hand_index * hand_width +(hand_width - pill_width) / 2, table.y + table.height - 34, pill_width, 26), label, active, light_mode)?
+        game_components.chip_stack(window, frame, resources, table.x + 26 + hand_index * hand_width, y + card_height - offset / 3, hand.bet, theme.highlight(light_mode), light_mode)?
+        hand_index = hand_index + 1
+    return Ok(true)
+
+fn draw_results(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, table: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    var human_results = 0
     var index = 0
+    while index < collections.length(game.results):
+        if game.results[index].player_index == 0:
+            human_results = human_results + 1
+        index = index + 1
+    if human_results == 0:
+        return Ok(true)
+    let panel = components.rect(table.x + table.width - 210, table.y + table.height / 2 - 38, 190, 42 + human_results * 25)
+    components.modern_panel(frame, panel, light_mode, true)?
+    components.type_text(window, frame, resources, "ROUND RESULT", panel.x + 14, panel.y + 11, components.type_caption(), theme.secondary_text(light_mode))?
+    index = 0
+    var row = 0
     while index < collections.length(game.results):
         let result = game.results[index]
         if result.player_index == 0:
-            let label = string.concat(string.concat("Hand ", string.from_int(result.hand_index + 1)), string.concat(": ", settlement.outcome_name(result.outcome)))
-            rocket_raylib.draw_text(frame, label, x, y + index * 24, theme.body_size(), theme.gold())?
+            let label = string.concat(string.concat("Hand ", string.from_int(result.hand_index + 1)), string.concat("  ", settlement.outcome_name(result.outcome)))
+            components.type_text(window, frame, resources, label, panel.x + 14, panel.y + 35 + row * 25, components.type_caption(), theme.highlight(light_mode))?
+            row = row + 1
         index = index + 1
     return Ok(true)
 
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: blackjack_model.Game, selected_bet: Int, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    components.panel(frame, components.rect(24, 72, width - 48, height - 166))?
-    rocket_raylib.draw_text(frame, "BLACKJACK", 40, 28, theme.heading_size(), theme.gold())?
-    rocket_raylib.draw_text(frame, game.message, 252, 38, theme.body_size(), theme.text())?
-    rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(game.players[0].balance)), width - 230, 38, theme.body_size(), theme.emerald())?
-    draw_dealer(frame, game, width)?
-    draw_ai(frame, game, width)?
-    let player_y = height - 330
-    rocket_raylib.draw_text(frame, "YOUR HANDS", 40, player_y - 28, theme.small_size(), theme.muted())?
-    var hand_index = 0
-    while hand_index < collections.length(game.players[0].hands):
-        let active = blackjack_engine.phase_code(game.phase) == 1 and game.active_player == 0 and game.players[0].active_hand == hand_index
-        draw_hand(frame, game.players[0].hands[hand_index], 40 + hand_index * 248, player_y, active)?
-        hand_index = hand_index + 1
+fn draw_rail(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, selected_bet: Int, value: game_layout.Interior, mouse_x: Int, mouse_y: Int, light_mode: Bool) -> Result[Bool, String]:
+    components.modern_panel(frame, value.rail, light_mode, true)?
     let phase = blackjack_engine.phase_code(game.phase)
+    if value.compact:
+        components.badge(window, frame, resources, components.rect(value.dock.x + 16, value.dock.y + 12, 116, 28), phase_name(phase), light_mode)?
+        components.type_text(window, frame, resources, game.message, value.dock.x + 148, value.dock.y + 16, components.type_caption(), theme.primary_text(light_mode))?
+        game_components.metric(window, frame, resources, "WAGER", string.from_int(selected_bet), value.dock.x + value.dock.width - 142, value.dock.y + 8, 126, false, light_mode)?
+    else:
+        components.badge(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 16, 132, 28), phase_name(phase), light_mode)?
+        game_components.status_banner(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 56, value.rail.width - 32, 54), game.message, light_mode)?
+        game_components.metric(window, frame, resources, "TABLE LIMITS", string.concat(string.concat(string.from_int(game.rules.minimum_bet), " - "), string.from_int(game.rules.maximum_bet)), value.rail.x + 16, value.rail.y + 118, value.rail.width - 32, false, light_mode)?
     if phase == 0:
-        rocket_raylib.draw_text(frame, string.concat("Bet ", string.from_int(selected_bet)), 338, height - 66, theme.body_size(), theme.text())?
-        let minus = bet_minus_rect(height)
-        let plus = bet_plus_rect(height)
-        let deal = deal_rect(height)
-        components.button(window, frame, minus, "-", true, components.contains(minus, mouse_x, mouse_y), false)?
-        components.button(window, frame, plus, "+", true, components.contains(plus, mouse_x, mouse_y), false)?
-        components.button(window, frame, deal, "Deal", true, components.contains(deal, mouse_x, mouse_y), true)?
+        let minus = bet_minus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let plus = bet_plus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let deal = deal_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, minus, "-", components.button_secondary(), true, components.contains(minus, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, plus, "+", components.button_secondary(), true, components.contains(plus, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, deal, string.concat("DEAL  ", string.from_int(selected_bet)), components.button_primary(), selected_bet <= game.players[0].balance + game.players[0].pending_bet, components.contains(deal, mouse_x, mouse_y), true, light_mode)?
     if phase == 1:
+        let names = ["HIT [H]", "STAND [S]", "DOUBLE [D]", "SPLIT [P]", "SURRENDER [R]"]
         var code = 0
         while code < 5:
-            let button = action_rect(code, height)
-            let names = ["Hit [H]", "Stand [S]", "Double [D]", "Split [P]", "Surrender [R]"]
-            components.button(window, frame, button, names[code], action_available(game, code), components.contains(button, mouse_x, mouse_y), code == 0)?
+            let button = action_rect(code, rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+            components.modern_button(window, frame, resources, button, names[code], components.button_primary(), action_available(game, code), components.contains(button, mouse_x, mouse_y), code == 0, light_mode)?
             code = code + 1
     if phase == 2:
-        rocket_raylib.draw_text(frame, "Dealer is completing the round...", 40, height - 64, theme.body_size(), theme.gold())?
+        components.type_text(window, frame, resources, "Dealer completes only the committed round.", value.rail.x + 16, value.rail.y + value.rail.height - 42, components.type_caption(), theme.highlight(light_mode))?
     if phase == 3:
-        draw_results(frame, game, width - 330, player_y)?
-        let next = next_rect(height)
-        let lobby = lobby_rect(height)
-        components.button(window, frame, next, "Next round [N]", true, components.contains(next, mouse_x, mouse_y), true)?
-        components.button(window, frame, lobby, "Lobby [B]", true, components.contains(lobby, mouse_x, mouse_y), false)?
-        rocket_raylib.draw_text(frame, "R restarts the table", 410, height - 64, theme.small_size(), theme.muted())?
+        let next = next_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let restart = restart_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, next, "NEXT ROUND [N]", components.button_primary(), true, components.contains(next, mouse_x, mouse_y), true, light_mode)?
+        components.modern_button(window, frame, resources, restart, "NEW TABLE [R]", components.button_secondary(), true, components.contains(restart, mouse_x, mouse_y), false, light_mode)?
+    return Ok(true)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, selected_bet: Int, light_mode: Bool, reduced_motion: Bool, now: Float, animation_end: Float, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let value = interior(width, height)
+    game_components.ambient_stage(frame, resources, value.stage, 0, light_mode)?
+    let table = game_layout.inset(value.stage, 14)
+    game_components.felt_table(frame, table, light_mode)?
+    components.type_text(window, frame, resources, "BLACKJACK PAYS 3 TO 2", table.x + 28, table.y + table.height / 2 - 12, components.type_caption(), rocket_raylib.color(255, 255, 255, 112))?
+    components.type_text(window, frame, resources, "DEALER STANDS ON SOFT 17", table.x + table.width - 226, table.y + table.height / 2 - 12, components.type_caption(), rocket_raylib.color(255, 255, 255, 112))?
+    draw_ai_seats(window, frame, resources, game, table, light_mode)?
+    var card_width = 56
+    var card_height = 76
+    if value.stage.width >= 960:
+        card_width = 68
+        card_height = 92
+    let offset = game_components.motion_offset(now, animation_end, reduced_motion, 34)
+    draw_dealer(window, frame, resources, game, table, card_width, card_height, offset, light_mode)?
+    draw_player_hands(window, frame, resources, game, table, card_width, card_height, offset, light_mode)?
+    if blackjack_engine.phase_code(game.phase) == 3:
+        draw_results(window, frame, resources, game, table, light_mode)?
+    draw_rail(window, frame, resources, game, selected_bet, value, mouse_x, mouse_y, light_mode)?
     return Ok(true)
