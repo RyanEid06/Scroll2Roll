@@ -5,7 +5,7 @@ pub fn name(index: Int) -> String:
     if index == 0:
         return "Blackjack"
     if index == 1:
-        return "Roulette"
+        return "European Roulette"
     if index == 2:
         return "Plinko"
     if index == 3:
@@ -13,7 +13,7 @@ pub fn name(index: Int) -> String:
     if index == 4:
         return "Midnight Crossing"
     if index == 5:
-        return "Hold'em"
+        return "No-Limit Hold'em"
     if index == 6:
         return "Mines"
     if index == 7:

@@ -121,7 +121,15 @@ region texture drawing, rounded fill/outline, line, triangle, ring, balanced
 scissor, and consumable mouse wheel. Persistence tests cover save-v1, save-v2,
 and save-v3 migration to save-v4, save-v4 round-trip, theme/reduced-motion
 integrity, and invalid recovery. The current suite passes 44/44 in Debug and
-Release.
+Release before the shell milestone.
+
+`ui_shell_test.rocket` covers exact layout and drawing at 800x600, 1024x768,
+1280x720, 1600x900, and 1920x1080; compact/wide lobby paging; minimum target and
+card sizes; non-overlap; resource-backed dark/light startup, lobby, settings,
+and help drawing; theme persistence; reduced motion; exact help return; safe
+Back; live-wager preservation; and explicit modal hitboxes. All eleven GUI flow
+tests now discover and activate games through the responsive lobby contract.
+The current suite passes 45/45 in Debug and Release.
 
 Functional drawing tests are necessary but not visual acceptance. Each visual
 milestone launches the actual native executable and records dark/light captures

@@ -47,8 +47,7 @@ fn run() -> Result[Int, String]:
             state = press(window, rocket_raylib.key_b(), state)
             if state.screen != 1:
                 return Ok(6)
-            let mouse = rocket_raylib_testing.set_mouse(100, 300, true)
-            state = application.step_for_test(state, window)
+            state = press(window, rocket_raylib.key_enter(), state)
             if state.screen != 2 or blackjack_engine.phase_code(state.game.phase) != 0:
                 return Ok(7)
             state = press(window, rocket_raylib.key_right(), state)

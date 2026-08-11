@@ -1,5 +1,6 @@
 import src.app.application
 import src.app.dice_view
+import src.app.shell_view
 import src.dice.dice_api
 import src.rocket_raylib
 import src.rocket_raylib_testing
@@ -43,7 +44,12 @@ fn run() -> Result[Int, String]:
         case Ok(window):
             var state = application.initial_for_test(save_path)?
             state = press(window, rocket_raylib.key_enter(), state)
-            state = click(window, 400, 82, state)
+            var lobby_move = 0
+            while lobby_move < 7:
+                state = press(window, rocket_raylib.key_tab(), state)
+                lobby_move = lobby_move + 1
+            let lobby_card = shell_view.lobby_card_rect(7, 800, 600)
+            state = click(window, lobby_card.x + lobby_card.width / 2, lobby_card.y + lobby_card.height / 2, state)
             if state.screen != 10 or dice_api.phase_code(state.dice) != 0:
                 return Ok(2)
             state = press(window, rocket_raylib.key_p(), state)

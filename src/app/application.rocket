@@ -10,6 +10,7 @@ import src.app.mines_view
 import src.app.plinko_view
 import src.app.registry
 import src.app.roulette_view
+import src.app.shell_view
 import src.app.slots_view
 import src.app.theme
 import src.app.ui_resources
@@ -373,54 +374,57 @@ fn settings_theme(state: State) -> State:
 fn settings_motion(state: State) -> State:
     return save_settings(state, persistence.with_reduced_motion(state.settings, not state.settings.reduced_motion))
 
-fn lobby_tile(index: Int, width: Int) -> components.Rect:
-    let compact_width =(width - 528) / 2
-    if index == 7:
-        return components.rect(300, 62, compact_width, 40)
-    if index == 8:
-        return components.rect(308 + compact_width, 62, compact_width, 40)
-    if index == 6:
-        return components.rect(300, 112, compact_width, 46)
-    if index == 9:
-        return components.rect(308 + compact_width, 112, compact_width, 46)
-    if index == 10:
-        return components.rect(588, 112, width - 620, 46)
-    let tile_width =(width - 128) / 3
-    let row = index / 3
-    let column = index - row * 3
-    return components.rect(32 + column *(tile_width + 32), 170 + row * 180, tile_width, 155)
-
-fn settings_button(width: Int) -> components.Rect:
-    return components.rect(width - 190, 32, 158, 44)
-
-fn exit_button(height: Int) -> components.Rect:
-    return components.rect(32, height - 76, 140, 44)
-
-fn setting_row_button(row: Int, side: Int, width: Int) -> components.Rect:
-    let x = width / 2 + 110 + side * 64
-    return components.rect(x, 210 + row * 92, 54, 44)
-
 fn update_lobby(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int) -> State:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
-    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_l()):
+    let focus = shell_view.lobby_focus(state.screen)
+    let columns = shell_view.lobby_columns(width)
+    let capacity = shell_view.lobby_capacity(width, height)
+    var next_focus = focus
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_tab()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()):
+        next_focus = focus + 1
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()):
+        next_focus = focus - 1
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()):
+        next_focus = focus + columns
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()):
+        next_focus = focus - columns
+    let wheel = rocket_raylib.mouse_wheel(window)
+    if wheel < 0.0:
+        next_focus = focus + capacity
+    if wheel > 0.0:
+        next_focus = focus - capacity
+    if next_focus < 0:
+        next_focus = 0
+    if next_focus >= registry.game_count():
+        next_focus = registry.game_count() - 1
+    if next_focus != focus:
+        return rebuild(state, shell_view.lobby_screen(next_focus), state.game, state.selected_bet, state.settings, "Keyboard focus moved", "", false, true, state.next_step, state.saved_round)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()):
+        return route_game(state, focus)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_l()):
         return route_game(state, 0)
-    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(settings_button(width), mouse_x, mouse_y):
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()):
         return rebuild(state, 3, state.game, state.selected_bet, state.settings, "Settings", "", false, true, state.next_step, state.saved_round)
-    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(exit_button(height), mouse_x, mouse_y):
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(shell_view.exit_rect(width, height), mouse_x, mouse_y):
         return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, "", true, state.running, state.next_step, state.saved_round)
     if clicked:
-        var index = 0
-        while index < registry.game_count():
-            if components.contains(lobby_tile(index, width), mouse_x, mouse_y):
+        let page = shell_view.lobby_page(focus, width, height)
+        let pages = shell_view.lobby_page_count(width, height)
+        if page > 0 and components.contains(shell_view.previous_page_rect(width, height), mouse_x, mouse_y):
+            return rebuild(state, shell_view.lobby_screen((page - 1) * capacity), state.game, state.selected_bet, state.settings, "Previous game shelf", "", false, true, state.next_step, state.saved_round)
+        if page + 1 < pages and components.contains(shell_view.next_page_rect(width, height), mouse_x, mouse_y):
+            return rebuild(state, shell_view.lobby_screen((page + 1) * capacity), state.game, state.selected_bet, state.settings, "Next game shelf", "", false, true, state.next_step, state.saved_round)
+        var index = page * capacity
+        while index < registry.game_count() and index <(page + 1) * capacity:
+            if components.contains(shell_view.lobby_card_rect(index, width, height), mouse_x, mouse_y):
                 return route_game(state, index)
             index = index + 1
     return state
 
 fn update_settings(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int) -> State:
     let width = rocket_raylib.window_width(window)
-    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()):
-        return rebuild(state, 1, state.game, state.selected_bet, state.settings, "Settings saved locally", "", false, true, state.next_step, state.saved_round)
+    let height = rocket_raylib.window_height(window)
     if rocket_raylib.is_key_pressed(window, rocket_raylib.key_m()):
         return settings_audio(state)
     if rocket_raylib.is_key_pressed(window, rocket_raylib.key_t()):
@@ -436,15 +440,22 @@ fn update_settings(state: State, window: rocket_raylib.Window, clicked: Bool, mo
     if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()):
         return settings_ai(state, 1)
     if clicked:
-        if components.contains(setting_row_button(0, 0, width), mouse_x, mouse_y):
+        if components.contains(shell_view.setting_control_rect(0, 0, width, height), mouse_x, mouse_y):
+            return settings_theme(state)
+        if components.contains(shell_view.setting_control_rect(1, 0, width, height), mouse_x, mouse_y):
+            return settings_motion(state)
+        if components.contains(shell_view.setting_control_rect(2, 0, width, height), mouse_x, mouse_y):
             return settings_audio(state)
-        if components.contains(setting_row_button(1, 0, width), mouse_x, mouse_y):
+        if components.contains(shell_view.setting_control_rect(3, 0, width, height), mouse_x, mouse_y):
             return settings_volume(state, -10)
-        if components.contains(setting_row_button(1, 1, width), mouse_x, mouse_y):
+        if components.contains(shell_view.setting_control_rect(3, 1, width, height), mouse_x, mouse_y):
             return settings_volume(state, 10)
-        if components.contains(setting_row_button(2, 0, width), mouse_x, mouse_y):
+        let slider = shell_view.settings_slider_rect(width, height)
+        if components.contains(slider, mouse_x, mouse_y):
+            return settings_volume(state,(mouse_x - slider.x) * 100 / slider.width - state.settings.volume_percent)
+        if components.contains(shell_view.setting_control_rect(4, 0, width, height), mouse_x, mouse_y):
             return settings_ai(state, -1)
-        if components.contains(setting_row_button(2, 1, width), mouse_x, mouse_y):
+        if components.contains(shell_view.setting_control_rect(4, 1, width, height), mouse_x, mouse_y):
             return settings_ai(state, 1)
     return state
 
@@ -1696,26 +1707,142 @@ fn update_slots(state: State, window: rocket_raylib.Window, clicked: Bool, mouse
         return slots_return_to_lobby(state)
     return state
 
+fn request_back(state: State) -> State:
+    if shell_view.is_help_screen(state.screen):
+        return rebuild(state, shell_view.help_source(state.screen), state.game, state.selected_bet, state.settings, "Guide closed", "", false, true, state.next_step, state.saved_round)
+    if shell_view.is_lobby_screen(state.screen):
+        return state
+    if state.screen == 3:
+        return rebuild(state, 1, state.game, state.selected_bet, state.settings, "Settings saved locally", "", false, true, state.next_step, state.saved_round)
+    if state.screen == 2:
+        let phase = blackjack_engine.phase_code(state.game.phase)
+        if phase == 0 or phase == 3:
+            return return_to_lobby(state)
+        return with_error(state, "Finish the active Blackjack hand before returning to All games")
+    if state.screen == 4:
+        if state.roulette_help:
+            return roulette_help(state, false)
+        return roulette_return_to_lobby(state)
+    if state.screen == 5:
+        if state.plinko_help:
+            return plinko_help(state, false)
+        return plinko_return_to_lobby(state)
+    if state.screen == 6:
+        if state.chicken_help:
+            return chicken_help(state, false)
+        return chicken_return_to_lobby(state)
+    if state.screen == 7:
+        if state.crossing_help:
+            return crossing_help(state, false)
+        return crossing_return_to_lobby(state)
+    if state.screen == 8:
+        if state.holdem_help:
+            return holdem_help(state, false)
+        return holdem_return_to_lobby(state)
+    if state.screen == 9:
+        if state.mines_help:
+            return mines_help(state, false)
+        return mines_return_to_lobby(state)
+    if state.screen == 10:
+        if state.dice_help:
+            return dice_help(state, false)
+        return dice_return_to_lobby(state)
+    if state.screen == 11:
+        if state.hilo_help:
+            return hilo_help(state, false)
+        return hilo_return_to_lobby(state)
+    if state.screen == 12:
+        if state.crash_help:
+            return crash_help(state, false)
+        return crash_return_to_lobby(state)
+    if state.screen == 13:
+        if state.slots_help:
+            return slots_help(state, false)
+        return slots_return_to_lobby(state)
+    return with_error(state, "This screen cannot be left until its current operation finishes")
+
+fn request_settings(state: State) -> State:
+    var source = state
+    if shell_view.is_help_screen(source.screen):
+        source = rebuild(source, shell_view.help_source(source.screen), source.game, source.selected_bet, source.settings, source.notice, "", false, true, source.next_step, source.saved_round)
+    if shell_view.is_lobby_screen(source.screen):
+        return rebuild(source, 3, source.game, source.selected_bet, source.settings, "Settings", "", false, true, source.next_step, source.saved_round)
+    if source.screen == 3:
+        return source
+    let backed = request_back(source)
+    if shell_view.is_lobby_screen(backed.screen):
+        return rebuild(backed, 3, backed.game, backed.selected_bet, backed.settings, "Settings", "", false, true, backed.next_step, backed.saved_round)
+    return backed
+
+fn visible_balance(state: State) -> Int:
+    var screen = state.screen
+    if shell_view.is_help_screen(screen):
+        screen = shell_view.help_source(screen)
+    if screen == 2:
+        return state.game.players[0].balance
+    if screen == 4:
+        return state.roulette.game.balance
+    if screen == 5:
+        return state.plinko.game.balance
+    if screen == 6:
+        return state.chicken.game.balance
+    if screen == 7:
+        return state.crossing.game.balance
+    if screen == 8:
+        return holdem_api.human_balance(state.holdem)
+    if screen == 9:
+        return state.mines.game.balance
+    if screen == 10:
+        return state.dice.game.balance
+    if screen == 11:
+        return state.hilo.game.balance
+    if screen == 12:
+        return state.crash.game.balance
+    if screen == 13:
+        return state.slots.game.balance
+    return state.settings.play_balance
+
 fn update(state: State, window: rocket_raylib.Window) -> State:
     let clicked = rocket_raylib.is_mouse_pressed(window, rocket_raylib.mouse_left())
     let mouse_x = rocket_raylib.mouse_x(window)
     let mouse_y = rocket_raylib.mouse_y(window)
     if state.error != "":
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked:
+        let width = rocket_raylib.window_width(window)
+        let height = rocket_raylib.window_height(window)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(components.modal_primary_rect(width, height, false), mouse_x, mouse_y):
             return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, "", state.exit_prompt, state.running, state.next_step, state.saved_round)
         return state
     if state.exit_prompt:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()):
+        let width = rocket_raylib.window_width(window)
+        let height = rocket_raylib.window_height(window)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(components.modal_primary_rect(width, height, true), mouse_x, mouse_y):
             return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, "", false, false, state.next_step, state.saved_round)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(components.modal_secondary_rect(width, height), mouse_x, mouse_y):
             return rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, "", false, true, state.next_step, state.saved_round)
         return state
     let now = rocket_raylib.elapsed_time(window)
     if state.screen == 0:
-        if now >= theme.startup_seconds() or rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_space()):
+        var duration = theme.startup_seconds()
+        if state.settings.reduced_motion:
+            duration = 0.18
+        if now >= duration or rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_space()):
             return rebuild(state, 1, state.game, state.selected_bet, state.settings, "Choose a game", "", false, true, state.next_step, state.saved_round)
         return state
-    if state.screen == 1:
+    let width = rocket_raylib.window_width(window)
+    let shell_back = not shell_view.is_lobby_screen(state.screen) and(clicked and components.contains(shell_view.back_rect(width), mouse_x, mouse_y) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()))
+    if shell_back:
+        return request_back(state)
+    if clicked and components.contains(shell_view.theme_rect(width), mouse_x, mouse_y) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_t()):
+        return settings_theme(state)
+    if clicked and components.contains(shell_view.help_rect(width), mouse_x, mouse_y):
+        if shell_view.is_help_screen(state.screen):
+            return state
+        return rebuild(state, shell_view.help_screen(state.screen), state.game, state.selected_bet, state.settings, "Guide opened", "", false, true, state.next_step, state.saved_round)
+    if clicked and components.contains(shell_view.settings_rect(width), mouse_x, mouse_y):
+        return request_settings(state)
+    if shell_view.is_help_screen(state.screen):
+        return state
+    if shell_view.is_lobby_screen(state.screen):
         return update_lobby(state, window, clicked, mouse_x, mouse_y)
     if state.screen == 2:
         return update_game(state, window, clicked, mouse_x, mouse_y, now)
@@ -1741,78 +1868,19 @@ fn update(state: State, window: rocket_raylib.Window) -> State:
         return update_slots(state, window, clicked, mouse_x, mouse_y, now)
     return update_settings(state, window, clicked, mouse_x, mouse_y)
 
-fn draw_startup(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
-    let height = rocket_raylib.window_height(window)
-    components.centered_label(window, frame, "SCROLL2ROLL", height / 2 - 70, theme.title_size(), theme.gold())?
-    components.centered_label(window, frame, "A local play-money casino", height / 2, theme.body_size(), theme.text())?
-    return components.centered_label(window, frame, "Loading the tables...", height / 2 + 46, theme.small_size(), theme.muted())
-
-fn draw_lobby(window: rocket_raylib.Window, frame: rocket_raylib.Frame, state: State, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_text(frame, "SCROLL2ROLL", 32, 34, theme.heading_size(), theme.gold())?
-    rocket_raylib.draw_text(frame, string.concat("Play credits ", string.from_int(state.settings.play_balance)), 32, 96, theme.body_size(), theme.emerald())?
-    rocket_raylib.draw_text(frame, "Choose a table", 32, 158, theme.heading_size(), theme.text())?
-    let settings = settings_button(width)
-    components.button(window, frame, settings, "Settings [S]", true, components.contains(settings, mouse_x, mouse_y), false)?
-    var index = 0
-    while index < registry.game_count():
-        let tile = lobby_tile(index, width)
-        components.panel(frame, tile)?
-        var status = "Coming later"
-        var ink = theme.muted()
-        if registry.available(index):
-            status = "Play now"
-            ink = theme.gold()
-        if index >= 6:
-            rocket_raylib.draw_text(frame, registry.name(index), tile.x + 10, tile.y + 11, theme.body_size(), theme.text())?
-            rocket_raylib.draw_text(frame, status, tile.x + tile.width - 64, tile.y + 14, theme.small_size(), ink)?
-        if index < 6:
-            rocket_raylib.draw_text(frame, registry.name(index), tile.x + 22, tile.y + 26, theme.heading_size(), theme.text())?
-            rocket_raylib.draw_text(frame, registry.description(index), tile.x + 22, tile.y + 84, theme.small_size(), theme.muted())?
-            rocket_raylib.draw_text(frame, status, tile.x + 22, tile.y + 126, theme.body_size(), ink)?
-        index = index + 1
-    let exit = exit_button(height)
-    components.button(window, frame, exit, "Exit", true, components.contains(exit, mouse_x, mouse_y), false)?
-    rocket_raylib.draw_text(frame, state.notice, 196, height - 62, theme.small_size(), theme.muted())?
-    return rocket_raylib.draw_text(frame, "Local, account-free, play-money entertainment", width - 416, height - 62, theme.small_size(), theme.muted())
-
-fn draw_settings(window: rocket_raylib.Window, frame: rocket_raylib.Frame, state: State, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    rocket_raylib.draw_text(frame, "SETTINGS", 32, 34, theme.heading_size(), theme.gold())?
-    components.panel(frame, components.rect(width / 2 - 330, 150, 660, 350))?
-    rocket_raylib.draw_text(frame, "Audio [M]", width / 2 - 280, 218, theme.body_size(), theme.text())?
-    var audio = "On"
-    if not state.settings.audio_enabled:
-        audio = "Off"
-    rocket_raylib.draw_text(frame, audio, width / 2 + 20, 218, theme.body_size(), theme.emerald())?
-    rocket_raylib.draw_text(frame, "Volume [Left/Right]", width / 2 - 280, 310, theme.body_size(), theme.text())?
-    rocket_raylib.draw_text(frame, string.concat(string.from_int(state.settings.volume_percent), "%"), width / 2 + 20, 310, theme.body_size(), theme.emerald())?
-    rocket_raylib.draw_text(frame, "AI players [Down/Up]", width / 2 - 280, 402, theme.body_size(), theme.text())?
-    rocket_raylib.draw_text(frame, string.from_int(state.settings.ai_count), width / 2 + 20, 402, theme.body_size(), theme.emerald())?
-    var row = 0
-    while row < 3:
-        let minus = setting_row_button(row, 0, width)
-        components.button(window, frame, minus, "-", true, components.contains(minus, mouse_x, mouse_y), false)?
-        if row > 0:
-            let plus = setting_row_button(row, 1, width)
-            components.button(window, frame, plus, "+", true, components.contains(plus, mouse_x, mouse_y), false)?
-        row = row + 1
-    return rocket_raylib.draw_text(frame, "Escape or B returns to the lobby", 32, 540, theme.body_size(), theme.muted())
-
 fn draw(window: rocket_raylib.Window, state: State, resources: ui_resources.UiResources) -> Result[Bool, String]:
     let mouse_x = rocket_raylib.mouse_x(window)
     let mouse_y = rocket_raylib.mouse_y(window)
     let frame = rocket_raylib.begin_frame(window)?
     rocket_raylib.clear(frame, theme.canvas(state.settings.light_mode))?
     if state.screen == 0:
-        draw_startup(window, frame)?
-    if state.screen == 1:
-        draw_lobby(window, frame, state, mouse_x, mouse_y)?
+        shell_view.draw_startup(window, frame, resources, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window))?
+    if shell_view.is_lobby_screen(state.screen):
+        shell_view.draw_lobby(window, frame, resources, shell_view.lobby_focus(state.screen), state.notice, state.settings.light_mode, mouse_x, mouse_y)?
     if state.screen == 2:
         blackjack_view.draw(window, frame, state.game, state.selected_bet, mouse_x, mouse_y)?
     if state.screen == 3:
-        draw_settings(window, frame, state, mouse_x, mouse_y)?
+        shell_view.draw_settings(window, frame, resources, state.settings, state.settings.light_mode, mouse_x, mouse_y)?
     if state.screen == 4:
         roulette_view.draw(window, frame, state.roulette.game, state.roulette_kind, state.roulette_target, state.roulette_help, mouse_x, mouse_y)?
     if state.screen == 5:
@@ -1840,10 +1908,14 @@ fn draw(window: rocket_raylib.Window, state: State, resources: ui_resources.UiRe
         crash_view.draw(window, frame, table, state.crash_help, mouse_x, mouse_y)?
     if state.screen == 13:
         slots_view.draw(window, frame, state.slots, state.slots_help, state.slots_reel_stage, mouse_x, mouse_y)?
+    if shell_view.is_help_screen(state.screen):
+        shell_view.draw_help(window, frame, resources, shell_view.help_source(state.screen), state.settings.light_mode)?
+    if state.screen != 0:
+        shell_view.draw_shell(window, frame, resources, shell_view.screen_title(state.screen), visible_balance(state), not shell_view.is_lobby_screen(state.screen), state.settings.light_mode, mouse_x, mouse_y)?
     if state.error != "":
-        components.modern_modal(window, frame, resources, "Something needs attention", state.error, state.settings.light_mode)?
+        components.modern_modal(window, frame, resources, "Something needs attention", state.error, false, state.settings.light_mode, mouse_x, mouse_y)?
     if state.exit_prompt:
-        components.modern_modal(window, frame, resources, "Leave Scroll2Roll?", "Your local settings and settled progress are saved", state.settings.light_mode)?
+        components.modern_modal(window, frame, resources, "Leave Scroll2Roll?", "Your local settings and settled progress are saved", true, state.settings.light_mode, mouse_x, mouse_y)?
     rocket_raylib.end_frame(frame)?
     return Ok(true)
 
@@ -1855,6 +1927,9 @@ pub fn step_for_test(state: State, window: rocket_raylib.Window) -> State:
 
 pub fn draw_for_test(window: rocket_raylib.Window, state: State) -> Result[Bool, String]:
     return draw(window, state, ui_resources.empty())
+
+pub fn draw_with_resources_for_test(window: rocket_raylib.Window, state: State, resources: ui_resources.UiResources) -> Result[Bool, String]:
+    return draw(window, state, resources)
 
 fn volume_value(percent: Int) -> Float:
     if percent <= 0:

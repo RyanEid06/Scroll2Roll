@@ -10,6 +10,7 @@ uses explicit procedural degraded modes for any failed load.
 | Runtime path | Purpose | Source and rights | SHA-256 |
 | --- | --- | --- | --- |
 | `assets/fonts/manrope/Manrope-wght.ttf` | Unmodified Manrope variable family, weights 200-800; display, heading, body, label, numeric, caption roles | Google Fonts `ofl/manrope`, retrieved 2026-08-09; Copyright 2018/2019 The Manrope Project Authors; SIL Open Font License 1.1 | `D0639BE45D0AF36E798172419D7BD173C4BD4F29E2B76CBB69DB1D11BF8B0A40` |
+| `assets/fonts/manrope/Manrope-Medium.ttf` | Static weight-500 production instance used by raylib because its TTF loader does not select variable-font axes | Generated locally from the exact unmodified `Manrope-wght.ttf` above with FontTools 4.59.0 `varLib.instancer`, `wght=500`, on 2026-08-11; same SIL Open Font License 1.1 | `98EE850D1D257F4BB2328C24DFFF392F85A351A61ED7F600DBA140BCBB5313F9` |
 | `assets/fonts/manrope/OFL.txt` | Required redistributed copyright/license | Exact Google Fonts license file, retrieved 2026-08-09 | `E01B637272E0CBDFB240184DD98EA5CC671556D9894DAE2668D92AB2C906787C` |
 | `assets/fonts/manrope/METADATA.pb` | Human-readable upstream family metadata | Exact Google Fonts metadata, retrieved 2026-08-09 | `368BEDA3AA55B0AFE90EDC142D67CF37E743258C76481D520172AFBC148C6CCA` |
 
@@ -19,9 +20,11 @@ Primary upstream URLs:
 - `https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/OFL.txt`
 - `https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/METADATA.pb`
 
-Manrope is bundled unmodified. The OFL notice must remain in source and every
-portable package containing the font. Scroll2Roll does not imply endorsement by
-the Manrope authors or Google Fonts.
+The upstream variable file is bundled unmodified. The static Medium runtime
+instance changes only the variable weight coordinate and remains under the
+same OFL license. The OFL notice must remain in source and every portable
+package containing either font. Scroll2Roll does not imply endorsement by the
+Manrope authors, Google Fonts, or FontTools.
 
 ## Original ImageGen artwork
 

@@ -43,7 +43,7 @@ pub fn load_from_paths(window: rocket_raylib.Window, font_path: String, atlas_a_
     return UiResources(font, font_ready, atlas_a, atlas_a_ready, atlas_b, atlas_b_ready, message)
 
 pub fn load(window: rocket_raylib.Window) -> UiResources:
-    return load_from_paths(window, "assets/fonts/manrope/Manrope-wght.ttf", "assets/ui/scroll2roll-cover-atlas-a.png", "assets/ui/scroll2roll-cover-atlas-b.png")
+    return load_from_paths(window, "assets/fonts/manrope/Manrope-Medium.ttf", "assets/ui/scroll2roll-cover-atlas-a.png", "assets/ui/scroll2roll-cover-atlas-b.png")
 
 pub fn ready(value: UiResources) -> Bool:
     return value.font_ready and value.atlas_a_ready and value.atlas_b_ready

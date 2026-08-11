@@ -2,10 +2,17 @@
 
 ## Global and lobby
 
-- `Enter`: continue from startup or open Blackjack from the lobby.
+- `Enter`: continue from startup or activate the focused lobby game/control.
+- `Tab` / `Shift+Tab`: move focus through visible game cards and lobby actions.
+- Arrow keys: move card focus or change compact lobby pages.
+- Mouse wheel: move through compact lobby pages.
 - `S`: open Settings from the lobby.
-- `Escape`: open the exit confirmation in the lobby; return from Settings or a ready/settled Blackjack table.
-- Mouse: select lobby tiles and controls.
+- `T`: toggle the persisted dark/light theme from the global shell.
+- `P`: open global Help from the lobby; game screens retain their documented
+  per-game Help behavior.
+- `Escape`: open exit confirmation in the lobby; request Back elsewhere.
+- `B`: request Back from any non-lobby screen.
+- Mouse: select the full illustrated cards, page arrows, and shell controls.
 - Settings: `T` toggles the persisted dark/light theme; `R` toggles the
   persisted reduced-motion preference; `M` toggles audio; Left/Right changes
   volume; Down/Up changes Hold'em AI count.

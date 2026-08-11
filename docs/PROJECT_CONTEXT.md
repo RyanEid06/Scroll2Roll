@@ -290,7 +290,7 @@ suite to 42/42. Debug and Release validation both pass.
 
 Milestone 2 is also complete. Two original ImageGen atlases provide the hero and
 eleven unique covers; the exact prompts, generation IDs, visual review, and
-hashes are committed. The unmodified Manrope variable family and its SIL OFL
+hashes are committed. The unmodified Manrope variable source and its SIL OFL
 1.1 license/metadata are bundled with exact upstream URLs and hashes. The narrow
 native adapter now provides only the demonstrated primitives needed for the new
 presentation. `ui_resources.rocket` owns font/atlas success, degraded mode, and
@@ -298,11 +298,24 @@ cleanup. Save-v4 adds only `light_mode` and `reduced_motion`, safely migrates
 valid save-v1/v2/v3, and preserves credits. The replacement component layer and
 focused tests bring the suite to 44/44 in both Debug and Release.
 
-The old views still render through compatibility token aliases at this precise
-milestone and remain visually rejected. No visual-completion claim is valid
-until original assets, bundled typography, resource ownership, persistence,
-shared components, the shell/lobby, and all eleven interiors pass their later
-milestones. `docs/UI_OVERHAUL_FOUNDATION.md` is the audit and acceptance ledger.
+Milestone 3 is complete. The actual native shell now has a branded launch
+scene, persistent application header, wide navigation rail, visible balance,
+global theme/help/settings controls, a responsive equal-card eleven-game
+lobby, compact 4/4/3 paging, purpose-designed dark/light rendering, readable
+minimum-size settings/help, and explicit confirmation buttons. Every non-lobby
+screen uses the same Back policy and consults its engine-defined safe boundary;
+live wagers are preserved with an explanation. The native adapter disables
+raylib's implicit Escape-close key so Rocket owns that policy. A deterministic
+SIL-OFL static Manrope Medium instance fixes raylib's variable-font ExtraLight
+selection while preserving the exact variable source. Actual native captures
+at every required viewport and maximized passed review. Focused shell tests and
+all accepted regressions bring the suite to 45/45 in Debug and Release.
+
+The eleven game interiors still render through compatibility-era views and
+remain visually rejected. No visual-completion claim is valid until every
+interior, the aligned website, the real asset-bearing package, and the final
+acceptance matrix pass. `docs/UI_OVERHAUL_FOUNDATION.md` is the audit and
+acceptance ledger.
 
 ## Milestones
 
@@ -368,10 +381,15 @@ milestones. `docs/UI_OVERHAUL_FOUNDATION.md` is the audit and acceptance ledger.
   tokens, clamped responsive geometry for all five required viewports, one new
   focused test, and passing 42/42 Debug and Release gates.
 - Completed: native UI overhaul milestone 2, including two reviewed original
-  ImageGen atlases, unmodified SIL-OFL Manrope typography, exact asset/prompt
+  ImageGen atlases, SIL-OFL Manrope typography, exact asset/prompt
   provenance, safe production load/degraded/unload ownership, narrow tested
   raylib primitives, save-v4 theme/reduced-motion migration, the replacement
   component system, and passing 44/44 Debug and Release gates.
+- Completed: native UI overhaul milestone 3, including branded startup,
+  persistent responsive shell, state-safe Back, purpose-designed dark/light
+  themes, settings/help/explicit modals, the illustrated responsive eleven-card
+  lobby, static Manrope Medium rendering, actual native visual review at every
+  required viewport, and passing 45/45 Debug and Release gates.
 
 ## Major decisions
 
@@ -415,13 +433,13 @@ Read `AGENTS.md`, `UI_OVERHAUL.md`, `docs/MASTER_PLAN.md`,
 `docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
 status and preserve user changes. The accepted 0.2.0 baseline remains intact;
 Mines, Dice, HiLo, Crash, Slots, and the accepted save-v3 behavior baseline are
-complete. The UI-overhaul suite currently passes 44/44. The
+complete. The UI-overhaul suite currently passes 45/45. The
 verified local 0.3.0 archive is 1,919,372 bytes with SHA-256
 `FD2B4EC31734DCB6E51707C862A439966E5771CBDA136DCD4F6B09726082688B`;
 source/staged website and responsive browser checks pass. Keep using frozen Rocket 2.0
 and the pinned raylib integration with custom frame control forced off. Do not
 push, publish, deploy, sign, or add an unapproved game without owner approval.
-UI overhaul milestones 1 and 2 pass 44/44 in Debug and Release. Continue with
-the startup, shell, persistent safe Back behavior, settings/help, and responsive
-eleven-card lobby. Do not mistake the compatibility-rendered old views for
-accepted UI.
+UI overhaul milestones 1 through 3 pass 45/45 in Debug and Release. Continue
+with the Blackjack, European Roulette, No-Limit Hold'em, and HiLo interior
+replacement group. Do not mistake the compatibility-rendered old game views
+for accepted UI.

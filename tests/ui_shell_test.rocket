@@ -1,0 +1,154 @@
+import src.app.application
+import src.app.components
+import src.app.shell_view
+import src.app.ui_resources
+import src.blackjack.blackjack_engine
+import src.rocket_raylib
+import src.rocket_raylib_testing
+import std.file
+import std.testing
+
+fn press(window: rocket_raylib.Window, key: Int, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_key(key, true, false)
+    return application.step_for_test(state, window)
+
+fn click(window: rocket_raylib.Window, value: components.Rect, state: application.State) -> application.State:
+    let scripted = rocket_raylib_testing.set_mouse(value.x + value.width / 2, value.y + value.height / 2, true)
+    return application.step_for_test(state, window)
+
+fn overlap(first: components.Rect, second: components.Rect) -> Bool:
+    return first.x < second.x + second.width and first.x + first.width > second.x and first.y < second.y + second.height and first.y + first.height > second.y
+
+fn layout_valid(width: Int, height: Int, expected_pages: Int) -> Bool:
+    if shell_view.lobby_page_count(width, height) != expected_pages:
+        return false
+    let capacity = shell_view.lobby_capacity(width, height)
+    var index = 0
+    while index < 11:
+        let card = shell_view.lobby_card_rect(index, width, height)
+        if card.width < 160 or card.height < 120 or card.x < 0 or card.y < 0 or card.x + card.width > width or card.y + card.height > height:
+            return false
+        var other = index + 1
+        while other < 11:
+            if index / capacity == other / capacity and overlap(card, shell_view.lobby_card_rect(other, width, height)):
+                return false
+            other = other + 1
+        index = index + 1
+    let settings = shell_view.settings_panel_rect(width, height)
+    if settings.x < 0 or settings.y < 64 or settings.width <= 0 or settings.height <= 0 or settings.x + settings.width > width or settings.y + settings.height > height:
+        return false
+    let back = shell_view.back_rect(width)
+    let theme = shell_view.theme_rect(width)
+    let help = shell_view.help_rect(width)
+    let settings_button = shell_view.settings_rect(width)
+    if back.width < 44 or theme.width < 44 or help.width < 44 or settings_button.width < 44:
+        return false
+    if overlap(back, theme) or overlap(theme, help) or overlap(help, settings_button):
+        return false
+    return true
+
+fn run() -> Result[Int, String]:
+    if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
+        return Ok(1)
+    if not layout_valid(800, 600, 3) or not layout_valid(1024, 768, 2) or not layout_valid(1280, 720, 2) or not layout_valid(1600, 900, 1) or not layout_valid(1920, 1080, 1):
+        return Ok(2)
+    let temporary = testing.temp_directory("scroll2roll-ui-shell")?
+    let save_path = testing.fixture_path(temporary, "settings.s2r")?
+    let window = rocket_raylib.open_window(800, 600, "UI shell navigation")?
+    let resources = ui_resources.load_from_paths(window, "font.ttf", "atlas-a.png", "atlas-b.png")
+    var state = application.initial_for_test(save_path)?
+    application.draw_with_resources_for_test(window, state, resources)?
+    state = press(window, rocket_raylib.key_enter(), state)
+    if not shell_view.is_lobby_screen(state.screen):
+        return Ok(3)
+    application.draw_with_resources_for_test(window, state, resources)?
+    state = click(window, shell_view.help_rect(800), state)
+    if state.screen != 201:
+        return Ok(4)
+    application.draw_with_resources_for_test(window, state, resources)?
+    state = click(window, shell_view.back_rect(800), state)
+    if state.screen != 1:
+        return Ok(5)
+    state = click(window, shell_view.theme_rect(800), state)
+    if not state.settings.light_mode or not file.exists(save_path):
+        return Ok(6)
+    application.draw_with_resources_for_test(window, state, resources)?
+    state = click(window, shell_view.settings_rect(800), state)
+    if state.screen != 3:
+        return Ok(7)
+    application.draw_with_resources_for_test(window, state, resources)?
+    state = click(window, shell_view.setting_control_rect(1, 0, 800, 600), state)
+    if not state.settings.reduced_motion:
+        return Ok(8)
+    state = click(window, shell_view.back_rect(800), state)
+    state = press(window, rocket_raylib.key_enter(), state)
+    if state.screen != 2 or blackjack_engine.phase_code(state.game.phase) != 0:
+        return Ok(9)
+    state = click(window, shell_view.help_rect(800), state)
+    if state.screen != 202:
+        return Ok(10)
+    application.draw_with_resources_for_test(window, state, resources)?
+    state = click(window, shell_view.back_rect(800), state)
+    if state.screen != 2:
+        return Ok(11)
+    state = click(window, shell_view.back_rect(800), state)
+    if not shell_view.is_lobby_screen(state.screen):
+        return Ok(12)
+    state = press(window, rocket_raylib.key_enter(), state)
+    state = press(window, rocket_raylib.key_enter(), state)
+    var active_guard = 0
+    while blackjack_engine.phase_code(state.game.phase) == 3 and active_guard < 6:
+        state = press(window, rocket_raylib.key_n(), state)
+        state = press(window, rocket_raylib.key_enter(), state)
+        active_guard = active_guard + 1
+    let active_phase = blackjack_engine.phase_code(state.game.phase)
+    if state.screen != 2 or active_phase == 0 or active_phase == 3:
+        return Ok(13)
+    let round = state.game.round_number
+    let balance = state.game.players[0].balance
+    state = click(window, shell_view.back_rect(800), state)
+    if state.screen != 2:
+        return Ok(14)
+    if state.error == "":
+        return Ok(22)
+    if state.game.round_number != round:
+        return Ok(23)
+    if state.game.players[0].balance != balance:
+        return Ok(24)
+    let outside = rocket_raylib_testing.set_mouse(5, 5, true)
+    state = application.step_for_test(state, window)
+    if state.error == "":
+        return Ok(15)
+    state = click(window, components.modal_primary_rect(800, 600, false), state)
+    if state.error != "":
+        return Ok(16)
+    state = press(window, rocket_raylib.key_escape(), state)
+    if state.error == "" or state.screen != 2:
+        return Ok(17)
+    state = press(window, rocket_raylib.key_enter(), state)
+    state = application.initial_for_test(save_path)?
+    state = press(window, rocket_raylib.key_enter(), state)
+    state = press(window, rocket_raylib.key_escape(), state)
+    if not state.exit_prompt:
+        return Ok(18)
+    let outside_exit = rocket_raylib_testing.set_mouse(5, 5, true)
+    state = application.step_for_test(state, window)
+    if not state.exit_prompt:
+        return Ok(19)
+    state = click(window, components.modal_secondary_rect(800, 600), state)
+    if state.exit_prompt or not state.running:
+        return Ok(20)
+    ui_resources.unload(resources)?
+    rocket_raylib.close_window(window)?
+    testing.cleanup_temp(temporary)?
+    if rocket_raylib_testing.font_live_count() != 0 or rocket_raylib_testing.texture_live_count() != 0 or rocket_raylib_testing.buffer_live_count() != 0:
+        return Ok(21)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

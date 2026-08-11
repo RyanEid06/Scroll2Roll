@@ -1,4 +1,5 @@
 import src.app.application
+import src.app.shell_view
 import src.plinko.plinko_engine
 import src.rocket_raylib
 import src.rocket_raylib_testing
@@ -37,7 +38,10 @@ fn run() -> Result[Int, String]:
         case Ok(window):
             var state = application.initial_for_test(save_path)?
             state = press(window, rocket_raylib.key_enter(), state)
-            state = click(window, 920, 280, state)
+            state = press(window, rocket_raylib.key_tab(), state)
+            state = press(window, rocket_raylib.key_tab(), state)
+            let lobby_card = shell_view.lobby_card_rect(2, 1280, 720)
+            state = click(window, lobby_card.x + lobby_card.width / 2, lobby_card.y + lobby_card.height / 2, state)
             if state.screen != 5 or plinko_engine.phase_code(state.plinko.game.phase) != 0:
                 return Ok(2)
             state = press(window, rocket_raylib.key_p(), state)

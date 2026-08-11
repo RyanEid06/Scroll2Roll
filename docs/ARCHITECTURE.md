@@ -134,6 +134,14 @@ application owns presentation state, navigation, theme, reduced motion,
 scrolling, focus, animation clocks, and resource manifest handles. Each view
 continues to consume only its public game/session projection.
 
+`src/app/shell_view.rocket` owns the responsive startup, persistent global
+shell, lobby, settings, and global-help composition. Compact lobby screen IDs
+encode keyboard card focus without leaking it into a game engine; help screen
+IDs preserve the exact source screen. `application.rocket` remains the router
+and delegates Back eligibility to each existing engine/session boundary. The
+adapter calls raylib `SetExitKey(KEY_NULL)` after window creation so Escape is
+ordinary input and cannot bypass Rocket-owned active-wager protection.
+
 Narrow additions to `native/rocket_raylib_adapter.*` may expose only primitive
 rendering, custom-font measurement, scissoring, mouse-wheel input, and resource
 lifetime facts required by the reviewed UI. The adapter cannot own themes,
@@ -145,5 +153,6 @@ region texture drawing, thick lines, triangles, rings, rounded rectangles and
 outlines, balanced scissoring, and consumable mouse-wheel input. All validate
 arguments and resource/frame handles, expose deterministic test behavior, and
 remain policy-free. `src/app/ui_resources.rocket` is the single owner for the
-bundled Manrope font and two reviewed cover atlases; it loads each independently,
+bundled static Manrope Medium face and two reviewed cover atlases; it loads each
+independently,
 reports degraded mode, and releases every live handle before the window closes.

@@ -78,6 +78,52 @@ This file records the complete local acceptance pass performed on Windows x64 on
   remained clean. Nothing was pushed, deployed, published, released, signed,
   or purchased.
 
+## Native UI overhaul milestone 3 - responsive shell and lobby
+
+- On 2026-08-11, the actual native Release executable was inspected in both
+  dark and light themes. Exact client captures cover startup at 1280x720;
+  lobby at 800x600, 1024x768, 1280x720, 1600x900, 1920x1080, and maximized
+  1920x991; and settings, global help, exit confirmation, and all three compact
+  lobby pages at 800x600. Evidence remains ignored under
+  `out/visual-audit/milestone3/`.
+- The branded launch scene, persistent top shell, wide navigation rail,
+  purpose-designed theme switch, visible balance, responsive hero, and all
+  eleven equal illustrated game cards were reviewed for hierarchy, crop,
+  typography, contrast, focus, clipping, and dead space. The compact lobby
+  correctly pages as 4/4/3 cards and supports mouse, wheel, arrows, Tab, Enter,
+  and explicit page controls. Light mode uses its own canvas, surfaces,
+  shadows, borders, and text values rather than a color inversion.
+- Settings and global help fit the minimum viewport. Settings exposes theme,
+  reduced motion, audio, volume, Hold'em AI count, and reset guidance through
+  clear toggles, steppers, and slider. Exit confirmation presents explicit
+  Cancel and destructive Exit actions. Help returns to its exact source.
+- Every non-lobby screen has a persistent Back control. Back, `B`, and Escape
+  all consult the active engine's existing safe-return boundary. A live wager
+  remains intact and receives a state-aware explanation; ready or settled
+  games return immediately. Raylib's default Escape close key is disabled with
+  `SetExitKey(KEY_NULL)` so the Rocket application, not the native window loop,
+  owns this policy.
+- The retrieved Manrope variable source remains unmodified. Because raylib
+  selected its first ExtraLight instance, the shipped face is a deterministic
+  `wght=500` static instance named `Manrope-Medium.ttf`, derived with FontTools
+  4.59.0 under the same SIL OFL 1.1 license. Its SHA-256 is
+  `98EE850D1D257F4BB2328C24DFFF392F85A351A61ED7F600DBA140BCBB5313F9`.
+  The actual Release log confirms the Medium face and both 1536x1024 atlases
+  loaded successfully.
+- `ui_shell_test.rocket` verifies the five required dimensions, compact and
+  wide page counts, positive non-overlapping geometry, minimum card/control
+  sizes, both-theme resource-backed drawing, theme persistence, reduced
+  motion, exact help return, safe Back, blocked live-wager integrity, and
+  explicit modal hitboxes. All eleven GUI flow tests route through the new
+  responsive lobby instead of legacy fixed strip coordinates.
+- Sequential Debug and Release `scripts/validate.ps1` passes each completed the
+  native build, `rocketc check`, all 45 tests, and both formatting checks. A
+  discarded concurrent attempt produced one linker write collision because
+  both configurations share `.rocketc` test executable paths; the isolated
+  rerun passed that same exhaustive Hold'em evaluator and the full suite.
+  Frozen Rocket remained clean. Nothing was pushed, deployed, published,
+  released, signed, or purchased.
+
 ## 0.2.0 expansion baseline
 
 Before expansion implementation, both Debug and Release

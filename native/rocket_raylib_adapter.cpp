@@ -156,6 +156,7 @@ extern "C" int64_t rlv_window_open(int64_t width, int64_t height,
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
     InitWindow(static_cast<int>(width), static_cast<int>(height), title->c_str());
     if (!IsWindowReady()) return RLV_ERR_UNAVAILABLE;
+    SetExitKey(KEY_NULL);
   }
   state.windowOpen = true;
   state.closeRequested = false;

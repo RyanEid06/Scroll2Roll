@@ -144,6 +144,17 @@ express.
 
 ## Acceptance ledger
 
+Implementation status on 2026-08-11:
+
+| Milestone | Status | Evidence |
+| --- | --- | --- |
+| Foundation and rejected-baseline audit | Accepted | Five responsive geometry targets; 42/42 Debug and Release |
+| Assets, resources, persistence, components | Accepted | Reviewed ImageGen atlases, licensed Manrope, degraded modes; 44/44 |
+| Startup, shell, lobby, settings, help, modals | Accepted | Actual dark/light native captures at every target and maximized; 45/45 |
+| Blackjack, Roulette, Hold'em, HiLo interiors | Pending | Must pass focused implementation, visual, and regression gates |
+| Remaining seven interiors | Pending | Must pass focused implementation, visual, and regression gates |
+| Website, package, final acceptance | Pending | Must use the completed asset-bearing application |
+
 Every milestone must pass the relevant focused tests and the complete Debug and
 Release validation scripts before its commit. Visual milestones also require
 actual native screenshots in both themes at every target resolution; screenshots

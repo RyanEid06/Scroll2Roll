@@ -40,7 +40,7 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
   for the complete owner-mandated UI overhaul.
 - [x] Add reviewed original assets, licensed bundled typography, safe resource
   ownership, theme migration, reduced motion, and the shared component system.
-- [ ] Replace startup, global shell, settings, help/modals, and the eleven-card
+- [x] Replace startup, global shell, settings, help/modals, and the eleven-card
   lobby; validate dark/light rendering at every target desktop size.
 - [ ] Replace all eleven game interiors in reviewable groups while preserving
   every accepted deterministic engine and complete input flow.

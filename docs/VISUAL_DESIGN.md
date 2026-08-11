@@ -35,10 +35,13 @@ textures, and sounds do not leak into engine APIs.
 ## Typography and original art
 
 Manrope replaces the prototype bitmap face for the new display, heading, body,
-label, numeric, and caption roles. The exact unmodified font and SIL OFL 1.1
-notice are bundled under `assets/fonts/manrope/`; custom measurement uses the
-same loaded font as drawing. Default raylib text is an explicit tested degraded
-mode, not the intended presentation.
+label, numeric, and caption roles. The exact unmodified variable source and SIL
+OFL 1.1 notice are bundled under `assets/fonts/manrope/`. Production drawing
+uses the deterministic `wght=500` static `Manrope-Medium.ttf` instance derived
+from that source with FontTools 4.59.0 because raylib otherwise selected the
+variable face's ExtraLight instance. Custom measurement uses the same loaded
+font as drawing. Default raylib text is an explicit tested degraded mode, not
+the intended presentation.
 
 Two reviewed 1536x1024 ImageGen atlases provide a coherent original hero and
 eleven distinct game covers. They are sampled as 512x512 source cells and paired
@@ -55,8 +58,11 @@ degraded-mode glyph if its atlas cannot load.
 
 Keyboard focus, disabled states, hover/pressed states, readable hand totals, suit differentiation, and resolution-aware layout are required. Motion must never obscure legal actions or round state.
 
-The implemented startup, lobby, settings, exit confirmation, Blackjack table,
-and European Roulette table use the same token system. Roulette adds a readable
+The implemented and visually accepted startup, responsive lobby, global shell,
+settings, help, and exit confirmation use the same token system. Their actual
+native dark/light captures pass at the five required viewport sizes and
+maximized. The game-interior descriptions below remain acceptance targets until
+their implementation groups pass. Roulette adds a readable
 red/black/emerald number grid, outside-bet regions, gold keyboard focus and
 chips, an original procedural wheel, engine-locked ball position, help overlay,
 and result history without copying a casino-provider layout. The website

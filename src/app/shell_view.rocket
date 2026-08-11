@@ -1,0 +1,433 @@
+import src.app.components
+import src.app.layout
+import src.app.registry
+import src.app.theme
+import src.app.ui_resources
+import src.persistence
+import src.rocket_raylib
+import std.string
+
+pub fn is_lobby_screen(screen: Int) -> Bool:
+    return screen == 1 or screen >= 100 and screen < 100 + registry.game_count()
+
+pub fn lobby_focus(screen: Int) -> Int:
+    if screen >= 100 and screen < 100 + registry.game_count():
+        return screen - 100
+    return 0
+
+pub fn lobby_screen(focus: Int) -> Int:
+    var safe = focus
+    if safe < 0:
+        safe = registry.game_count() - 1
+    if safe >= registry.game_count():
+        safe = 0
+    return 100 + safe
+
+pub fn is_help_screen(screen: Int) -> Bool:
+    return screen >= 201 and screen <= 213
+
+pub fn help_screen(source_screen: Int) -> Int:
+    if is_lobby_screen(source_screen):
+        return 201
+    return 200 + source_screen
+
+pub fn help_source(screen: Int) -> Int:
+    if not is_help_screen(screen):
+        return screen
+    return screen - 200
+
+pub fn screen_title(screen: Int) -> String:
+    var source = screen
+    if is_help_screen(source):
+        source = help_source(source)
+    if is_lobby_screen(source):
+        return "All games"
+    if source == 2:
+        return "Blackjack"
+    if source == 3:
+        return "Settings"
+    if source == 4:
+        return "European Roulette"
+    if source == 5:
+        return "Plinko"
+    if source == 6:
+        return "Coop Climb"
+    if source == 7:
+        return "Midnight Crossing"
+    if source == 8:
+        return "No-Limit Hold'em"
+    if source == 9:
+        return "Mines"
+    if source == 10:
+        return "Dice"
+    if source == 11:
+        return "HiLo"
+    if source == 12:
+        return "Crash"
+    if source == 13:
+        return "Slots"
+    return "Scroll2Roll"
+
+pub fn back_rect(width: Int) -> components.Rect:
+    return components.rect(16, 10, 104, 44)
+
+pub fn settings_rect(width: Int) -> components.Rect:
+    return components.rect(width - 108, 10, 92, 44)
+
+pub fn help_rect(width: Int) -> components.Rect:
+    return components.rect(width - 184, 10, 68, 44)
+
+pub fn theme_rect(width: Int) -> components.Rect:
+    return components.rect(width - 274, 10, 82, 44)
+
+pub fn balance_rect(width: Int) -> components.Rect:
+    return components.rect(width - 418, 17, 136, 30)
+
+pub fn exit_rect(width: Int, height: Int) -> components.Rect:
+    return components.rect(layout.content_x(width), height - layout.safe_margin(width) - 44, 84, 44)
+
+pub fn lobby_columns(width: Int) -> Int:
+    return layout.lobby_columns(width)
+
+pub fn lobby_rows(width: Int, height: Int) -> Int:
+    if height >= 850:
+        return 3
+    return 2
+
+pub fn lobby_capacity(width: Int, height: Int) -> Int:
+    return lobby_columns(width) * lobby_rows(width, height)
+
+pub fn lobby_page_count(width: Int, height: Int) -> Int:
+    let capacity = lobby_capacity(width, height)
+    return(registry.game_count() + capacity - 1) / capacity
+
+pub fn lobby_page(focus: Int, width: Int, height: Int) -> Int:
+    return focus / lobby_capacity(width, height)
+
+pub fn hero_rect(width: Int) -> components.Rect:
+    var hero_height = 104
+    if width >= theme.breakpoint_compact():
+        hero_height = 128
+    return components.rect(layout.content_x(width), layout.top_bar_height(width) + layout.safe_margin(width), layout.content_width(width), hero_height)
+
+pub fn lobby_grid_y(width: Int) -> Int:
+    let hero = hero_rect(width)
+    return hero.y + hero.height + 58
+
+pub fn lobby_card_rect(index: Int, width: Int, height: Int) -> components.Rect:
+    let columns = lobby_columns(width)
+    let capacity = lobby_capacity(width, height)
+    let page = index / capacity
+    let local = index - page * capacity
+    let row = local / columns
+    let column = local - row * columns
+    let gap = theme.space_md()
+    let card_width =(layout.content_width(width) -(columns - 1) * gap) / columns
+    let available = height - lobby_grid_y(width) - layout.safe_margin(width) - 54
+    let rows = lobby_rows(width, height)
+    let card_height =(available -(rows - 1) * gap) / rows
+    return components.rect(layout.content_x(width) + column *(card_width + gap), lobby_grid_y(width) + row *(card_height + gap), card_width, card_height)
+
+pub fn previous_page_rect(width: Int, height: Int) -> components.Rect:
+    return components.rect(width / 2 - 110, height - layout.safe_margin(width) - 44, 44, 44)
+
+pub fn next_page_rect(width: Int, height: Int) -> components.Rect:
+    return components.rect(width / 2 + 66, height - layout.safe_margin(width) - 44, 44, 44)
+
+pub fn settings_panel_rect(width: Int, height: Int) -> components.Rect:
+    var panel_width = layout.content_width(width)
+    if panel_width > 920:
+        panel_width = 920
+    let x = layout.content_x(width) +(layout.content_width(width) - panel_width) / 2
+    let y = layout.top_bar_height(width) + layout.safe_margin(width)
+    return components.rect(x, y, panel_width, height - y - layout.safe_margin(width))
+
+pub fn setting_control_rect(row: Int, side: Int, width: Int, height: Int) -> components.Rect:
+    let panel = settings_panel_rect(width, height)
+    let y = panel.y + 72 + row * 64
+    if row < 3:
+        return components.rect(panel.x + panel.width - 92, y + 8, 60, 32)
+    if side == 0:
+        return components.rect(panel.x + panel.width - 300, y + 2, 44, 44)
+    return components.rect(panel.x + panel.width - 76, y + 2, 44, 44)
+
+pub fn settings_slider_rect(width: Int, height: Int) -> components.Rect:
+    let minus = setting_control_rect(3, 0, width, height)
+    let plus = setting_control_rect(3, 1, width, height)
+    return components.rect(minus.x + 56, minus.y + 4, plus.x - minus.x - 68, 36)
+
+fn draw_cover(frame: rocket_raylib.Frame, texture: rocket_raylib.Texture, cell: Int, value: components.Rect) -> Result[Bool, String]:
+    var source_x = ui_resources.source_x(cell)
+    var source_y = ui_resources.source_y(cell)
+    var source_width = 512
+    var source_height = 512
+    if value.width > value.height:
+        source_height = 512 * value.height / value.width
+        source_y = source_y +(512 - source_height) / 2
+    else:
+        source_width = 512 * value.width / value.height
+        source_x = source_x +(512 - source_width) / 2
+    return rocket_raylib.draw_texture_region(frame, texture, source_x, source_y, source_width, source_height, value.x, value.y, value.width, value.height, rocket_raylib.color(255, 255, 255, 255))
+
+fn draw_mark(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.28, 12, theme.violet(light_mode))?
+    rocket_raylib.draw_ring_pixels(frame, value.x + value.width / 2, value.y + value.height / 2, value.width / 5, value.width / 3, 28.0, 308.0, 24, rocket_raylib.color(255, 255, 255, 255))?
+    rocket_raylib.draw_circle_pixels(frame, value.x + value.width * 2 / 3, value.y + value.height / 3, 3, theme.highlight(light_mode))?
+    return Ok(true)
+
+fn draw_navigation_rail(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, light_mode: Bool) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let rail_width = layout.navigation_width(width)
+    if rail_width == 0:
+        return Ok(true)
+    rocket_raylib.draw_rectangle(frame, 0, layout.top_bar_height(width), rail_width, height - layout.top_bar_height(width), theme.shell(light_mode))?
+    draw_mark(window, frame, resources, components.rect((rail_width - 42) / 2, layout.top_bar_height(width) + 24, 42, 42), light_mode)?
+    components.type_centered(window, frame, resources, "ALL", components.rect(0, layout.top_bar_height(width) + 78, rail_width, 28), components.type_caption(), theme.secondary_text(light_mode))?
+    components.icon_button(frame, components.rect((rail_width - 44) / 2, height - 120, 44, 44), 2, true, false, false, light_mode)?
+    components.type_centered(window, frame, resources, "HELP", components.rect(0, height - 70, rail_width, 24), components.type_caption(), theme.secondary_text(light_mode))?
+    return Ok(true)
+
+fn theme_label(light_mode: Bool) -> String:
+    if light_mode:
+        return "Dark"
+    return "Light"
+
+pub fn draw_shell(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, title: String, balance: Int, show_back: Bool, light_mode: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    rocket_raylib.draw_rectangle(frame, 0, 0, width, layout.top_bar_height(width), theme.shell(light_mode))?
+    rocket_raylib.draw_line(frame, 0, layout.top_bar_height(width) - 1, width, layout.top_bar_height(width) - 1, 1.0, theme.subtle_border(light_mode))?
+    draw_navigation_rail(window, frame, resources, light_mode)?
+    var title_x = 66
+    if show_back:
+        let back = back_rect(width)
+        components.modern_button(window, frame, resources, back, "Back", components.button_quiet(), true, components.contains(back, mouse_x, mouse_y), false, light_mode)?
+        rocket_raylib.draw_line(frame, back.x + 18, back.y + 22, back.x + 29, back.y + 12, 2.0, theme.primary_text(light_mode))?
+        rocket_raylib.draw_line(frame, back.x + 18, back.y + 22, back.x + 29, back.y + 32, 2.0, theme.primary_text(light_mode))?
+        title_x = 132
+        components.type_text(window, frame, resources, "SCROLL2ROLL", title_x, 7, components.type_caption(), theme.secondary_text(light_mode))?
+    else:
+        draw_mark(window, frame, resources, components.rect(16, 11, 42, 42), light_mode)?
+        components.type_text(window, frame, resources, "SCROLL2ROLL", title_x, 8, components.type_label(), theme.primary_text(light_mode))?
+    var title_y = 29
+    var title_role = components.type_caption()
+    if show_back:
+        title_y = 27
+        title_role = components.type_label()
+    components.type_text(window, frame, resources, title, title_x, title_y, title_role, theme.primary_text(light_mode))?
+    let balance_box = balance_rect(width)
+    components.pill(window, frame, resources, balance_box, string.concat("Credits  ", string.from_int(balance)), true, light_mode)?
+    let mode = theme_rect(width)
+    components.modern_button(window, frame, resources, mode, "", components.button_secondary(), true, components.contains(mode, mouse_x, mouse_y), false, light_mode)?
+    let icon_x = mode.x + 14
+    let icon_y = mode.y + mode.height / 2
+    if light_mode:
+        rocket_raylib.draw_circle_pixels(frame, icon_x, icon_y, 7, theme.violet(light_mode))?
+        rocket_raylib.draw_circle_pixels(frame, icon_x + 4, icon_y - 3, 7, theme.elevated(light_mode))?
+    else:
+        rocket_raylib.draw_circle_pixels(frame, icon_x, icon_y, 5, theme.highlight(light_mode))?
+        rocket_raylib.draw_ring_pixels(frame, icon_x, icon_y, 9, 10, 0.0, 360.0, 18, theme.highlight(light_mode))?
+    components.type_text(window, frame, resources, theme_label(light_mode), mode.x + 31, mode.y + 14, components.type_caption(), theme.primary_text(light_mode))?
+    let help = help_rect(width)
+    components.modern_button(window, frame, resources, help, "Help", components.button_quiet(), true, components.contains(help, mouse_x, mouse_y), false, light_mode)?
+    let settings = settings_rect(width)
+    components.modern_button(window, frame, resources, settings, "Settings", components.button_quiet(), true, components.contains(settings, mouse_x, mouse_y), false, light_mode)?
+    return Ok(true)
+
+pub fn draw_startup(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, light_mode: Bool, reduced_motion: Bool, elapsed: Float) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let full = components.rect(0, 0, width, height)
+    if resources.atlas_b_ready:
+        draw_cover(frame, resources.atlas_b, ui_resources.hero_cell(), full)?
+    else:
+        rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.canvas(light_mode))?
+        rocket_raylib.draw_ring_pixels(frame, width * 3 / 4, height / 2, height / 7, height / 3, 0.0, 360.0, 64, theme.violet(light_mode))?
+        rocket_raylib.draw_circle_pixels(frame, width * 3 / 4, height / 2, height / 12, theme.highlight(light_mode))?
+    var veil = rocket_raylib.color(7, 9, 20, 194)
+    if light_mode:
+        veil = rocket_raylib.color(238, 242, 250, 204)
+    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, veil)?
+    var panel_width = 560
+    if width < 900:
+        panel_width = width - 64
+    let panel = components.rect((width - panel_width) / 2, height / 2 - 164, panel_width, 328)
+    components.modern_panel(frame, panel, light_mode, false)?
+    draw_mark(window, frame, resources, components.rect(panel.x + 32, panel.y + 30, 56, 56), light_mode)?
+    components.type_text(window, frame, resources, "SCROLL2ROLL", panel.x + 108, panel.y + 37, components.type_heading(), theme.primary_text(light_mode))?
+    components.type_text(window, frame, resources, "Eleven games. One private local arcade.", panel.x + 32, panel.y + 112, components.type_body(), theme.secondary_text(light_mode))?
+    components.badge(window, frame, resources, components.rect(panel.x + 32, panel.y + 160, 78, 30), "LOCAL", light_mode)?
+    components.badge(window, frame, resources, components.rect(panel.x + 120, panel.y + 160, 116, 30), "PLAY-MONEY", light_mode)?
+    rocket_raylib.draw_rounded_rectangle(frame, panel.x + 32, panel.y + 222, panel.width - 64, 8, 0.5, 10, theme.subtle_border(light_mode))?
+    var progress =(panel.width - 64) / 3
+    if elapsed > 0.35:
+        progress =(panel.width - 64) * 2 / 3
+    if elapsed > 0.75:
+        progress = panel.width - 64
+    if reduced_motion:
+        progress = panel.width - 64
+    rocket_raylib.draw_rounded_rectangle(frame, panel.x + 32, panel.y + 222, progress, 8, 0.5, 10, theme.primary(light_mode))?
+    var status = "Preparing the local tables..."
+    if reduced_motion:
+        status = "Reduced motion enabled - ready"
+    components.type_text(window, frame, resources, status, panel.x + 32, panel.y + 252, components.type_label(), theme.primary_text(light_mode))?
+    return components.type_text(window, frame, resources, "Enter or Space skips", panel.x + 32, panel.y + 286, components.type_caption(), theme.secondary_text(light_mode))
+
+fn draw_hero_art(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    if resources.atlas_b_ready:
+        return draw_cover(frame, resources.atlas_b, ui_resources.hero_cell(), value)
+    rocket_raylib.draw_rectangle(frame, value.x, value.y, value.width, value.height, theme.elevated(light_mode))?
+    rocket_raylib.draw_ring_pixels(frame, value.x + value.width * 3 / 4, value.y + value.height / 2, value.height / 5, value.height / 2, 0.0, 360.0, 36, theme.violet(light_mode))?
+    rocket_raylib.draw_circle_pixels(frame, value.x + value.width * 3 / 4, value.y + value.height / 2, value.height / 8, theme.highlight(light_mode))?
+    return Ok(true)
+
+pub fn draw_lobby(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, focus: Int, notice: String, light_mode: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let hero = hero_rect(width)
+    components.modern_panel(frame, hero, light_mode, false)?
+    let art_width = hero.width * 2 / 5
+    let art = components.rect(hero.x + hero.width - art_width, hero.y, art_width, hero.height)
+    rocket_raylib.begin_scissor(frame, art.x, art.y, art.width, art.height)?
+    draw_hero_art(frame, resources, art, light_mode)?
+    rocket_raylib.end_scissor(frame)?
+    components.badge(window, frame, resources, components.rect(hero.x + 22, hero.y + 16, 78, 28), "LOCAL", light_mode)?
+    components.type_text(window, frame, resources, "Your next table, offline.", hero.x + 22, hero.y + 52, components.type_heading(), theme.primary_text(light_mode))?
+    components.type_text(window, frame, resources, "Private play-money entertainment with no account or network.", hero.x + 22, hero.y + 90, components.type_caption(), theme.secondary_text(light_mode))?
+    let page = lobby_page(focus, width, height)
+    let capacity = lobby_capacity(width, height)
+    let start = page * capacity
+    components.type_text(window, frame, resources, "CHOOSE A GAME", layout.content_x(width), hero.y + hero.height + 24, components.type_label(), theme.secondary_text(light_mode))?
+    var index = start
+    while index < registry.game_count() and index < start + capacity:
+        let card = lobby_card_rect(index, width, height)
+        components.game_card(window, frame, resources, card, index, registry.name(index), registry.description(index), components.contains(card, mouse_x, mouse_y), index == focus, light_mode)?
+        index = index + 1
+    let exit = exit_rect(width, height)
+    components.modern_button(window, frame, resources, exit, "Exit", components.button_quiet(), true, components.contains(exit, mouse_x, mouse_y), false, light_mode)?
+    let pages = lobby_page_count(width, height)
+    if pages > 1:
+        let previous = previous_page_rect(width, height)
+        let next = next_page_rect(width, height)
+        components.icon_button(frame, previous, 0, page > 0, components.contains(previous, mouse_x, mouse_y), false, light_mode)?
+        components.icon_button(frame, next, 3, page + 1 < pages, components.contains(next, mouse_x, mouse_y), false, light_mode)?
+        components.type_centered(window, frame, resources, string.concat(string.concat("Page ", string.from_int(page + 1)), string.concat(" of ", string.from_int(pages))), components.rect(width / 2 - 62, previous.y, 124, 44), components.type_caption(), theme.secondary_text(light_mode))?
+    if notice != "":
+        components.type_text(window, frame, resources, notice, layout.content_x(width) + 104, height - layout.safe_margin(width) - 30, components.type_caption(), theme.secondary_text(light_mode))?
+    return Ok(true)
+
+fn setting_name(row: Int) -> String:
+    if row == 0:
+        return "Appearance"
+    if row == 1:
+        return "Reduced motion"
+    if row == 2:
+        return "Audio"
+    if row == 3:
+        return "Volume"
+    return "AI rivals"
+
+fn setting_detail(row: Int) -> String:
+    if row == 0:
+        return "A purpose-designed dark or light palette"
+    if row == 1:
+        return "Shortens decorative transitions, never game logic"
+    if row == 2:
+        return "Primary actions and outcomes only"
+    if row == 3:
+        return "Keyboard: Left / Right"
+    return "Blackjack and Hold'em opponents: Down / Up"
+
+pub fn draw_settings(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, settings: persistence.Settings, light_mode: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let panel = settings_panel_rect(width, height)
+    components.modern_panel(frame, panel, light_mode, false)?
+    components.type_text(window, frame, resources, "Make the arcade yours", panel.x + 28, panel.y + 22, components.type_heading(), theme.primary_text(light_mode))?
+    var row = 0
+    while row < 5:
+        let y = panel.y + 72 + row * 64
+        rocket_raylib.draw_line(frame, panel.x + 28, y + 56, panel.x + panel.width - 28, y + 56, 1.0, theme.subtle_border(light_mode))?
+        components.type_text(window, frame, resources, setting_name(row), panel.x + 28, y, components.type_label(), theme.primary_text(light_mode))?
+        components.type_text(window, frame, resources, setting_detail(row), panel.x + 28, y + 26, components.type_caption(), theme.secondary_text(light_mode))?
+        if row < 3:
+            var selected = settings.light_mode
+            if row == 1:
+                selected = settings.reduced_motion
+            if row == 2:
+                selected = settings.audio_enabled
+            let toggle = setting_control_rect(row, 0, width, height)
+            components.toggle(frame, toggle, selected, components.contains(toggle, mouse_x, mouse_y), light_mode)?
+        else:
+            let minus = setting_control_rect(row, 0, width, height)
+            let plus = setting_control_rect(row, 1, width, height)
+            components.modern_button(window, frame, resources, minus, "-", components.button_secondary(), true, components.contains(minus, mouse_x, mouse_y), false, light_mode)?
+            components.modern_button(window, frame, resources, plus, "+", components.button_secondary(), true, components.contains(plus, mouse_x, mouse_y), false, light_mode)?
+            var value = settings.volume_percent
+            if row == 4:
+                value = settings.ai_count
+            var value_text = string.from_int(value)
+            if row == 3:
+                value_text = string.concat(value_text, "%")
+            components.pill(window, frame, resources, components.rect(minus.x - 74, minus.y + 7, 62, 30), value_text, false, light_mode)?
+        row = row + 1
+    let slider = settings_slider_rect(width, height)
+    rocket_raylib.draw_line(frame, slider.x, slider.y + slider.height / 2, slider.x + slider.width, slider.y + slider.height / 2, 5.0, theme.subtle_border(light_mode))?
+    rocket_raylib.draw_line(frame, slider.x, slider.y + slider.height / 2, slider.x + slider.width * settings.volume_percent / 100, slider.y + slider.height / 2, 5.0, theme.primary(light_mode))?
+    rocket_raylib.draw_circle_pixels(frame, slider.x + slider.width * settings.volume_percent / 100, slider.y + slider.height / 2, 7, theme.primary(light_mode))?
+    components.type_text(window, frame, resources, "Reset guidance", panel.x + 28, panel.y + panel.height - 72, components.type_label(), theme.primary_text(light_mode))?
+    return components.type_text(window, frame, resources, "Close the app, then remove settings.s2r from Local AppData / Scroll2Roll.", panel.x + 28, panel.y + panel.height - 43, components.type_caption(), theme.secondary_text(light_mode))
+
+fn help_panel_rect(index: Int, width: Int, height: Int) -> components.Rect:
+    let x = layout.content_x(width)
+    let y = layout.top_bar_height(width) + layout.safe_margin(width) + 68
+    let content_width = layout.content_width(width)
+    if width < theme.breakpoint_compact():
+        let panel_height =(height - y - layout.safe_margin(width) - 16) / 3
+        return components.rect(x, y + index *(panel_height + 8), content_width, panel_height)
+    let gap = theme.space_md()
+    let panel_width =(content_width - gap * 2) / 3
+    return components.rect(x + index *(panel_width + gap), y, panel_width, height - y - layout.safe_margin(width))
+
+fn help_title(index: Int) -> String:
+    if index == 0:
+        return "LOCAL BY DESIGN"
+    if index == 1:
+        return "CLEAR CONTROLS"
+    return "FAIR PLAY"
+
+fn help_line(index: Int, line: Int) -> String:
+    if index == 0 and line == 0:
+        return "No account, deposits, ads,"
+    if index == 0 and line == 1:
+        return "purchases, or cash-out."
+    if index == 0:
+        return "Your play stays on this PC."
+    if index == 1 and line == 0:
+        return "Mouse and keyboard are equal."
+    if index == 1 and line == 1:
+        return "Tab/arrows move; Enter acts."
+    if index == 1:
+        return "P opens rules; Esc requests Back."
+    if line == 0:
+        return "Outcomes come from tested engines."
+    if line == 1:
+        return "Active wagers must settle first."
+    return "No network or private outcome leaks."
+
+pub fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, source_screen: Int, light_mode: Bool) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let top = layout.top_bar_height(width) + layout.safe_margin(width)
+    components.type_text(window, frame, resources, string.concat(screen_title(source_screen), " guide"), layout.content_x(width), top, components.type_heading(), theme.primary_text(light_mode))?
+    components.type_text(window, frame, resources, "Rules stay engine-owned; this guide explains navigation, privacy, and safe play.", layout.content_x(width), top + 38, components.type_caption(), theme.secondary_text(light_mode))?
+    var index = 0
+    while index < 3:
+        let panel = help_panel_rect(index, width, rocket_raylib.window_height(window))
+        components.modern_panel(frame, panel, light_mode, false)?
+        components.badge(window, frame, resources, components.rect(panel.x + 20, panel.y + 18, 132, 28), help_title(index), light_mode)?
+        var line = 0
+        while line < 3:
+            components.type_text(window, frame, resources, help_line(index, line), panel.x + 20, panel.y + 62 + line * 28, components.type_caption(), theme.primary_text(light_mode))?
+            line = line + 1
+        index = index + 1
+    return Ok(true)

@@ -1,5 +1,6 @@
 import src.app.application
 import src.app.roulette_view
+import src.app.shell_view
 import src.roulette.roulette_engine
 import src.roulette.roulette_rules
 import src.rocket_raylib
@@ -49,7 +50,9 @@ fn run() -> Result[Int, String]:
             state = press(window, rocket_raylib.key_enter(), state)
             if state.screen != 1:
                 return Ok(2)
-            state = click(window, 520, 300, state)
+            state = press(window, rocket_raylib.key_tab(), state)
+            let lobby_card = shell_view.lobby_card_rect(1, 1280, 720)
+            state = click(window, lobby_card.x + lobby_card.width / 2, lobby_card.y + lobby_card.height / 2, state)
             if state.screen != 4 or roulette_engine.phase_code(state.roulette.game.phase) != 0:
                 return Ok(3)
             state = press(window, rocket_raylib.key_p(), state)

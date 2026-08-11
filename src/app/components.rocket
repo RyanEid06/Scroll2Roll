@@ -183,6 +183,9 @@ pub fn icon_button(frame: rocket_raylib.Frame, value: Rect, icon: Int, enabled: 
     if icon == 2:
         rocket_raylib.draw_circle(frame, center_x, center_y - 7, 2.5, ink)?
         rocket_raylib.draw_rounded_rectangle(frame, center_x - 2, center_y - 1, 4, 12, 0.4, 8, ink)?
+    if icon == 3:
+        rocket_raylib.draw_line(frame, center_x - 8, center_y - 9, center_x + 2, center_y, 3.0, ink)?
+        rocket_raylib.draw_line(frame, center_x + 2, center_y, center_x - 8, center_y + 9, 3.0, ink)?
     if not enabled:
         rocket_raylib.draw_line(frame, value.x + 11, value.y + 11, value.x + value.width - 11, value.y + value.height - 11, 2.0, theme.secondary_text(light_mode))?
     if focused:
@@ -227,24 +230,46 @@ pub fn toast(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources
     rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, 5, value.height, 0.5, 8, accent)?
     return type_text(window, frame, resources, message, value.x + 18, value.y + 15, type_label(), theme.primary_text(light_mode))
 
-pub fn modern_modal(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, title: String, message: String, light_mode: Bool) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, rocket_raylib.color(3, 6, 20, 190))?
+pub fn modal_box(width: Int, height: Int) -> Rect:
     var modal_width = 560
     if width < 900:
         modal_width = width - 64
-    let box = rect((width - modal_width) / 2, height / 2 - 116, modal_width, 232)
+    return rect((width - modal_width) / 2, height / 2 - 116, modal_width, 232)
+
+pub fn modal_primary_rect(width: Int, height: Int, confirm: Bool) -> Rect:
+    let box = modal_box(width, height)
+    if confirm:
+        return rect(box.x + box.width - 156, box.y + 158, 128, 46)
+    return rect(box.x + box.width - 156, box.y + 158, 128, 46)
+
+pub fn modal_secondary_rect(width: Int, height: Int) -> Rect:
+    let box = modal_box(width, height)
+    return rect(box.x + box.width - 300, box.y + 158, 128, 46)
+
+pub fn modern_modal(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, title: String, message: String, confirm: Bool, light_mode: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, rocket_raylib.color(3, 6, 20, 190))?
+    let box = modal_box(width, height)
     modern_panel(frame, box, light_mode, true)?
     type_text(window, frame, resources, title, box.x + 28, box.y + 28, type_heading(), theme.primary_text(light_mode))?
     type_text(window, frame, resources, message, box.x + 28, box.y + 84, type_body(), theme.secondary_text(light_mode))?
-    let hint = rect(box.x + 28, box.y + 152, box.width - 56, 48)
-    return modern_button(window, frame, resources, hint, "Enter confirms  |  Escape cancels", button_secondary(), true, false, false, light_mode)
+    if confirm:
+        let cancel = modal_secondary_rect(width, height)
+        modern_button(window, frame, resources, cancel, "Cancel", button_secondary(), true, contains(cancel, mouse_x, mouse_y), false, light_mode)?
+        let primary = modal_primary_rect(width, height, true)
+        return modern_button(window, frame, resources, primary, "Exit", button_danger(), true, contains(primary, mouse_x, mouse_y), true, light_mode)
+    let primary = modal_primary_rect(width, height, false)
+    return modern_button(window, frame, resources, primary, "Okay", button_primary(), true, contains(primary, mouse_x, mouse_y), true, light_mode)
 
 fn fallback_game_glyph(frame: rocket_raylib.Frame, value: Rect, game_index: Int, light_mode: Bool) -> Result[Bool, String]:
     let center_x = value.x + value.width / 2
     let center_y = value.y + value.height / 2
-    let scale = value.width / 8
+    var scale = value.width / 8
+    if value.height / 6 < scale:
+        scale = value.height / 6
+    if scale < 8:
+        scale = 8
     let accent = theme.highlight(light_mode)
     let cool = theme.cyan(light_mode)
     if game_index == 0 or game_index == 8:
@@ -310,13 +335,26 @@ pub fn game_card(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resou
     let art_height = value.height - 72
     if art_ready:
         let cell = ui_resources.atlas_cell(game_index)
+        var source_x = ui_resources.source_x(cell)
+        var source_y = ui_resources.source_y(cell)
+        var source_width = 512
+        var source_height = 512
+        if value.width > art_height:
+            source_height = 512 * art_height / value.width
+            source_y = source_y +(512 - source_height) / 2
+        else:
+            source_width = 512 * value.width / art_height
+            source_x = source_x +(512 - source_width) / 2
         rocket_raylib.begin_scissor(frame, value.x, value.y, value.width, art_height)?
-        rocket_raylib.draw_texture_region(frame, atlas, ui_resources.source_x(cell), ui_resources.source_y(cell), 512, 512, value.x, value.y, value.width, art_height, rocket_raylib.color(255, 255, 255, 255))?
+        rocket_raylib.draw_texture_region(frame, atlas, source_x, source_y, source_width, source_height, value.x, value.y, value.width, art_height, rocket_raylib.color(255, 255, 255, 255))?
         rocket_raylib.end_scissor(frame)?
     else:
         rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, art_height, 0.12, 12, theme.shell(light_mode))?
+        rocket_raylib.begin_scissor(frame, value.x, value.y, value.width, art_height)?
         fallback_game_glyph(frame, rect(value.x, value.y, value.width, art_height), game_index, light_mode)?
+        rocket_raylib.end_scissor(frame)?
     rocket_raylib.draw_rectangle(frame, value.x, value.y + art_height - 28, value.width, 28, rocket_raylib.color(9, 11, 20, 150))?
+    type_text(window, frame, resources, "PLAY", value.x + 16, value.y + art_height - 23, type_caption(), rocket_raylib.color(255, 255, 255, 255))?
     type_text(window, frame, resources, title, value.x + 16, value.y + art_height + 10, type_label(), theme.primary_text(light_mode))?
     type_text(window, frame, resources, subtitle, value.x + 16, value.y + art_height + 37, type_caption(), theme.secondary_text(light_mode))?
     var outline = theme.subtle_border(light_mode)

@@ -1,4 +1,5 @@
 import src.app.application
+import src.app.shell_view
 import src.app.slots_view
 import src.rocket_raylib
 import src.rocket_raylib_testing
@@ -56,7 +57,12 @@ fn run() -> Result[Int, String]:
         case Ok(window):
             var state = application.initial_for_test(save_path)?
             state = press(window, rocket_raylib.key_enter(), state)
-            state = click(window, 650, 135, state)
+            var lobby_move = 0
+            while lobby_move < 10:
+                state = press(window, rocket_raylib.key_tab(), state)
+                lobby_move = lobby_move + 1
+            let lobby_card = shell_view.lobby_card_rect(10, 800, 600)
+            state = click(window, lobby_card.x + lobby_card.width / 2, lobby_card.y + lobby_card.height / 2, state)
             if state.screen != 13 or slots_api.phase_code(state.slots) != 0:
                 return Ok(2)
             state = press(window, rocket_raylib.key_p(), state)
@@ -75,8 +81,9 @@ fn run() -> Result[Int, String]:
             let committed_stops = state.slots.game.spin.stops
             state = press(window, rocket_raylib.key_up(), state)
             state = press(window, rocket_raylib.key_b(), state)
-            if state.screen != 13 or state.slots.game.bet_per_line != 2 or not same_values(committed_stops, state.slots.game.spin.stops):
+            if state.screen != 13 or state.error == "" or state.slots.game.bet_per_line != 2 or not same_values(committed_stops, state.slots.game.spin.stops):
                 return Ok(6)
+            state = press(window, rocket_raylib.key_enter(), state)
             state = finish_round(window, state)?
             if not file.exists(save_path) or collections.length(state.slots.game.history) != 1 or state.slots_reel_stage != 5:
                 return Ok(7)
