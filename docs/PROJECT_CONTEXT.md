@@ -328,12 +328,22 @@ captures cover every required size, with a 1920x1055 maximum client on the
 current 1920x1080 display; deterministic view tests exercise exact 1920x1080.
 All 46 tests pass in Debug and Release.
 
-The remaining Plinko, Coop Climb, Midnight Crossing, Mines, Dice, Crash, and
-Slots interiors still render through compatibility-era views and remain
-visually rejected. No visual-completion claim is valid until those interiors,
-the aligned website, the real asset-bearing package, and the final acceptance
-matrix pass. `docs/UI_OVERHAUL_FOUNDATION.md` is the audit and acceptance
-ledger.
+Milestone 5 is complete. Plinko now presents a deep audited peg chamber with
+exact multiplier bins and reduced-motion-aware interpolation along committed
+engine paths. Coop Climb presents an original observatory ladder with ten
+fixed-value coops, a telescope goal, and privacy-safe hidden/next/secured/failed
+states. Midnight Crossing presents a top-down city board with roads, tram,
+canals, checkpoint, courier, vehicles, and logs driven only by public fixed-
+tick state. All three use responsive compact/wide controls, exact-rule guides,
+and dark/light original ambience. Actual native captures cover the full target
+matrix plus compact/standard active states; review found and fixed one compact
+Coop status overlap. All 47 tests pass in Debug and Release.
+
+The remaining Mines, Dice, Crash, and Slots interiors still render through
+compatibility-era views and remain visually rejected. No visual-completion
+claim is valid until those interiors, the aligned website, the real asset-
+bearing package, and the final acceptance matrix pass.
+`docs/UI_OVERHAUL_FOUNDATION.md` is the audit and acceptance ledger.
 
 ## Milestones
 
@@ -414,6 +424,10 @@ ledger.
   exact-rule guides, privacy-safe projections, committed/reduced motion,
   actual dark/light native review across the target matrix, and passing 46/46
   Debug and Release gates.
+- Completed: native UI overhaul milestone 5, including complete Plinko, Coop
+  Climb, and Midnight Crossing replacements; committed-path interpolation;
+  privacy-safe ladder and public fixed-tick hazard rendering; actual dark/light
+  and active-state native review; and passing 47/47 Debug and Release gates.
 
 ## Major decisions
 
@@ -461,13 +475,13 @@ Read `AGENTS.md`, `UI_OVERHAUL.md`, `docs/MASTER_PLAN.md`,
 `docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
 status and preserve user changes. The accepted 0.2.0 baseline remains intact;
 Mines, Dice, HiLo, Crash, Slots, and the accepted save-v3 behavior baseline are
-complete. The UI-overhaul suite currently passes 46/46. The
+complete. The UI-overhaul suite currently passes 47/47. The
 verified local 0.3.0 archive is 1,919,372 bytes with SHA-256
 `FD2B4EC31734DCB6E51707C862A439966E5771CBDA136DCD4F6B09726082688B`;
 source/staged website and responsive browser checks pass. Keep using frozen Rocket 2.0
 and the pinned raylib integration with custom frame control forced off. Do not
 push, publish, deploy, sign, or add an unapproved game without owner approval.
-UI overhaul milestones 1 through 4 pass 46/46 in Debug and Release. Blackjack,
-European Roulette, No-Limit Hold'em, and HiLo are visually accepted. Continue
-with Plinko, Coop Climb, Midnight Crossing, Mines, Dice, Crash, and Slots. Do
-not mistake those compatibility-rendered old game views for accepted UI.
+UI overhaul milestones 1 through 5 pass 47/47 in Debug and Release. Blackjack,
+European Roulette, Plinko, Coop Climb, Midnight Crossing, No-Limit Hold'em, and
+HiLo are visually accepted. Continue with Mines, Dice, Crash, and Slots. Do not
+mistake those compatibility-rendered old game views for accepted UI.

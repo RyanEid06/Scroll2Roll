@@ -1,0 +1,111 @@
+import src.app.chicken_view
+import src.app.components
+import src.app.crossing_view
+import src.app.plinko_view
+import src.app.ui_resources
+import src.chicken.chicken_api
+import src.crossing.crossing_api
+import src.crossing.crossing_model
+import src.plinko.plinko_api
+import src.rocket_raylib
+import src.rocket_raylib_testing
+import std.collections
+
+fn overlap(first: components.Rect, second: components.Rect) -> Bool:
+    return first.x < second.x + second.width and first.x + first.width > second.x and first.y < second.y + second.height and first.y + first.height > second.y
+
+fn target_valid(value: components.Rect, width: Int, height: Int) -> Bool:
+    return value.width >= 44 and value.height >= 44 and value.x >= 0 and value.y >= 0 and value.x + value.width <= width and value.y + value.height <= height
+
+fn set_valid(values: Array[components.Rect], width: Int, height: Int) -> Bool:
+    var index = 0
+    while index < collections.length(values):
+        if not target_valid(values[index], width, height):
+            return false
+        var other = index + 1
+        while other < collections.length(values):
+            if overlap(values[index], values[other]):
+                return false
+            other = other + 1
+        index = index + 1
+    return true
+
+fn layout_valid(width: Int, height: Int) -> Bool:
+    let plinko_ready = [plinko_view.rows_minus_rect(width, height), plinko_view.rows_plus_rect(width, height), plinko_view.risk_rect(width, height), plinko_view.bet_minus_rect(width, height), plinko_view.bet_plus_rect(width, height), plinko_view.batch_minus_rect(width, height), plinko_view.batch_plus_rect(width, height), plinko_view.drop_rect(width, height)]
+    if not set_valid(plinko_ready, width, height) or not target_valid(plinko_view.next_rect(width, height), width, height) or not target_valid(plinko_view.help_rect(width, height), width, height):
+        print("arcade layout: plinko")
+        return false
+    let chicken_ready = [chicken_view.risk_rect(width, height), chicken_view.bet_minus_rect(width, height), chicken_view.bet_plus_rect(width, height), chicken_view.start_rect(width, height)]
+    let chicken_active = [chicken_view.advance_rect(width, height), chicken_view.cash_out_rect(width, height)]
+    if not set_valid(chicken_ready, width, height) or not set_valid(chicken_active, width, height) or not target_valid(chicken_view.next_rect(width, height), width, height) or not target_valid(chicken_view.help_rect(width, height), width, height):
+        print("arcade layout: chicken")
+        return false
+    let crossing_ready = [crossing_view.bet_minus_rect(width, height), crossing_view.bet_plus_rect(width, height), crossing_view.start_rect(width, height)]
+    let crossing_active = [crossing_view.up_rect(width, height), crossing_view.left_rect(width, height), crossing_view.down_rect(width, height), crossing_view.right_rect(width, height), crossing_view.pause_rect(width, height), crossing_view.cash_out_rect(width, height)]
+    if not set_valid(crossing_ready, width, height) or not set_valid(crossing_active, width, height) or not target_valid(crossing_view.next_rect(width, height), width, height) or not target_valid(crossing_view.help_rect(width, height), width, height):
+        print("arcade layout: crossing")
+        return false
+    return true
+
+fn settled_chicken(source: chicken_api.Session) -> Result[chicken_api.Session, String]:
+    let advanced = chicken_api.with_advance(source)?
+    if chicken_api.phase_code(advanced) == 2:
+        return Ok(advanced)
+    return chicken_api.with_cash_out(advanced)
+
+fn settled_crossing(source: crossing_model.Game) -> crossing_model.Game:
+    return crossing_model.Game(source.balance + 12, source.bet, crossing_model.Settled(), false, source.hazards, 450, 0, 1, 12500, source.wager, 12, false, false, source.tick_count, 2, source.round_number, source.seed, "Checkpoint cashed out")
+
+fn draw_states(window: rocket_raylib.Window, light_mode: Bool) -> Result[Bool, String]:
+    let resources = ui_resources.empty()
+    let plinko_ready = plinko_api.new_session(1000, 20260851)?
+    let plinko_active = plinko_api.with_drop(plinko_ready)?
+    let plinko_settled = plinko_api.with_settlement(plinko_active)?
+    let chicken_ready = chicken_api.new_session(1000, 20260852)?
+    let chicken_active = chicken_api.with_start(chicken_ready)?
+    let chicken_settled = settled_chicken(chicken_active)?
+    let crossing_ready = crossing_api.new_session(1000, 20260853)?
+    let crossing_active = crossing_api.with_start(crossing_ready)?
+    let crossing_settled = settled_crossing(crossing_active.game)
+
+    let frame = rocket_raylib.begin_frame(window)?
+    rocket_raylib.clear(frame, rocket_raylib.black())?
+    plinko_view.draw(window, frame, resources, plinko_ready.game, 0, false, light_mode, false, 0.0, 0.0, -100, -100)?
+    plinko_view.draw(window, frame, resources, plinko_active.game, 4, false, light_mode, false, 0.4, 0.8, -100, -100)?
+    plinko_view.draw(window, frame, resources, plinko_settled.game, 12, light_mode, light_mode, true, 1.0, 0.0, -100, -100)?
+    chicken_view.draw(window, frame, resources, chicken_ready.game, false, light_mode, false, 0.0, -100, -100)?
+    chicken_view.draw(window, frame, resources, chicken_active.game, false, light_mode, false, 0.4, -100, -100)?
+    chicken_view.draw(window, frame, resources, chicken_settled.game, light_mode, light_mode, true, 1.0, -100, -100)?
+    crossing_view.draw(window, frame, resources, crossing_ready.game, false, light_mode, false, 0.0, -100, -100)?
+    crossing_view.draw(window, frame, resources, crossing_active.game, false, light_mode, false, 0.4, -100, -100)?
+    crossing_view.draw(window, frame, resources, crossing_settled, light_mode, light_mode, true, 1.0, -100, -100)?
+    if rocket_raylib_testing.scissor_active() or rocket_raylib_testing.draw_count() < 350:
+        return Ok(false)
+    rocket_raylib.end_frame(frame)?
+    return Ok(true)
+
+fn run() -> Result[Int, String]:
+    if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
+        return Ok(1)
+    let widths = [800, 1024, 1280, 1600, 1920]
+    let heights = [600, 768, 720, 900, 1080]
+    var index = 0
+    while index < collections.length(widths):
+        if not layout_valid(widths[index], heights[index]):
+            return Ok(2 + index)
+        let window = rocket_raylib.open_window(widths[index], heights[index], "Arcade game interior states")?
+        if not draw_states(window, false)? or not draw_states(window, true)?:
+            return Ok(10 + index)
+        rocket_raylib.close_window(window)?
+        index = index + 1
+    if rocket_raylib_testing.buffer_live_count() != 0:
+        return Ok(20)
+    return Ok(0)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

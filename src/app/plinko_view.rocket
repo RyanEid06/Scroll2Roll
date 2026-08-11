@@ -1,5 +1,9 @@
 import src.app.components
+import src.app.game_components
+import src.app.game_layout
+import src.app.shell_view
 import src.app.theme
+import src.app.ui_resources
 import src.plinko.plinko_engine
 import src.plinko.plinko_model
 import src.plinko.plinko_rules
@@ -7,90 +11,158 @@ import src.rocket_raylib
 import std.collections
 import std.string
 
-pub fn rows_minus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 130, 46, 38)
+fn interior(width: Int, height: Int) -> game_layout.Interior:
+    return game_layout.interior(width, height)
 
-pub fn rows_plus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 144, 130, 46, 38)
+pub fn rows_minus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + 12, 44, 44)
+    return components.rect(value.rail.x + 16, value.rail.y + 156, 48, 44)
 
-pub fn risk_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 184, 232, 40)
+pub fn rows_plus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 120, value.dock.y + 12, 44, 44)
+    return components.rect(value.rail.x + value.rail.width - 64, value.rail.y + 156, 48, 44)
 
-pub fn bet_minus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 240, 46, 38)
+pub fn risk_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 178, value.dock.y + 12, 150, 44)
+    return components.rect(value.rail.x + 16, value.rail.y + 216, value.rail.width - 32, 44)
 
-pub fn bet_plus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 144, 240, 46, 38)
+pub fn bet_minus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 344, value.dock.y + 12, 44, 44)
+    return components.rect(value.rail.x + 16, value.rail.y + 276, 48, 44)
 
-pub fn batch_minus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 294, 46, 38)
+pub fn bet_plus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 448, value.dock.y + 12, 44, 44)
+    return components.rect(value.rail.x + value.rail.width - 64, value.rail.y + 276, 48, 44)
 
-pub fn batch_plus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 144, 294, 46, 38)
+pub fn batch_minus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 508, value.dock.y + 12, 44, 44)
+    return components.rect(value.rail.x + 16, value.rail.y + 336, 48, 44)
 
-pub fn drop_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 354, 232, 46)
+pub fn batch_plus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 612, value.dock.y + 12, 44, 44)
+    return components.rect(value.rail.x + value.rail.width - 64, value.rail.y + 336, 48, 44)
 
-pub fn help_rect(width: Int) -> components.Rect:
-    return components.rect(width - 118, 24, 86, 38)
+pub fn drop_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + value.dock.height - 60, value.dock.width - 32, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 64, value.rail.width - 32, 48)
 
-pub fn next_rect(height: Int) -> components.Rect:
-    return components.rect(32, height - 68, 150, 42)
+pub fn help_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    return components.rect(value.stage.x + value.stage.width - 88, value.stage.y + 6, 76, 44)
 
-pub fn lobby_rect(height: Int) -> components.Rect:
-    return components.rect(192, height - 68, 120, 42)
+pub fn next_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + value.dock.height - 60, value.dock.width - 32, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 64, value.rail.width - 32, 48)
 
-fn board_center(width: Int) -> Int:
-    return(width - 360) / 2
+pub fn lobby_rect(width: Int, height: Int) -> components.Rect:
+    let expected = height
+    return shell_view.back_rect(width)
 
-fn peg_gap(rows: Int, width: Int) -> Int:
-    var gap =(width - 400) / rows
+fn phase_name(code: Int) -> String:
+    if code == 0:
+        return "BOARD READY"
+    if code == 1:
+        return "BALLS IN PLAY"
+    return "BATCH SETTLED"
+
+fn board_rect(value: game_layout.Interior) -> components.Rect:
+    return game_layout.inset(value.stage, 18)
+
+fn peg_gap(game: plinko_model.Game, board: components.Rect) -> Int:
+    var gap =(board.width - 60) / game.rows
+    if gap > 46:
+        gap = 46
     if gap < 18:
         gap = 18
-    if gap > 42:
-        gap = 42
     return gap
 
-fn row_gap(rows: Int, height: Int) -> Int:
-    var gap =(height - 210) / rows
-    if gap < 20:
-        gap = 20
-    if gap > 34:
-        gap = 34
+fn row_gap(game: plinko_model.Game, board: components.Rect) -> Int:
+    var gap =(board.height - 78) / game.rows
+    if gap > 38:
+        gap = 38
+    if gap < 15:
+        gap = 15
     return gap
 
-fn board_top() -> Int:
-    return 94
+fn path_progress(now: Float, animation_end: Float, reduced_motion: Bool) -> Int:
+    if reduced_motion:
+        return 0
+    let remaining = animation_end - now
+    if remaining <= 0.0:
+        return 8
+    if remaining > 0.07:
+        return 0
+    if remaining > 0.06:
+        return 1
+    if remaining > 0.05:
+        return 2
+    if remaining > 0.04:
+        return 3
+    if remaining > 0.03:
+        return 4
+    if remaining > 0.02:
+        return 5
+    if remaining > 0.01:
+        return 6
+    return 7
 
-fn draw_board(frame: rocket_raylib.Frame, game: plinko_model.Game, width: Int, height: Int, stage: Int) -> Result[Bool, String]:
-    let center = board_center(width)
-    let horizontal = peg_gap(game.rows, width)
-    let vertical = row_gap(game.rows, height)
+fn draw_board(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: plinko_model.Game, value: game_layout.Interior, stage: Int, light_mode: Bool, reduced_motion: Bool, now: Float, animation_end: Float) -> Result[Bool, String]:
+    let board = board_rect(value)
+    rocket_raylib.draw_rounded_rectangle(frame, board.x, board.y, board.width, board.height, 0.06, 12, rocket_raylib.color(6, 19, 45, 224))?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, board.x, board.y, board.width, board.height, 0.06, 12, 2.0, theme.cyan(light_mode))?
+    let center = board.x + board.width / 2
+    let horizontal = peg_gap(game, board)
+    let vertical = row_gap(game, board)
+    let top = board.y + 28
     var row = 0
     while row < game.rows:
         var peg = 0
         while peg <= row:
             let x = center +(peg * 2 - row) * horizontal / 2
-            let y = board_top() + row * vertical
-            rocket_raylib.draw_circle(frame, x, y, 4.0, theme.border())?
+            let y = top + row * vertical
+            rocket_raylib.draw_circle_pixels(frame, x + 2, y + 2, 5, rocket_raylib.color(2, 6, 23, 120))?
+            rocket_raylib.draw_circle_pixels(frame, x, y, 4, rocket_raylib.color(190, 223, 255, 255))?
+            rocket_raylib.draw_circle_pixels(frame, x - 1, y - 1, 1, rocket_raylib.color(255, 255, 255, 255))?
             peg = peg + 1
         row = row + 1
     let multipliers = plinko_rules.multipliers(game.rows, game.risk)?
-    let bucket_y = board_top() + game.rows * vertical + 12
+    let bucket_y = top + game.rows * vertical + 6
     var bucket = 0
     while bucket <= game.rows:
         let x = center +(bucket * 2 - game.rows) * horizontal / 2
-        var fill = theme.panel()
+        var fill = theme.violet(false)
         if bucket == 0 or bucket == game.rows:
-            fill = theme.danger()
-        rocket_raylib.draw_rectangle(frame, x - horizontal / 2 + 2, bucket_y, horizontal - 4, 34, fill)?
-        let label = string.concat(string.from_int(multipliers[bucket] / 100), "%")
-        rocket_raylib.draw_text(frame, label, x - horizontal / 2 + 4, bucket_y + 10, 10, theme.text())?
+            fill = theme.destructive(light_mode)
+        if bucket > game.rows / 3 and bucket < game.rows * 2 / 3:
+            fill = theme.success(light_mode)
+        let bucket_box = components.rect(x - horizontal / 2 + 2, bucket_y, horizontal - 4, 34)
+        rocket_raylib.draw_rounded_rectangle(frame, bucket_box.x, bucket_box.y, bucket_box.width, bucket_box.height, 0.18, 6, fill)?
+        components.type_centered(window, frame, resources, string.concat(string.from_int(multipliers[bucket] / 100), "%"), bucket_box, components.type_caption(), rocket_raylib.color(255, 255, 255, 255))?
         bucket = bucket + 1
     if plinko_engine.phase_code(game.phase) == 1:
+        let progress = path_progress(now, animation_end, reduced_motion)
         var ball = 0
         while ball < collections.length(game.pending):
-            var ball_stage = stage - ball * 2
+            let raw_stage = stage - ball * 2
+            var ball_stage = raw_stage
             if ball_stage < 0:
                 ball_stage = 0
             if ball_stage > game.rows:
@@ -101,61 +173,79 @@ fn draw_board(frame: rocket_raylib.Frame, game: plinko_model.Game, width: Int, h
                 rights = rights + game.pending[ball].path[step]
                 step = step + 1
             let ball_x = center +(rights * 2 - ball_stage) * horizontal / 2
-            let ball_y = board_top() - 18 + ball_stage * vertical
-            rocket_raylib.draw_circle(frame, ball_x, ball_y, 8.0, theme.gold())?
+            let ball_y = top - 16 + ball_stage * vertical
+            var displayed_x = ball_x
+            var displayed_y = ball_y
+            if raw_stage >= 0 and ball_stage < game.rows:
+                let next_stage = ball_stage + 1
+                let next_rights = rights + game.pending[ball].path[ball_stage]
+                let next_x = center +(next_rights * 2 - next_stage) * horizontal / 2
+                let next_y = top - 16 + next_stage * vertical
+                displayed_x =(ball_x *(8 - progress) + next_x * progress) / 8
+                displayed_y =(ball_y *(8 - progress) + next_y * progress) / 8
+            rocket_raylib.draw_circle_pixels(frame, displayed_x + 3, displayed_y + 4, 9, rocket_raylib.color(2, 6, 23, 110))?
+            rocket_raylib.draw_circle_pixels(frame, displayed_x, displayed_y, 8, theme.highlight(light_mode))?
             ball = ball + 1
+    components.type_text(window, frame, resources, "AUDITED PEG CHAMBER", board.x + 16, board.y + 12, components.type_caption(), rocket_raylib.color(255, 255, 255, 125))?
     return Ok(true)
 
-fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.overlay())?
-    let box = components.rect(width / 2 - 350, 92, 700, 490)
-    components.panel(frame, box)?
-    rocket_raylib.draw_text(frame, "PLINKO RULES AND RETURN", box.x + 28, box.y + 28, theme.heading_size(), theme.gold())?
-    let lines = ["Choose 8-16 rows and Low, Medium, or High risk.", "Each row is one deterministic seeded 50/50 left/right engine step.", "The landing bucket is the number of right steps in the tested path.", "Multiplier tables use basis points; settlement floors fractional credits.", "Exact binomial auditing yields a 95.98%-96.00% theoretical return.", "High risk moves value from center buckets to rare edge buckets.", "Drop 1-10 balls; every batch is finite and prepaid before animation.", "Left/Right rows | Tab risk | Up/Down bet | M balls | Enter drop.", "P closes help. Credits are local play money with no monetary value."]
-    var index = 0
-    while index < collections.length(lines):
-        rocket_raylib.draw_text(frame, lines[index], box.x + 28, box.y + 86 + index * 40, theme.body_size(), theme.text())?
-        index = index + 1
-    return Ok(true)
-
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: plinko_model.Game, stage: Int, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_text(frame, "PLINKO", 32, 28, theme.heading_size(), theme.gold())?
-    rocket_raylib.draw_text(frame, game.message, 188, 36, theme.body_size(), theme.text())?
-    rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(game.balance)), width - 300, 36, theme.body_size(), theme.emerald())?
-    let help_button = help_rect(width)
-    components.button(window, frame, help_button, "Help [P]", true, components.contains(help_button, mouse_x, mouse_y), false)?
-    draw_board(frame, game, width, height, stage)?
-    components.panel(frame, components.rect(width - 350, 110, 272, 330))?
-    rocket_raylib.draw_text(frame, string.concat("Rows: ", string.from_int(game.rows)), width - 270, 140, theme.body_size(), theme.text())?
-    components.button(window, frame, rows_minus_rect(width), "-", plinko_engine.phase_code(game.phase) == 0, components.contains(rows_minus_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, rows_plus_rect(width), "+", plinko_engine.phase_code(game.phase) == 0, components.contains(rows_plus_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, risk_rect(width), string.concat("Risk: ", plinko_rules.risk_name(game.risk)), plinko_engine.phase_code(game.phase) == 0, components.contains(risk_rect(width), mouse_x, mouse_y), false)?
-    rocket_raylib.draw_text(frame, string.concat("Bet: ", string.from_int(game.bet)), width - 270, 250, theme.body_size(), theme.text())?
-    components.button(window, frame, bet_minus_rect(width), "-", plinko_engine.phase_code(game.phase) == 0, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, bet_plus_rect(width), "+", plinko_engine.phase_code(game.phase) == 0, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
-    rocket_raylib.draw_text(frame, string.concat("Balls: ", string.from_int(game.batch_count)), width - 270, 304, theme.body_size(), theme.text())?
-    components.button(window, frame, batch_minus_rect(width), "-", plinko_engine.phase_code(game.phase) == 0, components.contains(batch_minus_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, batch_plus_rect(width), "+", plinko_engine.phase_code(game.phase) == 0, components.contains(batch_plus_rect(width), mouse_x, mouse_y), false)?
-    let wager = game.bet * game.batch_count
-    components.button(window, frame, drop_rect(width), string.concat("Drop ", string.from_int(wager)), plinko_engine.phase_code(game.phase) == 0 and wager <= game.balance, components.contains(drop_rect(width), mouse_x, mouse_y), true)?
-    let expected = plinko_rules.expected_return_basis_points(game.rows, game.risk)?
-    rocket_raylib.draw_text(frame, string.concat("Audited return: ", string.concat(string.from_int(expected / 100), string.concat(".", string.from_int(expected - expected / 100 * 100)))), width - 330, 414, theme.small_size(), theme.muted())?
+fn draw_controls(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: plinko_model.Game, value: game_layout.Interior, mouse_x: Int, mouse_y: Int, light_mode: Bool) -> Result[Bool, String]:
+    components.modern_panel(frame, value.rail, light_mode, true)?
     let phase = plinko_engine.phase_code(game.phase)
-    if phase == 1:
-        rocket_raylib.draw_text(frame, "Animation follows precomputed engine paths", 32, height - 56, theme.body_size(), theme.gold())?
-    if phase == 2:
-        rocket_raylib.draw_text(frame, string.concat("Wager ", string.from_int(game.total_wager)), 32, height - 104, theme.body_size(), theme.text())?
-        rocket_raylib.draw_text(frame, string.concat("Return ", string.from_int(game.total_return)), 168, height - 104, theme.body_size(), theme.emerald())?
-        let next = next_rect(height)
-        let lobby = lobby_rect(height)
-        components.button(window, frame, next, "Next [N]", true, components.contains(next, mouse_x, mouse_y), true)?
-        components.button(window, frame, lobby, "Lobby [B]", true, components.contains(lobby, mouse_x, mouse_y), false)?
+    let wager = game.bet * game.batch_count
+    let expected = plinko_rules.expected_return_basis_points(game.rows, game.risk)?
+    if value.compact:
+        components.type_centered(window, frame, resources, string.concat("ROWS ", string.from_int(game.rows)), components.rect(value.dock.x + 60, value.dock.y + 12, 60, 44), components.type_caption(), theme.primary_text(light_mode))?
+        components.type_centered(window, frame, resources, string.concat("BET ", string.from_int(game.bet)), components.rect(value.dock.x + 388, value.dock.y + 12, 60, 44), components.type_caption(), theme.primary_text(light_mode))?
+        components.type_centered(window, frame, resources, string.concat("BALLS ", string.from_int(game.batch_count)), components.rect(value.dock.x + 552, value.dock.y + 12, 60, 44), components.type_caption(), theme.primary_text(light_mode))?
+        if phase == 1:
+            components.badge(window, frame, resources, components.rect(value.dock.x + 16, value.dock.y + 80, 138, 28), phase_name(phase), light_mode)?
+            game_components.status_banner(window, frame, resources, components.rect(value.dock.x + 170, value.dock.y + 68, value.dock.width - 186, 54), game.message, light_mode)?
+    else:
+        components.badge(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 16, 138, 28), phase_name(phase), light_mode)?
+        game_components.status_banner(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 56, value.rail.width - 32, 54), game.message, light_mode)?
+        game_components.metric(window, frame, resources, "AUDITED RETURN", string.concat(string.from_int(expected / 100), "%"), value.rail.x + 16, value.rail.y + 118, 140, true, light_mode)?
+        components.type_centered(window, frame, resources, string.concat("ROWS  ", string.from_int(game.rows)), components.rect(value.rail.x + 70, value.rail.y + 156, value.rail.width - 140, 44), components.type_label(), theme.primary_text(light_mode))?
+        components.type_centered(window, frame, resources, string.concat("BET  ", string.from_int(game.bet)), components.rect(value.rail.x + 70, value.rail.y + 276, value.rail.width - 140, 44), components.type_label(), theme.primary_text(light_mode))?
+        components.type_centered(window, frame, resources, string.concat("BALLS  ", string.from_int(game.batch_count)), components.rect(value.rail.x + 70, value.rail.y + 336, value.rail.width - 140, 44), components.type_label(), theme.primary_text(light_mode))?
+    let enabled = phase == 0
+    let minus_rows = rows_minus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+    let plus_rows = rows_plus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+    let risk = risk_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+    let minus_bet = bet_minus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+    let plus_bet = bet_plus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+    let minus_batch = batch_minus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+    let plus_batch = batch_plus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+    components.modern_button(window, frame, resources, minus_rows, "-", components.button_secondary(), enabled, components.contains(minus_rows, mouse_x, mouse_y), false, light_mode)?
+    components.modern_button(window, frame, resources, plus_rows, "+", components.button_secondary(), enabled, components.contains(plus_rows, mouse_x, mouse_y), false, light_mode)?
+    components.modern_button(window, frame, resources, risk, plinko_rules.risk_name(game.risk), components.button_secondary(), enabled, components.contains(risk, mouse_x, mouse_y), false, light_mode)?
+    components.modern_button(window, frame, resources, minus_bet, "-", components.button_secondary(), enabled, components.contains(minus_bet, mouse_x, mouse_y), false, light_mode)?
+    components.modern_button(window, frame, resources, plus_bet, "+", components.button_secondary(), enabled, components.contains(plus_bet, mouse_x, mouse_y), false, light_mode)?
+    components.modern_button(window, frame, resources, minus_batch, "-", components.button_secondary(), enabled, components.contains(minus_batch, mouse_x, mouse_y), false, light_mode)?
+    components.modern_button(window, frame, resources, plus_batch, "+", components.button_secondary(), enabled, components.contains(plus_batch, mouse_x, mouse_y), false, light_mode)?
     if phase == 0:
-        rocket_raylib.draw_text(frame, "B or Escape returns to the lobby", 32, height - 56, theme.small_size(), theme.muted())?
+        let drop = drop_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, drop, string.concat("DROP  ", string.from_int(wager)), components.button_primary(), wager <= game.balance, components.contains(drop, mouse_x, mouse_y), true, light_mode)?
+    if phase == 2:
+        if not value.compact:
+            game_components.metric(window, frame, resources, "RETURN", string.from_int(game.total_return), value.rail.x + 16, value.rail.y + 410, 120, true, light_mode)?
+        let next = next_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, next, "NEXT BOARD [N]", components.button_primary(), true, components.contains(next, mouse_x, mouse_y), true, light_mode)?
+    return Ok(true)
+
+fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, light_mode: Bool) -> Result[Bool, String]:
+    let lines = ["Choose 8-16 rows and Low, Medium, or High risk.", "Every row is one deterministic seeded 50/50 engine step.", "The landing bucket equals the number of right steps in the tested path.", "Basis-point multipliers settle with one final integer-credit floor.", "Exact binomial auditing yields a 95.98%-96.00% theoretical return.", "High risk moves value from center buckets to rare edge buckets.", "Drop one to ten balls; every finite batch is prepaid before motion.", "Left/Right changes rows, Tab risk, Up/Down wager, and M balls.", "Animation follows committed paths and never chooses a bucket."]
+    return game_components.help_overlay(window, frame, resources, "PLINKO  /  AUDITED RETURN GUIDE", lines, -1, light_mode)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: plinko_model.Game, stage: Int, help: Bool, light_mode: Bool, reduced_motion: Bool, now: Float, animation_end: Float, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let value = interior(width, height)
+    game_components.ambient_stage(frame, resources, value.stage, 2, light_mode)?
+    draw_board(window, frame, resources, game, value, stage, light_mode, reduced_motion, now, animation_end)?
+    draw_controls(window, frame, resources, game, value, mouse_x, mouse_y, light_mode)?
+    let rules = help_rect(width, height)
+    components.modern_button(window, frame, resources, rules, "RULES", components.button_quiet(), true, components.contains(rules, mouse_x, mouse_y), false, light_mode)?
     if help:
-        draw_help(window, frame)?
+        draw_help(window, frame, resources, light_mode)?
     return Ok(true)

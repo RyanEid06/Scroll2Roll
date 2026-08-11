@@ -1,4 +1,5 @@
 import src.app.application
+import src.app.plinko_view
 import src.app.shell_view
 import src.plinko.plinko_engine
 import src.rocket_raylib
@@ -64,21 +65,28 @@ fn run() -> Result[Int, String]:
                 return Ok(6)
             if not file.exists(save_path) or state.plinko.game.balance < first_balance:
                 return Ok(12)
-            state = click(window, 100, 670, state)
+            let next = plinko_view.next_rect(1280, 720)
+            state = click(window, next.x + next.width / 2, next.y + next.height / 2, state)
             if plinko_engine.phase_code(state.plinko.game.phase) != 0:
                 return Ok(7)
-            state = click(window, 973, 149, state)
-            state = click(window, 1040, 204, state)
-            state = click(window, 1159, 259, state)
-            state = click(window, 1159, 313, state)
+            let rows_minus = plinko_view.rows_minus_rect(1280, 720)
+            let risk = plinko_view.risk_rect(1280, 720)
+            let bet_plus = plinko_view.bet_plus_rect(1280, 720)
+            let batch_plus = plinko_view.batch_plus_rect(1280, 720)
+            state = click(window, rows_minus.x + rows_minus.width / 2, rows_minus.y + rows_minus.height / 2, state)
+            state = click(window, risk.x + risk.width / 2, risk.y + risk.height / 2, state)
+            state = click(window, bet_plus.x + bet_plus.width / 2, bet_plus.y + bet_plus.height / 2, state)
+            state = click(window, batch_plus.x + batch_plus.width / 2, batch_plus.y + batch_plus.height / 2, state)
             if state.plinko.game.rows != 12 or state.plinko.game.bet != 20 or state.plinko.game.batch_count != 3:
                 return Ok(8)
-            state = click(window, 1040, 377, state)
+            let drop = plinko_view.drop_rect(1280, 720)
+            state = click(window, drop.x + drop.width / 2, drop.y + drop.height / 2, state)
             if plinko_engine.phase_code(state.plinko.game.phase) != 1 or collections.length(state.plinko.game.pending) != 3:
                 return Ok(9)
             state = settle_animation(window, state)?
             application.draw_for_test(window, state)?
-            state = click(window, 230, 670, state)
+            let back = plinko_view.lobby_rect(1280, 720)
+            state = click(window, back.x + back.width / 2, back.y + back.height / 2, state)
             if state.screen != 1 or state.settings.play_balance != state.plinko.game.balance:
                 return Ok(10)
             let closed = rocket_raylib.close_window(window)

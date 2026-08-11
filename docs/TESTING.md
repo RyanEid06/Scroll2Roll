@@ -138,6 +138,14 @@ six-line, basket, chip, and action clicks from responsive view geometry;
 Hold'em and HiLo GUI flows likewise use exported responsive controls. The
 current suite passes 46/46 in Debug and Release.
 
+`ui_arcade_games_view_test.rocket` covers the accepted Plinko, Coop Climb, and
+Midnight Crossing replacement group. It checks phase-specific exported
+controls for 44-pixel minimum size, bounds, and non-overlap, then draws each
+game in ready/active/settled states in both themes at all five exact target
+dimensions. The three scripted GUI flows now click those exported responsive
+rectangles instead of compatibility-era pixels. The current suite passes
+47/47 in Debug and Release.
+
 Functional drawing tests are necessary but not visual acceptance. Each visual
 milestone launches the actual native executable and records dark/light captures
 at 800x600, 1024x768, 1280x720, 1600x900, 1920x1080, and maximized. Review must

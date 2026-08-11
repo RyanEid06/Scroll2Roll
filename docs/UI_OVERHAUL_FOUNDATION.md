@@ -152,7 +152,8 @@ Implementation status on 2026-08-11:
 | Assets, resources, persistence, components | Accepted | Reviewed ImageGen atlases, licensed Manrope, degraded modes; 44/44 |
 | Startup, shell, lobby, settings, help, modals | Accepted | Actual dark/light native captures at every target and maximized; 45/45 |
 | Blackjack, Roulette, Hold'em, HiLo interiors | Accepted | Actual dark/light native matrix, responsive state drawing, exact guides; 46/46 |
-| Remaining seven interiors | Pending | Must pass focused implementation, visual, and regression gates |
+| Plinko, Coop Climb, Midnight Crossing interiors | Accepted | Actual dark/light native matrix, active states, responsive drawing; 47/47 |
+| Mines, Dice, Crash, Slots interiors | Pending | Must pass focused implementation, visual, and regression gates |
 | Website, package, final acceptance | Pending | Must use the completed asset-bearing application |
 
 Every milestone must pass the relevant focused tests and the complete Debug and

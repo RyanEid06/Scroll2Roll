@@ -1,4 +1,5 @@
 import src.app.application
+import src.app.crossing_view
 import src.app.shell_view
 import src.crossing.crossing_engine
 import src.crossing.crossing_rules
@@ -29,7 +30,8 @@ fn drive_checkpoint(window: rocket_raylib.Window, value: application.State, mous
             corridor_clear = crossing_engine.safe_at(state.crossing.game, state.crossing.game.player_x, 1) and crossing_engine.safe_at(state.crossing.game, state.crossing.game.player_x, 2) and crossing_engine.safe_at(state.crossing.game, state.crossing.game.player_x, 3)
         if corridor_clear and crossing_engine.safe_at(state.crossing.game, state.crossing.game.player_x, next_lane):
             if mouse:
-                state = click(window, 587, 305, state)
+                let up = crossing_view.up_rect(800, 600)
+                state = click(window, up.x + up.width / 2, up.y + up.height / 2, state)
             else:
                 state = press(window, rocket_raylib.key_up(), state)
         else:
@@ -38,13 +40,15 @@ fn drive_checkpoint(window: rocket_raylib.Window, value: application.State, mous
             let current_lane = state.crossing.game.player_lane
             if crossing_rules.lane_kind(current_lane) == 3 and crossing_engine.safe_at(state.crossing.game, left_x, current_lane) and crossing_engine.safe_at(state.crossing.game, left_x, next_lane):
                 if mouse:
-                    state = click(window, 525, 359, state)
+                    let left = crossing_view.left_rect(800, 600)
+                    state = click(window, left.x + left.width / 2, left.y + left.height / 2, state)
                 else:
                     state = press(window, rocket_raylib.key_left(), state)
             else:
                 if crossing_rules.lane_kind(current_lane) == 3 and crossing_engine.safe_at(state.crossing.game, right_x, current_lane) and crossing_engine.safe_at(state.crossing.game, right_x, next_lane):
                     if mouse:
-                        state = click(window, 649, 359, state)
+                        let right = crossing_view.right_rect(800, 600)
+                        state = click(window, right.x + right.width / 2, right.y + right.height / 2, state)
                     else:
                         state = press(window, rocket_raylib.key_right(), state)
                 else:
@@ -95,29 +99,37 @@ fn run() -> Result[Int, String]:
             if crossing_engine.phase_code(state.crossing.game.phase) != 2 or state.crossing.game.payout != 18 or not file.exists(save_path):
                 return Ok(8)
             let first_balance = state.crossing.game.balance
-            state = click(window, 100, 550, state)
+            let next = crossing_view.next_rect(800, 600)
+            state = click(window, next.x + next.width / 2, next.y + next.height / 2, state)
             if crossing_engine.phase_code(state.crossing.game.phase) != 0:
                 return Ok(9)
-            state = click(window, 679, 210, state)
-            state = click(window, 586, 274, state)
+            let bet_plus = crossing_view.bet_plus_rect(800, 600)
+            let start = crossing_view.start_rect(800, 600)
+            state = click(window, bet_plus.x + bet_plus.width / 2, bet_plus.y + bet_plus.height / 2, state)
+            state = click(window, start.x + start.width / 2, start.y + start.height / 2, state)
             if crossing_engine.phase_code(state.crossing.game.phase) != 1 or state.crossing.game.bet != 20:
                 return Ok(10)
-            state = click(window, 649, 359, state)
-            state = click(window, 525, 359, state)
+            let right = crossing_view.right_rect(800, 600)
+            let left = crossing_view.left_rect(800, 600)
+            state = click(window, right.x + right.width / 2, right.y + right.height / 2, state)
+            state = click(window, left.x + left.width / 2, left.y + left.height / 2, state)
             if state.crossing.game.player_x != 450 or state.crossing.game.checkpoints != 0:
                 return Ok(11)
-            state = click(window, 524, 419, state)
+            let pause = crossing_view.pause_rect(800, 600)
+            state = click(window, pause.x + pause.width / 2, pause.y + pause.height / 2, state)
             if not state.crossing_help or not state.crossing.game.paused:
                 return Ok(12)
-            state = click(window, 524, 419, state)
+            state = click(window, pause.x + pause.width / 2, pause.y + pause.height / 2, state)
             state = drive_checkpoint(window, state, true)?
             if crossing_engine.phase_code(state.crossing.game.phase) != 1 or state.crossing.game.checkpoints != 1:
                 return Ok(13)
-            state = click(window, 645, 419, state)
+            let cash = crossing_view.cash_out_rect(800, 600)
+            state = click(window, cash.x + cash.width / 2, cash.y + cash.height / 2, state)
             if crossing_engine.phase_code(state.crossing.game.phase) != 2:
                 return Ok(14)
             application.draw_for_test(window, state)?
-            state = click(window, 230, 550, state)
+            let back = crossing_view.lobby_rect(800, 600)
+            state = click(window, back.x + back.width / 2, back.y + back.height / 2, state)
             if state.screen != 1 or state.settings.play_balance != state.crossing.game.balance:
                 return Ok(15)
             if first_balance < 0 or state.crossing.game.balance < 0:

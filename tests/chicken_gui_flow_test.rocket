@@ -1,4 +1,5 @@
 import src.app.application
+import src.app.chicken_view
 import src.app.shell_view
 import src.chicken.chicken_engine
 import src.rocket_raylib
@@ -50,23 +51,30 @@ fn run() -> Result[Int, String]:
             if chicken_engine.phase_code(state.chicken.game.phase) != 2 or not file.exists(save_path):
                 return Ok(6)
             let first_balance = state.chicken.game.balance
-            state = click(window, 100, 550, state)
+            let next = chicken_view.next_rect(800, 600)
+            state = click(window, next.x + next.width / 2, next.y + next.height / 2, state)
             if chicken_engine.phase_code(state.chicken.game.phase) != 0:
                 return Ok(7)
-            state = click(window, 586, 175, state)
-            state = click(window, 679, 236, state)
+            let risk = chicken_view.risk_rect(800, 600)
+            let bet_plus = chicken_view.bet_plus_rect(800, 600)
+            state = click(window, risk.x + risk.width / 2, risk.y + risk.height / 2, state)
+            state = click(window, bet_plus.x + bet_plus.width / 2, bet_plus.y + bet_plus.height / 2, state)
             if state.chicken.game.bet != 20:
                 return Ok(8)
-            state = click(window, 586, 306, state)
+            let start = chicken_view.start_rect(800, 600)
+            state = click(window, start.x + start.width / 2, start.y + start.height / 2, state)
             if chicken_engine.phase_code(state.chicken.game.phase) != 1:
                 return Ok(9)
-            state = click(window, 586, 306, state)
+            let advance = chicken_view.advance_rect(800, 600)
+            state = click(window, advance.x + advance.width / 2, advance.y + advance.height / 2, state)
             if chicken_engine.phase_code(state.chicken.game.phase) == 1:
-                state = click(window, 586, 368, state)
+                let cash = chicken_view.cash_out_rect(800, 600)
+                state = click(window, cash.x + cash.width / 2, cash.y + cash.height / 2, state)
             if chicken_engine.phase_code(state.chicken.game.phase) != 2:
                 return Ok(10)
             application.draw_for_test(window, state)?
-            state = click(window, 230, 550, state)
+            let back = chicken_view.lobby_rect(800, 600)
+            state = click(window, back.x + back.width / 2, back.y + back.height / 2, state)
             if state.screen != 1 or state.settings.play_balance != state.chicken.game.balance:
                 return Ok(11)
             if first_balance < 0 or state.chicken.game.balance < 0:

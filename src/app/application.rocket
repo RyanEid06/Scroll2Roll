@@ -726,29 +726,29 @@ fn plinko_engine_phase(state: State) -> Int:
 fn update_plinko(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int, now: Float) -> State:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
-    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(plinko_view.help_rect(width), mouse_x, mouse_y):
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(plinko_view.help_rect(width, height), mouse_x, mouse_y):
         return plinko_help(state, not state.plinko_help)
     if state.plinko_help:
         return state
     let phase = plinko_engine_phase(state)
     if phase == 0:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(plinko_view.rows_minus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(plinko_view.rows_minus_rect(width, height), mouse_x, mouse_y):
             return plinko_configure_rows(state, -1)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(plinko_view.rows_plus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(plinko_view.rows_plus_rect(width, height), mouse_x, mouse_y):
             return plinko_configure_rows(state, 1)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_tab()) or clicked and components.contains(plinko_view.risk_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_tab()) or clicked and components.contains(plinko_view.risk_rect(width, height), mouse_x, mouse_y):
             return plinko_cycle_risk(state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(plinko_view.bet_minus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(plinko_view.bet_minus_rect(width, height), mouse_x, mouse_y):
             return plinko_configure_bet(state, -5)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(plinko_view.bet_plus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(plinko_view.bet_plus_rect(width, height), mouse_x, mouse_y):
             return plinko_configure_bet(state, 5)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_m()):
             return plinko_configure_batch(state, 1)
-        if clicked and components.contains(plinko_view.batch_minus_rect(width), mouse_x, mouse_y):
+        if clicked and components.contains(plinko_view.batch_minus_rect(width, height), mouse_x, mouse_y):
             return plinko_configure_batch(state, -1)
-        if clicked and components.contains(plinko_view.batch_plus_rect(width), mouse_x, mouse_y):
+        if clicked and components.contains(plinko_view.batch_plus_rect(width, height), mouse_x, mouse_y):
             return plinko_configure_batch(state, 1)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(plinko_view.drop_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(plinko_view.drop_rect(width, height), mouse_x, mouse_y):
             return plinko_start(state, now)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()):
             return plinko_return_to_lobby(state)
@@ -763,13 +763,13 @@ fn update_plinko(state: State, window: rocket_raylib.Window, clicked: Bool, mous
                     return with_error(state, error)
         return with_plinko(state, state.plinko, state.plinko_stage + 1, now + 0.08)
     if phase == 2:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(plinko_view.next_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(plinko_view.next_rect(width, height), mouse_x, mouse_y):
             match plinko_api.with_next_round(state.plinko):
                 case Ok(session):
                     return with_plinko(state, session, 0, 0.0)
                 case Err(error):
                     return with_error(state, error)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(plinko_view.lobby_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(plinko_view.lobby_rect(width, height), mouse_x, mouse_y):
             return plinko_return_to_lobby(state)
     return state
 
@@ -831,35 +831,35 @@ fn chicken_return_to_lobby(state: State) -> State:
 fn update_chicken(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int) -> State:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
-    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(chicken_view.help_rect(width), mouse_x, mouse_y):
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(chicken_view.help_rect(width, height), mouse_x, mouse_y):
         return chicken_help(state, not state.chicken_help)
     if state.chicken_help:
         return state
     let phase = chicken_api.phase_code(state.chicken)
     if phase == 0:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_tab()) or clicked and components.contains(chicken_view.risk_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_tab()) or clicked and components.contains(chicken_view.risk_rect(width, height), mouse_x, mouse_y):
             return chicken_cycle_risk(state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(chicken_view.bet_minus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(chicken_view.bet_minus_rect(width, height), mouse_x, mouse_y):
             return chicken_configure_bet(state, -5)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(chicken_view.bet_plus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(chicken_view.bet_plus_rect(width, height), mouse_x, mouse_y):
             return chicken_configure_bet(state, 5)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(chicken_view.start_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(chicken_view.start_rect(width, height), mouse_x, mouse_y):
             return chicken_start(state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(chicken_view.lobby_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(chicken_view.lobby_rect(width, height), mouse_x, mouse_y):
             return chicken_return_to_lobby(state)
     if phase == 1:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(chicken_view.advance_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(chicken_view.advance_rect(width, height), mouse_x, mouse_y):
             return chicken_advance(state)
-        if state.chicken.game.survived_depth > 0 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(chicken_view.cash_out_rect(width), mouse_x, mouse_y)):
+        if state.chicken.game.survived_depth > 0 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(chicken_view.cash_out_rect(width, height), mouse_x, mouse_y)):
             return chicken_cash_out(state)
     if phase == 2:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(chicken_view.next_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(chicken_view.next_rect(width, height), mouse_x, mouse_y):
             match chicken_api.with_next_round(state.chicken):
                 case Ok(session):
                     return with_chicken(state, session)
                 case Err(error):
                     return with_error(state, error)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(chicken_view.lobby_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(chicken_view.lobby_rect(width, height), mouse_x, mouse_y):
             return chicken_return_to_lobby(state)
     return state
 
@@ -939,40 +939,40 @@ fn crossing_ticks(state: State, window: rocket_raylib.Window) -> State:
 fn update_crossing(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int) -> State:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
-    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and(components.contains(crossing_view.help_rect(width), mouse_x, mouse_y) or crossing_api.phase_code(state.crossing) == 1 and components.contains(crossing_view.pause_rect(width), mouse_x, mouse_y)):
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and(components.contains(crossing_view.help_rect(width, height), mouse_x, mouse_y) or crossing_api.phase_code(state.crossing) == 1 and components.contains(crossing_view.pause_rect(width, height), mouse_x, mouse_y)):
         return crossing_toggle_help(state)
     if state.crossing_help:
         return state
     let phase = crossing_api.phase_code(state.crossing)
     if phase == 0:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(crossing_view.bet_minus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(crossing_view.bet_minus_rect(width, height), mouse_x, mouse_y):
             return crossing_configure_bet(state, -5)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(crossing_view.bet_plus_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(crossing_view.bet_plus_rect(width, height), mouse_x, mouse_y):
             return crossing_configure_bet(state, 5)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(crossing_view.start_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(crossing_view.start_rect(width, height), mouse_x, mouse_y):
             return crossing_start(state)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(crossing_view.lobby_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(crossing_view.lobby_rect(width, height), mouse_x, mouse_y):
             return crossing_return_to_lobby(state)
     if phase == 1:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(crossing_view.up_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(crossing_view.up_rect(width, height), mouse_x, mouse_y):
             return crossing_move(state, 0, 1)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(crossing_view.down_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_down()) or clicked and components.contains(crossing_view.down_rect(width, height), mouse_x, mouse_y):
             return crossing_move(state, 0, -1)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(crossing_view.left_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()) or clicked and components.contains(crossing_view.left_rect(width, height), mouse_x, mouse_y):
             return crossing_move(state, -1, 0)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(crossing_view.right_rect(width), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or clicked and components.contains(crossing_view.right_rect(width, height), mouse_x, mouse_y):
             return crossing_move(state, 1, 0)
-        if state.crossing.game.checkpoints > 0 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(crossing_view.cash_out_rect(width), mouse_x, mouse_y)):
+        if state.crossing.game.checkpoints > 0 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(crossing_view.cash_out_rect(width, height), mouse_x, mouse_y)):
             return crossing_cash_out(state)
         return crossing_ticks(state, window)
     if phase == 2:
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(crossing_view.next_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(crossing_view.next_rect(width, height), mouse_x, mouse_y):
             match crossing_api.with_next_round(state.crossing):
                 case Ok(session):
                     return with_crossing(state, session, 0.0)
                 case Err(error):
                     return with_error(state, error)
-        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(crossing_view.lobby_rect(height), mouse_x, mouse_y):
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(crossing_view.lobby_rect(width, height), mouse_x, mouse_y):
             return crossing_return_to_lobby(state)
     return state
 
@@ -1887,11 +1887,11 @@ fn draw(window: rocket_raylib.Window, state: State, resources: ui_resources.UiRe
     if state.screen == 4:
         roulette_view.draw(window, frame, resources, state.roulette.game, state.roulette_kind, state.roulette_target, state.roulette_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.roulette_spin_end, mouse_x, mouse_y)?
     if state.screen == 5:
-        plinko_view.draw(window, frame, state.plinko.game, state.plinko_stage, state.plinko_help, mouse_x, mouse_y)?
+        plinko_view.draw(window, frame, resources, state.plinko.game, state.plinko_stage, state.plinko_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.plinko_next_step, mouse_x, mouse_y)?
     if state.screen == 6:
-        chicken_view.draw(window, frame, state.chicken.game, state.chicken_help, mouse_x, mouse_y)?
+        chicken_view.draw(window, frame, resources, state.chicken.game, state.chicken_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), mouse_x, mouse_y)?
     if state.screen == 7:
-        crossing_view.draw(window, frame, state.crossing.game, state.crossing_help, mouse_x, mouse_y)?
+        crossing_view.draw(window, frame, resources, state.crossing.game, state.crossing_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), mouse_x, mouse_y)?
     if state.screen == 8:
         let table = holdem_api.public_table(state.holdem)
         let can_fold = holdem_api.can_action(state.holdem, 0, 0)

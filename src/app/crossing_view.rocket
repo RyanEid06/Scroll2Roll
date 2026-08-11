@@ -1,5 +1,9 @@
 import src.app.components
+import src.app.game_components
+import src.app.game_layout
+import src.app.shell_view
 import src.app.theme
+import src.app.ui_resources
 import src.crossing.crossing_engine
 import src.crossing.crossing_model
 import src.crossing.crossing_rules
@@ -7,41 +11,77 @@ import src.rocket_raylib
 import std.collections
 import std.string
 
-pub fn bet_minus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 190, 46, 40)
+fn interior(width: Int, height: Int) -> game_layout.Interior:
+    return game_layout.interior(width, height)
 
-pub fn bet_plus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 144, 190, 46, 40)
+pub fn bet_minus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + value.dock.height - 60, 48, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + 184, 48, 44)
 
-pub fn start_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 250, 232, 48)
+pub fn bet_plus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 120, value.dock.y + value.dock.height - 60, 48, 48)
+    return components.rect(value.rail.x + value.rail.width - 64, value.rail.y + 184, 48, 44)
 
-pub fn up_rect(width: Int) -> components.Rect:
-    return components.rect(width - 240, 282, 54, 46)
+pub fn start_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 184, value.dock.y + value.dock.height - 60, value.dock.width - 200, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + 246, value.rail.width - 32, 50)
 
-pub fn left_rect(width: Int) -> components.Rect:
-    return components.rect(width - 302, 336, 54, 46)
+pub fn up_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 80, value.dock.y + 12, 52, 44)
+    return components.rect(value.rail.x + value.rail.width / 2 - 28, value.rail.y + value.rail.height - 246, 56, 44)
 
-pub fn down_rect(width: Int) -> components.Rect:
-    return components.rect(width - 240, 336, 54, 46)
+pub fn left_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 20, value.dock.y + 64, 52, 44)
+    return components.rect(value.rail.x + value.rail.width / 2 - 90, value.rail.y + value.rail.height - 194, 56, 44)
 
-pub fn right_rect(width: Int) -> components.Rect:
-    return components.rect(width - 178, 336, 54, 46)
+pub fn down_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 80, value.dock.y + 64, 52, 44)
+    return components.rect(value.rail.x + value.rail.width / 2 - 28, value.rail.y + value.rail.height - 194, 56, 44)
 
-pub fn pause_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 398, 108, 42)
+pub fn right_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 140, value.dock.y + 64, 52, 44)
+    return components.rect(value.rail.x + value.rail.width / 2 + 34, value.rail.y + value.rail.height - 194, 56, 44)
 
-pub fn cash_out_rect(width: Int) -> components.Rect:
-    return components.rect(width - 212, 398, 114, 42)
+pub fn pause_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 214, value.dock.y + value.dock.height - 60, 136, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 126,(value.rail.width - 40) / 2, 48)
 
-pub fn help_rect(width: Int) -> components.Rect:
-    return components.rect(width - 118, 24, 86, 38)
+pub fn cash_out_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 358, value.dock.y + value.dock.height - 60, value.dock.width - 374, 48)
+    let pause = pause_rect(width, height)
+    return components.rect(pause.x + pause.width + 8, pause.y, pause.width, pause.height)
 
-pub fn next_rect(height: Int) -> components.Rect:
-    return components.rect(32, height - 68, 150, 42)
+pub fn help_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    return components.rect(value.stage.x + value.stage.width - 88, value.stage.y + 6, 76, 44)
 
-pub fn lobby_rect(height: Int) -> components.Rect:
-    return components.rect(192, height - 68, 120, 42)
+pub fn next_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + value.dock.height - 60, value.dock.width - 32, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 64, value.rail.width - 32, 48)
+
+pub fn lobby_rect(width: Int, height: Int) -> components.Rect:
+    let expected = height
+    return shell_view.back_rect(width)
 
 fn multiplier_label(basis_points: Int) -> String:
     let whole = basis_points / 10000
@@ -51,17 +91,26 @@ fn multiplier_label(basis_points: Int) -> String:
         fraction = string.concat("0", fraction)
     return string.concat(string.from_int(whole), string.concat(".", string.concat(fraction, "x")))
 
-fn lane_fill(lane: Int) -> rocket_raylib.Color:
+fn phase_name(code: Int) -> String:
+    if code == 0:
+        return "CROSSING READY"
+    if code == 1:
+        return "LIVE CROSSING"
+    return "RUN SETTLED"
+
+fn lane_fill(lane: Int, light_mode: Bool) -> rocket_raylib.Color:
     let kind = crossing_rules.lane_kind(lane)
     if kind == 1:
-        return theme.road()
+        return rocket_raylib.color(27, 31, 45, 255)
     if kind == 2:
-        return theme.rail()
+        return rocket_raylib.color(54, 39, 65, 255)
     if kind == 3:
-        return theme.water()
+        return rocket_raylib.color(8, 74, 112, 255)
     if kind == 4:
-        return theme.gold()
-    return theme.safe_lane()
+        return rocket_raylib.color(108, 78, 23, 255)
+    if light_mode:
+        return rocket_raylib.color(51, 112, 82, 255)
+    return rocket_raylib.color(16, 72, 59, 255)
 
 fn lane_name(lane: Int) -> String:
     let kind = crossing_rules.lane_kind(lane)
@@ -75,85 +124,110 @@ fn lane_name(lane: Int) -> String:
         return "CHECKPOINT"
     return "SAFE"
 
-fn draw_world(frame: rocket_raylib.Frame, game: crossing_model.Game, width: Int, height: Int) -> Result[Bool, String]:
-    let board_x = 32
-    let board_y = 92
-    let board_width = width - 414
-    let board_height = height - 160
-    let lane_height = board_height / crossing_rules.lane_count()
+fn draw_hazard(frame: rocket_raylib.Frame, kind: Int, x: Int, y: Int, width: Int, height: Int, light_mode: Bool) -> Result[Bool, String]:
+    if kind == 2:
+        rocket_raylib.draw_rounded_rectangle(frame, x, y, width, height, 0.5, 8, rocket_raylib.color(111, 71, 37, 255))?
+        rocket_raylib.draw_circle_pixels(frame, x + width / 4, y + height / 2, height / 3, rocket_raylib.color(161, 104, 54, 255))?
+        return rocket_raylib.draw_circle_pixels(frame, x + width * 3 / 4, y + height / 2, height / 3, rocket_raylib.color(161, 104, 54, 255))
+    var fill = theme.destructive(light_mode)
+    if kind == 1:
+        fill = theme.highlight(light_mode)
+    rocket_raylib.draw_rounded_rectangle(frame, x, y, width, height, 0.25, 6, fill)?
+    if kind == 1:
+        rocket_raylib.draw_line(frame, x + 6, y + height / 2, x + width - 6, y + height / 2, 2.0, rocket_raylib.color(38, 28, 42, 255))?
+    else:
+        rocket_raylib.draw_circle_pixels(frame, x + width / 4, y + height, 3, rocket_raylib.color(10, 13, 24, 255))?
+        rocket_raylib.draw_circle_pixels(frame, x + width * 3 / 4, y + height, 3, rocket_raylib.color(10, 13, 24, 255))?
+    return Ok(true)
+
+fn draw_world(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: crossing_model.Game, value: game_layout.Interior, light_mode: Bool) -> Result[Bool, String]:
+    let board = game_layout.inset(value.stage, 16)
+    rocket_raylib.draw_rounded_rectangle(frame, board.x, board.y, board.width, board.height, 0.04, 8, rocket_raylib.color(5, 13, 30, 245))?
+    let lane_height = board.height / crossing_rules.lane_count()
     var lane = 0
     while lane < crossing_rules.lane_count():
-        let y = board_y +(crossing_rules.lane_count() - 1 - lane) * lane_height
-        rocket_raylib.draw_rectangle(frame, board_x, y, board_width, lane_height - 2, lane_fill(lane))?
-        rocket_raylib.draw_text(frame, lane_name(lane), board_x + 6, y + 5, 10, theme.muted())?
+        let y = board.y +(crossing_rules.lane_count() - 1 - lane) * lane_height
+        rocket_raylib.draw_rectangle(frame, board.x, y, board.width, lane_height - 1, lane_fill(lane, light_mode))?
+        if lane_height >= 18:
+            components.type_text(window, frame, resources, lane_name(lane), board.x + 5, y + 2, components.type_caption(), rocket_raylib.color(255, 255, 255, 105))?
         lane = lane + 1
+    rocket_raylib.begin_scissor(frame, board.x, board.y, board.width, board.height)?
     var index = 0
     while index < collections.length(game.hazards):
         let hazard = game.hazards[index]
-        let x = board_x + hazard.position * board_width / crossing_rules.world_width()
-        let y = board_y +(crossing_rules.lane_count() - 1 - hazard.lane) * lane_height + 15
-        let hazard_width = hazard.length * board_width / crossing_rules.world_width()
-        var fill = theme.danger()
-        if crossing_rules.hazard_code(hazard.kind) == 1:
-            fill = theme.gold()
-        if crossing_rules.hazard_code(hazard.kind) == 2:
-            fill = theme.timber()
-        rocket_raylib.draw_rectangle(frame, x, y, hazard_width, lane_height - 28, fill)?
+        let x = board.x + hazard.position * board.width / crossing_rules.world_width()
+        let y = board.y +(crossing_rules.lane_count() - 1 - hazard.lane) * lane_height + 3
+        var hazard_width = hazard.length * board.width / crossing_rules.world_width()
+        if hazard_width < 12:
+            hazard_width = 12
+        var hazard_height = lane_height - 7
+        if hazard_height < 5:
+            hazard_height = 5
+        draw_hazard(frame, crossing_rules.hazard_code(hazard.kind), x, y, hazard_width, hazard_height, light_mode)?
         index = index + 1
-    let player_x = board_x + game.player_x * board_width / crossing_rules.world_width()
-    let player_y = board_y +(crossing_rules.lane_count() - 1 - game.player_lane) * lane_height + lane_height / 2
-    rocket_raylib.draw_circle(frame, player_x, player_y, 10.0, theme.text())?
-    rocket_raylib.draw_rectangle(frame, player_x - 4, player_y - 14, 8, 28, theme.emerald())?
-    return Ok(true)
+    rocket_raylib.end_scissor(frame)?
+    let player_x = board.x + game.player_x * board.width / crossing_rules.world_width()
+    let player_y = board.y +(crossing_rules.lane_count() - 1 - game.player_lane) * lane_height + lane_height / 2
+    rocket_raylib.draw_circle_pixels(frame, player_x, player_y - 3, 7, rocket_raylib.color(245, 217, 163, 255))?
+    rocket_raylib.draw_triangle(frame, player_x - 8, player_y + 10, player_x + 8, player_y + 10, player_x, player_y - 2, theme.cyan(light_mode))?
+    rocket_raylib.draw_ring_pixels(frame, player_x, player_y, 12, 14, 0.0, 360.0, 20, theme.highlight(light_mode))?
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, board.x, board.y, board.width, board.height, 0.04, 8, 2.0, theme.subtle_border(light_mode))
 
-fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.overlay())?
-    let box = components.rect(width / 2 - 350, 66, 700, 490)
-    components.panel(frame, box)?
-    rocket_raylib.draw_text(frame, "MIDNIGHT CROSSING RULES", box.x + 26, box.y + 24, theme.heading_size(), theme.gold())?
-    let lines = ["Arrow keys or the direction pad move one bounded grid step.", "Cars and the tram fail a run on contact; canal lanes require a log.", "Logs carry the player on deterministic 20 Hz fixed simulation ticks.", "Forward reaches checkpoints; sideways/backward movement never farms score.", "Each checkpoint raises difficulty and cash-out from 1.25x to 2.25x.", "Five checkpoints complete the finite run automatically.", "P pauses with this help. S cashes out after a checkpoint.", "Rendering never advances hazards. Credits have no monetary value."]
-    var index = 0
-    while index < collections.length(lines):
-        rocket_raylib.draw_text(frame, lines[index], box.x + 26, box.y + 84 + index * 42, theme.body_size(), theme.text())?
-        index = index + 1
-    return Ok(true)
-
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: crossing_model.Game, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_text(frame, "MIDNIGHT CROSSING", 32, 26, theme.heading_size(), theme.gold())?
-    rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(game.balance)), width - 300, 36, theme.body_size(), theme.emerald())?
-    let help_button = help_rect(width)
-    components.button(window, frame, help_button, "Help [P]", true, components.contains(help_button, mouse_x, mouse_y), false)?
-    draw_world(frame, game, width, height)?
-    components.panel(frame, components.rect(width - 350, 104, 272, 374))?
-    rocket_raylib.draw_text(frame, string.concat("Checkpoints ", string.from_int(game.checkpoints)), width - 330, 118, theme.body_size(), theme.text())?
-    rocket_raylib.draw_text(frame, string.concat("Cash value ", multiplier_label(game.multiplier_basis_points)), width - 330, 148, theme.body_size(), theme.gold())?
+fn draw_controls(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: crossing_model.Game, value: game_layout.Interior, mouse_x: Int, mouse_y: Int, light_mode: Bool) -> Result[Bool, String]:
+    components.modern_panel(frame, value.rail, light_mode, true)?
     let phase = crossing_engine.phase_code(game.phase)
+    if value.compact:
+        components.badge(window, frame, resources, components.rect(value.dock.x + 214, value.dock.y + 10, 144, 28), phase_name(phase), light_mode)?
+        game_components.metric(window, frame, resources, "CHECKPOINTS", string.from_int(game.checkpoints), value.dock.x + 382, value.dock.y + 6, 108, false, light_mode)?
+        game_components.metric(window, frame, resources, "CASH VALUE", multiplier_label(game.multiplier_basis_points), value.dock.x + 510, value.dock.y + 6, 120, true, light_mode)?
+    else:
+        components.badge(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 16, 146, 28), phase_name(phase), light_mode)?
+        game_components.status_banner(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 56, value.rail.width - 32, 54), game.message, light_mode)?
+        game_components.metric(window, frame, resources, "CHECKPOINTS", string.from_int(game.checkpoints), value.rail.x + 16, value.rail.y + 120, 112, false, light_mode)?
+        game_components.metric(window, frame, resources, "CASH VALUE", multiplier_label(game.multiplier_basis_points), value.rail.x + 148, value.rail.y + 120, 120, true, light_mode)?
     if phase == 0:
-        rocket_raylib.draw_text(frame, string.concat("Pass: ", string.from_int(game.bet)), width - 266, 200, theme.body_size(), theme.text())?
-        components.button(window, frame, bet_minus_rect(width), "-", true, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
-        components.button(window, frame, bet_plus_rect(width), "+", true, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
-        components.button(window, frame, start_rect(width), "Enter crossing", game.bet <= game.balance, components.contains(start_rect(width), mouse_x, mouse_y), true)?
+        let minus = bet_minus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let plus = bet_plus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let start = start_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, minus, "-", components.button_secondary(), true, components.contains(minus, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, plus, "+", components.button_secondary(), true, components.contains(plus, mouse_x, mouse_y), false, light_mode)?
+        components.type_centered(window, frame, resources, string.concat("PASS  ", string.from_int(game.bet)), components.rect(minus.x + 48, minus.y, plus.x - minus.x - 48, 44), components.type_label(), theme.primary_text(light_mode))?
+        components.modern_button(window, frame, resources, start, "ENTER CROSSING", components.button_primary(), game.bet <= game.balance, components.contains(start, mouse_x, mouse_y), true, light_mode)?
     if phase == 1:
-        components.button(window, frame, up_rect(width), "Up", not game.paused, components.contains(up_rect(width), mouse_x, mouse_y), true)?
-        components.button(window, frame, left_rect(width), "Left", not game.paused, components.contains(left_rect(width), mouse_x, mouse_y), false)?
-        components.button(window, frame, down_rect(width), "Down", not game.paused, components.contains(down_rect(width), mouse_x, mouse_y), false)?
-        components.button(window, frame, right_rect(width), "Right", not game.paused, components.contains(right_rect(width), mouse_x, mouse_y), false)?
-        components.button(window, frame, pause_rect(width), "Pause [P]", true, components.contains(pause_rect(width), mouse_x, mouse_y), false)?
-        components.button(window, frame, cash_out_rect(width), "Cash [S]", game.checkpoints > 0, components.contains(cash_out_rect(width), mouse_x, mouse_y), false)?
+        let up = up_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let left = left_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let down = down_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let right = right_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let pause = pause_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let cash = cash_out_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, up, "UP", components.button_primary(), not game.paused, components.contains(up, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, left, "LEFT", components.button_secondary(), not game.paused, components.contains(left, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, down, "DOWN", components.button_secondary(), not game.paused, components.contains(down, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, right, "RIGHT", components.button_secondary(), not game.paused, components.contains(right, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, pause, "PAUSE [P]", components.button_secondary(), true, components.contains(pause, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, cash, "CASH OUT [S]", components.button_primary(), game.checkpoints > 0, components.contains(cash, mouse_x, mouse_y), true, light_mode)?
     if phase == 2:
-        rocket_raylib.draw_text(frame, game.message, width - 330, 206, theme.small_size(), theme.text())?
-        rocket_raylib.draw_text(frame, string.concat("Return ", string.from_int(game.payout)), width - 330, 246, theme.heading_size(), theme.emerald())?
-        let next = next_rect(height)
-        let lobby = lobby_rect(height)
-        components.button(window, frame, next, "Next [N]", true, components.contains(next, mouse_x, mouse_y), true)?
-        components.button(window, frame, lobby, "Lobby [B]", true, components.contains(lobby, mouse_x, mouse_y), false)?
-    if phase == 0:
-        let lobby = lobby_rect(height)
-        components.button(window, frame, lobby, "Lobby [B]", true, components.contains(lobby, mouse_x, mouse_y), false)?
+        if not value.compact:
+            game_components.metric(window, frame, resources, "RETURN", string.from_int(game.payout), value.rail.x + 16, value.rail.y + 200, 120, true, light_mode)?
+        let next = next_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, next, "NEXT RUN [N]", components.button_primary(), true, components.contains(next, mouse_x, mouse_y), true, light_mode)?
+    return Ok(true)
+
+fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, light_mode: Bool) -> Result[Bool, String]:
+    let lines = ["Arrow keys or the direction pad move one bounded grid step.", "Cars and the tram fail a run on contact; canals require a log.", "Logs carry the player on deterministic 20 Hz fixed simulation ticks.", "Forward reaches checkpoints; sideways/backward never farms score.", "Each checkpoint raises difficulty and cash-out from 1.25x to 2.25x.", "Five checkpoints complete the finite run automatically.", "P pauses with this guide; S cashes out after a checkpoint.", "Rendering scales public positions and never advances a hazard.", "Finish or cash out a live run before returning to the lobby."]
+    return game_components.help_overlay(window, frame, resources, "MIDNIGHT CROSSING  /  CITY GUIDE", lines, -1, light_mode)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: crossing_model.Game, help: Bool, light_mode: Bool, reduced_motion: Bool, now: Float, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let value = interior(width, height)
+    let expected_now = now
+    let expected_motion = reduced_motion
+    game_components.ambient_stage(frame, resources, value.stage, 4, light_mode)?
+    draw_world(window, frame, resources, game, value, light_mode)?
+    draw_controls(window, frame, resources, game, value, mouse_x, mouse_y, light_mode)?
+    let rules = help_rect(width, height)
+    components.modern_button(window, frame, resources, rules, "RULES", components.button_quiet(), true, components.contains(rules, mouse_x, mouse_y), false, light_mode)?
     if help:
-        draw_help(window, frame)?
+        draw_help(window, frame, resources, light_mode)?
     return Ok(true)

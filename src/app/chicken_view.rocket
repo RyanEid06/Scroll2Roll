@@ -1,5 +1,9 @@
 import src.app.components
+import src.app.game_components
+import src.app.game_layout
+import src.app.shell_view
 import src.app.theme
+import src.app.ui_resources
 import src.chicken.chicken_engine
 import src.chicken.chicken_model
 import src.chicken.chicken_rules
@@ -7,32 +11,58 @@ import src.rocket_raylib
 import std.collections
 import std.string
 
-pub fn risk_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 154, 232, 42)
+fn interior(width: Int, height: Int) -> game_layout.Interior:
+    return game_layout.interior(width, height)
 
-pub fn bet_minus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 216, 46, 40)
+pub fn risk_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + 14, 170, 44)
+    return components.rect(value.rail.x + 16, value.rail.y + 170, value.rail.width - 32, 46)
 
-pub fn bet_plus_rect(width: Int) -> components.Rect:
-    return components.rect(width - 144, 216, 46, 40)
+pub fn bet_minus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 204, value.dock.y + 14, 44, 44)
+    return components.rect(value.rail.x + 16, value.rail.y + 232, 48, 44)
 
-pub fn start_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 282, 232, 48)
+pub fn bet_plus_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 352, value.dock.y + 14, 44, 44)
+    return components.rect(value.rail.x + value.rail.width - 64, value.rail.y + 232, 48, 44)
 
-pub fn advance_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 282, 232, 48)
+pub fn start_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 414, value.dock.y + 14, value.dock.width - 430, 44)
+    return components.rect(value.rail.x + 16, value.rail.y + 294, value.rail.width - 32, 50)
 
-pub fn cash_out_rect(width: Int) -> components.Rect:
-    return components.rect(width - 330, 344, 232, 48)
+pub fn advance_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + value.dock.height - 60, value.dock.width / 2 - 20, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 128, value.rail.width - 32, 50)
 
-pub fn help_rect(width: Int) -> components.Rect:
-    return components.rect(width - 118, 24, 86, 38)
+pub fn cash_out_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + value.dock.width / 2 + 4, value.dock.y + value.dock.height - 60, value.dock.width / 2 - 20, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 68, value.rail.width - 32, 50)
 
-pub fn next_rect(height: Int) -> components.Rect:
-    return components.rect(32, height - 68, 150, 42)
+pub fn help_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    return components.rect(value.stage.x + value.stage.width - 88, value.stage.y + 6, 76, 44)
 
-pub fn lobby_rect(height: Int) -> components.Rect:
-    return components.rect(192, height - 68, 120, 42)
+pub fn next_rect(width: Int, height: Int) -> components.Rect:
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + value.dock.height - 60, value.dock.width - 32, 48)
+    return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 64, value.rail.width - 32, 48)
+
+pub fn lobby_rect(width: Int, height: Int) -> components.Rect:
+    let expected = height
+    return shell_view.back_rect(width)
 
 fn multiplier_label(basis_points: Int) -> String:
     let whole = basis_points / 10000
@@ -42,91 +72,120 @@ fn multiplier_label(basis_points: Int) -> String:
         fraction = string.concat("0", fraction)
     return string.concat(string.from_int(whole), string.concat(".", string.concat(fraction, "x")))
 
-fn draw_coop(frame: rocket_raylib.Frame, x: Int, y: Int, width: Int, fill: rocket_raylib.Color, ink: rocket_raylib.Color, label: String) -> Result[Bool, String]:
-    rocket_raylib.draw_rectangle(frame, x, y + 8, width, 28, fill)?
-    rocket_raylib.draw_rectangle(frame, x + 10, y, width - 20, 10, theme.border())?
-    rocket_raylib.draw_circle(frame, x + 22, y + 22, 6.0, theme.gold())?
-    rocket_raylib.draw_text(frame, label, x + 42, y + 14, theme.small_size(), ink)?
-    return Ok(true)
+fn current_multiplier(game: chicken_model.Game) -> String:
+    if game.survived_depth < 1:
+        return "--"
+    return multiplier_label(chicken_rules.multipliers(game.risk)[game.survived_depth - 1])
 
-fn draw_ladder(frame: rocket_raylib.Frame, game: chicken_model.Game, height: Int) -> Result[Bool, String]:
+fn phase_name(code: Int) -> String:
+    if code == 0:
+        return "PASS READY"
+    if code == 1:
+        return "CLIMBING"
+    return "RUN SETTLED"
+
+fn draw_telescope(frame: rocket_raylib.Frame, x: Int, y: Int, light_mode: Bool) -> Result[Bool, String]:
+    rocket_raylib.draw_ring_pixels(frame, x, y, 14, 24, 12.0, 330.0, 28, theme.highlight(light_mode))?
+    rocket_raylib.draw_rounded_rectangle(frame, x - 9, y + 17, 18, 32, 0.2, 6, rocket_raylib.color(108, 71, 34, 255))?
+    rocket_raylib.draw_line(frame, x, y + 40, x - 20, y + 63, 4.0, theme.highlight(light_mode))?
+    return rocket_raylib.draw_line(frame, x, y + 40, x + 20, y + 63, 4.0, theme.highlight(light_mode))
+
+fn draw_coop(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, label: String, status: String, fill: rocket_raylib.Color, ink: rocket_raylib.Color, light_mode: Bool) -> Result[Bool, String]:
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y + 3, value.width, value.height, 0.18, 8, rocket_raylib.color(2, 6, 23, 90))?
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.18, 8, fill)?
+    rocket_raylib.draw_triangle(frame, value.x + 12, value.y + 11, value.x + 26, value.y + 2, value.x + 40, value.y + 11, theme.highlight(light_mode))?
+    rocket_raylib.draw_circle_pixels(frame, value.x + 26, value.y + value.height / 2 + 4, 6, theme.highlight(light_mode))?
+    components.type_text(window, frame, resources, label, value.x + 48, value.y + 7, components.type_caption(), ink)?
+    return components.type_text(window, frame, resources, status, value.x + value.width - 106, value.y + 7, components.type_caption(), ink)
+
+fn draw_ladder(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: chicken_model.Game, value: game_layout.Interior, light_mode: Bool) -> Result[Bool, String]:
+    let board = game_layout.inset(value.stage, 18)
     let values = chicken_rules.multipliers(game.risk)
-    let start_y = height - 120
-    rocket_raylib.draw_rectangle(frame, 210, 80, 22, start_y - 52, theme.border())?
+    let rung_gap =(board.height - 66) / chicken_rules.maximum_depth()
+    var rung_height = rung_gap - 4
+    if rung_height < 22:
+        rung_height = 22
+    let ladder_x = board.x + board.width / 2
+    rocket_raylib.draw_rounded_rectangle(frame, ladder_x - 10, board.y + 50, 20, board.height - 72, 0.4, 8, rocket_raylib.color(104, 68, 31, 255))?
+    draw_telescope(frame, ladder_x, board.y + 22, light_mode)?
     var depth = 0
     while depth < chicken_rules.maximum_depth():
-        let y = start_y - depth * 39
-        var fill = theme.panel()
-        var ink = theme.text()
-        var status = "Future path hidden"
+        let y = board.y + board.height - 20 -(depth + 1) * rung_gap
+        var fill = rocket_raylib.color(18, 35, 48, 235)
+        var ink = rocket_raylib.color(245, 248, 255, 255)
+        var status = "HIDDEN"
         if depth < game.survived_depth:
-            fill = theme.emerald()
-            ink = theme.background()
-            status = "Secured"
+            fill = theme.success(light_mode)
+            status = "SECURED"
         if chicken_engine.phase_code(game.phase) == 1 and depth == game.survived_depth:
-            fill = theme.gold()
-            ink = theme.background()
-            status = "Next choice"
+            fill = theme.highlight(light_mode)
+            ink = rocket_raylib.color(18, 28, 38, 255)
+            status = "NEXT"
         if chicken_engine.phase_code(game.phase) == 2 and game.failed and depth == game.survived_depth:
-            fill = theme.danger()
-            status = "Failed rung"
-        let label = string.concat(string.concat("Coop ", string.from_int(depth + 1)), string.concat("  ", string.concat(multiplier_label(values[depth]), string.concat("  ", status))))
-        draw_coop(frame, 46, y, 350, fill, ink, label)?
+            fill = theme.destructive(light_mode)
+            status = "FAILED"
+        var width = board.width * 52 / 100
+        if depth - depth / 2 * 2 == 0:
+            width = board.width * 58 / 100
+        let box = components.rect(ladder_x - width / 2, y, width, rung_height)
+        let label = string.concat(string.concat("COOP ", string.from_int(depth + 1)), string.concat("   ", multiplier_label(values[depth])))
+        draw_coop(window, frame, resources, box, label, status, fill, ink, light_mode)?
         depth = depth + 1
-    rocket_raylib.draw_circle(frame, 221, 66, 18.0, theme.gold())?
-    rocket_raylib.draw_circle(frame, 221, 66, 9.0, theme.background())?
+    components.type_text(window, frame, resources, "OBSERVATORY ASCENT", board.x + 12, board.y + 12, components.type_caption(), rocket_raylib.color(255, 255, 255, 132))?
     return Ok(true)
 
-fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, theme.overlay())?
-    let box = components.rect(width / 2 - 350, 70, 700, 480)
-    components.panel(frame, box)?
-    rocket_raylib.draw_text(frame, "COOP CLIMB RULES AND RETURN", box.x + 26, box.y + 24, theme.heading_size(), theme.gold())?
-    let lines = ["Lock one wager, then reveal one hidden rung at a time.", "After every safe rung choose Advance or Cash Out.", "A failed advance loses the prepaid wager; future safety stays hidden.", "Low survives 4/5, Medium 2/3, and High 1/2 on each rung.", "Ten fixed multiplier tables target 96% return at every cash-out depth.", "Settlement floors stake x basis-point multiplier / 10000.", "Tab risk | Up/Down bet | Enter start/advance | S cash out.", "P closes help. Credits are local play money with no monetary value."]
-    var index = 0
-    while index < collections.length(lines):
-        rocket_raylib.draw_text(frame, lines[index], box.x + 26, box.y + 82 + index * 42, theme.body_size(), theme.text())?
-        index = index + 1
-    return Ok(true)
-
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, game: chicken_model.Game, help: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
-    let width = rocket_raylib.window_width(window)
-    let height = rocket_raylib.window_height(window)
-    rocket_raylib.draw_text(frame, "COOP CLIMB", 32, 26, theme.heading_size(), theme.gold())?
-    rocket_raylib.draw_text(frame, "Original observatory ladder", 32, 62, theme.small_size(), theme.muted())?
-    rocket_raylib.draw_text(frame, string.concat("Credits ", string.from_int(game.balance)), width - 300, 36, theme.body_size(), theme.emerald())?
-    let help_button = help_rect(width)
-    components.button(window, frame, help_button, "Help [P]", true, components.contains(help_button, mouse_x, mouse_y), false)?
-    draw_ladder(frame, game, height)?
-    components.panel(frame, components.rect(width - 350, 110, 272, 330))?
-    rocket_raylib.draw_text(frame, game.message, width - 330, 120, theme.small_size(), theme.muted())?
-    components.button(window, frame, risk_rect(width), string.concat("Risk: ", chicken_rules.risk_name(game.risk)), chicken_engine.phase_code(game.phase) == 0, components.contains(risk_rect(width), mouse_x, mouse_y), false)?
-    rocket_raylib.draw_text(frame, string.concat("Wager: ", string.from_int(game.bet)), width - 270, 226, theme.body_size(), theme.text())?
-    components.button(window, frame, bet_minus_rect(width), "-", chicken_engine.phase_code(game.phase) == 0, components.contains(bet_minus_rect(width), mouse_x, mouse_y), false)?
-    components.button(window, frame, bet_plus_rect(width), "+", chicken_engine.phase_code(game.phase) == 0, components.contains(bet_plus_rect(width), mouse_x, mouse_y), false)?
+fn draw_controls(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: chicken_model.Game, value: game_layout.Interior, mouse_x: Int, mouse_y: Int, light_mode: Bool) -> Result[Bool, String]:
+    components.modern_panel(frame, value.rail, light_mode, true)?
     let phase = chicken_engine.phase_code(game.phase)
+    if value.compact:
+        var information_y = value.dock.y + 12
+        if phase == 0:
+            information_y = value.dock.y + value.dock.height - 74
+        components.badge(window, frame, resources, components.rect(value.dock.x + 16, information_y + 4, 124, 28), phase_name(phase), light_mode)?
+        game_components.metric(window, frame, resources, "DEPTH", string.from_int(game.survived_depth), value.dock.x + 156, information_y, 80, false, light_mode)?
+        game_components.metric(window, frame, resources, "CASH VALUE", current_multiplier(game), value.dock.x + 252, information_y, 118, true, light_mode)?
+    else:
+        components.badge(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 16, 132, 28), phase_name(phase), light_mode)?
+        game_components.status_banner(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 56, value.rail.width - 32, 54), game.message, light_mode)?
+        game_components.metric(window, frame, resources, "DEPTH", string.from_int(game.survived_depth), value.rail.x + 16, value.rail.y + 118, 86, false, light_mode)?
+        game_components.metric(window, frame, resources, "CASH VALUE", current_multiplier(game), value.rail.x + 120, value.rail.y + 118, 130, true, light_mode)?
     if phase == 0:
-        components.button(window, frame, start_rect(width), "Secure pass [Enter]", game.bet <= game.balance, components.contains(start_rect(width), mouse_x, mouse_y), true)?
-        rocket_raylib.draw_text(frame, "Tab risk | Up/Down wager", width - 330, 354, theme.small_size(), theme.muted())?
+        let risk = risk_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let minus = bet_minus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let plus = bet_plus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let start = start_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, risk, string.concat("RISK  ", chicken_rules.risk_name(game.risk)), components.button_secondary(), true, components.contains(risk, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, minus, "-", components.button_secondary(), true, components.contains(minus, mouse_x, mouse_y), false, light_mode)?
+        components.modern_button(window, frame, resources, plus, "+", components.button_secondary(), true, components.contains(plus, mouse_x, mouse_y), false, light_mode)?
+        components.type_centered(window, frame, resources, string.concat("WAGER  ", string.from_int(game.bet)), components.rect(minus.x + 48, minus.y, plus.x - minus.x - 48, 44), components.type_caption(), theme.primary_text(light_mode))?
+        components.modern_button(window, frame, resources, start, "SECURE PASS [ENTER]", components.button_primary(), game.bet <= game.balance, components.contains(start, mouse_x, mouse_y), true, light_mode)?
     if phase == 1:
-        components.button(window, frame, advance_rect(width), "Advance [Enter]", game.survived_depth < chicken_rules.maximum_depth(), components.contains(advance_rect(width), mouse_x, mouse_y), true)?
-        var cash_label = "Cash Out [S]"
-        if game.survived_depth > 0:
-            cash_label = string.concat("Cash ", string.concat(multiplier_label(chicken_rules.multiplier_at(game.risk, game.survived_depth)?), " [S]"))
-        components.button(window, frame, cash_out_rect(width), cash_label, game.survived_depth > 0, components.contains(cash_out_rect(width), mouse_x, mouse_y), false)?
+        let advance = advance_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        let cash = cash_out_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, advance, "ADVANCE [ENTER]", components.button_primary(), game.survived_depth < chicken_rules.maximum_depth(), components.contains(advance, mouse_x, mouse_y), true, light_mode)?
+        components.modern_button(window, frame, resources, cash, "CASH OUT [S]", components.button_secondary(), game.survived_depth > 0, components.contains(cash, mouse_x, mouse_y), false, light_mode)?
     if phase == 2:
-        rocket_raylib.draw_text(frame, string.concat("Wager ", string.from_int(game.wager)), width - 330, 286, theme.body_size(), theme.text())?
-        rocket_raylib.draw_text(frame, string.concat("Return ", string.from_int(game.payout)), width - 330, 330, theme.body_size(), theme.emerald())?
-        let next = next_rect(height)
-        let lobby = lobby_rect(height)
-        components.button(window, frame, next, "Next [N]", true, components.contains(next, mouse_x, mouse_y), true)?
-        components.button(window, frame, lobby, "Lobby [B]", true, components.contains(lobby, mouse_x, mouse_y), false)?
-    if phase == 0:
-        let lobby = lobby_rect(height)
-        components.button(window, frame, lobby, "Lobby [B]", true, components.contains(lobby, mouse_x, mouse_y), false)?
-        rocket_raylib.draw_text(frame, "Ready: returning preserves settled credits", 420, height - 52, theme.small_size(), theme.muted())?
+        if not value.compact:
+            game_components.metric(window, frame, resources, "RETURN", string.from_int(game.payout), value.rail.x + 16, value.rail.y + 214, 120, true, light_mode)?
+        let next = next_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        components.modern_button(window, frame, resources, next, "NEXT PASS [N]", components.button_primary(), true, components.contains(next, mouse_x, mouse_y), true, light_mode)?
+    return Ok(true)
+
+fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, light_mode: Bool) -> Result[Bool, String]:
+    let lines = ["Lock one wager, then reveal one hidden rung at a time.", "After every safe rung choose Advance or Cash Out.", "A failed advance loses the prepaid wager; future safety stays hidden.", "Low survives 4/5, Medium 2/3, and High 1/2 on each rung.", "Ten fixed multiplier tables target 96% return at every cash-out depth.", "Settlement floors stake x basis-point multiplier / 10000.", "Tab changes risk, Up/Down changes wager, and Enter advances.", "S cashes out only after at least one secured rung.", "Rendering never receives or exposes future safe/fail values."]
+    return game_components.help_overlay(window, frame, resources, "COOP CLIMB  /  OBSERVATORY GUIDE", lines, -1, light_mode)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: chicken_model.Game, help: Bool, light_mode: Bool, reduced_motion: Bool, now: Float, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let value = interior(width, height)
+    let expected_now = now
+    let expected_motion = reduced_motion
+    game_components.ambient_stage(frame, resources, value.stage, 3, light_mode)?
+    draw_ladder(window, frame, resources, game, value, light_mode)?
+    draw_controls(window, frame, resources, game, value, mouse_x, mouse_y, light_mode)?
+    let rules = help_rect(width, height)
+    components.modern_button(window, frame, resources, rules, "RULES", components.button_quiet(), true, components.contains(rules, mouse_x, mouse_y), false, light_mode)?
     if help:
-        draw_help(window, frame)?
+        draw_help(window, frame, resources, light_mode)?
     return Ok(true)

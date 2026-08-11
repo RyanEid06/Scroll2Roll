@@ -182,6 +182,49 @@ This file records the complete local acceptance pass performed on Windows x64 on
   package, or website was changed. Nothing was pushed, deployed, published,
   released, signed, or purchased.
 
+## Native UI overhaul milestone 5 - three arcade interiors
+
+- On 2026-08-11, the actual native executable was captured for Plinko, Coop
+  Climb, and Midnight Crossing in dark and light themes at 800x600, 1024x768,
+  1280x720, and 1600x900. Both themes were also captured at the current
+  display's 1920x1055 maximum decorated-window client; deterministic rendering
+  tests exercise exact 1920x1080. Ignored evidence is under
+  `out/visual-audit/milestone5/` using game, theme, state, and requested-size
+  filenames. Representative active captures cover every game at compact and
+  standard dimensions.
+- Plinko now has a deep cyan audited chamber, responsive triangular peg field,
+  dimensional pegs, exact multiplier bins, batch configuration, committed-path
+  balls, compact live status, and sub-step interpolation. Interpolation reads
+  only precommitted engine paths; reduced motion retains the discrete committed
+  stages and rendering never selects a bucket.
+- Coop Climb now has an original observatory ascent, telescope goal, ten fixed
+  multiplier rungs, hidden/next/secured/failed state, risk and pass controls,
+  cash-out state, and a phase-aware compact dock. The renderer derives the
+  displayed secured multiplier from the public fixed ladder and depth; it does
+  not receive or expose future safe/fail values.
+- Midnight Crossing now has a dominant top-down city board with safe medians,
+  roads, tram lane, canals, checkpoint, procedural courier, vehicles, tram, and
+  logs. All hazard positions and kinds come from public engine state and are
+  scissored to the board; the view neither advances fixed ticks nor performs
+  collision decisions. Compact and wide direction pads expose the same legal
+  movement/pause/cash-out paths as the keyboard.
+- Native review found one 800x600 Coop Climb overlap between ready controls and
+  compact status metrics. The information band is now phase-aware—below the
+  ready row and above active/settled actions—and replacement dark/light and
+  active captures pass without clipping or overlap. Plinko's otherwise-empty
+  compact live state also gained a status band during review.
+- `ui_arcade_games_view_test.rocket` permanently checks target bounds,
+  44-pixel controls, phase-specific non-overlap, balanced scissor state, and
+  both-theme ready/active/settled rendering at all five exact dimensions. The
+  Plinko, Coop Climb, and Midnight Crossing GUI tests now derive every changed
+  pointer action from exported responsive hitboxes while preserving their
+  complete rules, persistence, pause, settlement, and safe-lobby flows.
+- Sequential Debug and Release `scripts/validate.ps1` passes each completed the
+  native build, `rocketc check`, all 47 tests, and both formatting checks. The
+  frozen Rocket checkout remained clean and the bundled font hash remained
+  unchanged. Nothing was pushed, deployed, published, released, signed, or
+  purchased.
+
 ## 0.2.0 expansion baseline
 
 Before expansion implementation, both Debug and Release
