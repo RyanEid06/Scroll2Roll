@@ -162,3 +162,19 @@ at 800x600, 1024x768, 1280x720, 1600x900, 1920x1080, and maximized. Review must
 check recognizable game grammar, stage dominance, action order, typography,
 contrast, focus/disabled states, help/history usability, clipping, overlap,
 negative geometry, reachability, and any lingering flat debug composition.
+
+Final package validation checks an exact 17-file allowlist, recursive internal
+checksums, reviewed font/art/manifest hashes, the complete pinned raylib
+license, forbidden source/build/development content, safe checksum paths,
+archive sidecar integrity, and a relocated `--headless-smoke` run with the
+relocation directory as the process working directory. The accepted archive is
+6,963,264 bytes with SHA-256
+`83b4e94c24c196782cb04f209193303a6bd602a8a3e7b2b3a8e99548ec02d597`.
+
+Final website validation checks all 13 verified native-capture hashes, their
+references, the eleven equal cards, local profile safety, CSP, reduced motion,
+semantic palette hooks, prohibited claims, and the exact staged archive. The
+source tree passes with 19 files and the fresh staged tree with 20. Browser QA
+covers 1280x720 and 390x844 profile/catalog/download flows, exact metadata,
+desktop two-column and phone one-column geometry, invalid-name focus feedback,
+image loading, zero horizontal overflow, and zero console warnings/errors.

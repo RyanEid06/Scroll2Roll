@@ -154,7 +154,7 @@ Implementation status on 2026-08-11:
 | Blackjack, Roulette, Hold'em, HiLo interiors | Accepted | Actual dark/light native matrix, responsive state drawing, exact guides; 46/46 |
 | Plinko, Coop Climb, Midnight Crossing interiors | Accepted | Actual dark/light native matrix, active states, responsive drawing; 47/47 |
 | Mines, Dice, Crash, Slots interiors | Accepted | Actual dark/light matrix, active and maximized states, privacy-safe responsive drawing; 48/48 |
-| Website, package, final acceptance | Pending | Must use the completed asset-bearing application |
+| Website, package, final acceptance | Accepted | Verified native captures, exact asset-bearing archive, source/staged/browser QA, final audit |
 
 Every milestone must pass the relevant focused tests and the complete Debug and
 Release validation scripts before its commit. Visual milestones also require
@@ -169,6 +169,8 @@ safe; both themes have readable contrast; keyboard and mouse reach the same
 legal actions; labels do not clip; and the minimum viewport has no overlap,
 negative geometry, or unreachable control.
 
-All eleven native interiors are accepted. This ledger does not yet claim that
-the full overhaul Definition of Done is complete because the real package,
-aligned website, final documentation, and clean-tree audit remain pending.
+All eleven native interiors, the aligned website, and the asset-bearing package
+pass the documented engineering gates. The overhaul Definition of Done is
+therefore complete locally. This is not a public release or a claim of owner
+visual approval: representative captures are presented for that decision, and
+publication/signing still require explicit owner authorization.

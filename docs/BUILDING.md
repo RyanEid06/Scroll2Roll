@@ -70,9 +70,11 @@ building.
 
 ## Packaging
 
-The current workflow produces and verifies
-`out/package/Scroll2Roll-0.3.0-windows-x64.zip`; exact contents and acceptance
-metadata are in `PACKAGING.md`.
+The current workflow produces and verifies the asset-bearing
+`out/package/Scroll2Roll-0.3.0-windows-x64.zip`. The accepted local archive is
+6,963,264 bytes (6.64 MiB) with SHA-256
+`83b4e94c24c196782cb04f209193303a6bd602a8a3e7b2b3a8e99548ec02d597`;
+exact contents and acceptance metadata are in `PACKAGING.md`.
 
 ```powershell
 .\scripts\package-windows.ps1 -RocketRoot $rocketRoot

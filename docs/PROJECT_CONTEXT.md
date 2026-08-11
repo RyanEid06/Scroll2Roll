@@ -17,7 +17,8 @@ Read this file and `MASTER_PLAN.md` completely at the start of every Scroll2Roll
 
 ## Product vision and completed scope
 
-Scroll2Roll is a polished, local, single-player, play-money casino shell. The
+Scroll2Roll is an illustration-led, local, single-player, play-money casino
+shell. The
 accepted 0.2.0 baseline includes complete Blackjack, European Roulette, Plinko,
 Coop Climb, Midnight Crossing, and No-Limit Texas Hold'em. The owner-approved
 0.3.0 expansion in `EXPANSION_0_3_IMPLEMENTATION.md` adds Mines, Dice, HiLo,
@@ -67,17 +68,24 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
 - The static website is a responsive three-page experience: new visitors create
   a non-authenticated local browser profile with a validated nickname and
   optional PNG/JPEG/WebP avatar; the Play page presents all eleven complete native
-  games in original illustrated cards; and the Download page presents the exact
+  games with verified native captures; and the Download page presents the exact
   verified 0.3.0 package, integrity data, installation, requirements,
   unsigned-build disclosure, and troubleshooting. Profile data stays in
   `localStorage`, is never transmitted, and can be edited or reset.
-- Release packaging includes the native executable, version, notices, controls, troubleshooting, and checksums, and passes relocated headless smoke validation.
+- Release packaging includes the native executable, reviewed fonts and cover
+  atlases, asset/provenance manifests, complete licenses, version, notices,
+  controls, troubleshooting, and recursive checksums, and passes exact-content
+  and relocated headless-smoke validation.
 - Version 2 persistence writes `scroll2roll-save-2`, migrates valid
   `scroll2roll-save-1` settings and credits, and safely recovers from missing,
   invalid, or unsupported data.
 - Version 3 persistence writes `scroll2roll-save-3`, migrates valid save-v1 and
   save-v2 settings and credits without adding game-rule state, and preserves
   explicit missing, corrupt, and unsupported recovery.
+- Version 4 persistence adds only the persisted dark/light theme and
+  reduced-motion preference, migrates valid save-v1/v2/v3 data with credit
+  integrity, and never persists live wagers, private outcomes, or resource
+  handles.
 - European Roulette is fully playable through its rendering-independent engine
   and presentation API. It implements the single-zero 0-36 wheel; correct
   colors; straight, split, street, corner, six-line, basket, dozen, column,
@@ -252,7 +260,8 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
   adding fixed-strip/payline/feature math with exact source-recomputed return,
   deterministic paid/free/Bonus sessions and finite autoplay, and complete
   minimum-size keyboard/mouse flows with committed sequential presentation.
-- `Scroll2Roll-0.3.0-windows-x64.zip` is 1,919,372 bytes with SHA-256
+- The superseded pre-overhaul `Scroll2Roll-0.3.0-windows-x64.zip` was
+  1,919,372 bytes with SHA-256
   `FD2B4EC31734DCB6E51707C862A439966E5771CBDA136DCD4F6B09726082688B`.
   Internal checksums, forbidden-content scanning, and relocated headless smoke
   pass. The six-file source site and seven-file staged site pass with that exact
@@ -269,7 +278,13 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
 - The game is local-only and play-money-only. Credits are not transferable and have no cash value.
 - Hold'em AI is intentionally described as deterministic recreational play,
   not professional, adaptive, online, or unbeatable poker.
-- The packaged application uses procedural UI art and a short generated tone; it does not ship a screenshot-baseline suite or external art/audio catalog.
+- The packaged application combines reviewed original ImageGen covers with
+  procedural native tables, boards, cabinets, and a short generated tone. It
+  does not ship third-party casino-provider art or an automated screenshot-
+  baseline comparison suite.
+- The current 1920x1080 display permits a 1920x1055 forced client and a 1920x991
+  true-maximized client after Windows chrome/taskbar; deterministic renderer
+  tests exercise exact 1920x1080 geometry.
 - The frozen Rocket debugger represented the scalar `status` local during acceptance; managed locals such as the argument array may display as unavailable in the native debugger.
 - The frozen LSP's formatter is exposed through its `source.format.rocket` code-action contract and the reproducible `rocketc fmt` workflow; Visual Studio's generic `Edit.FormatDocument` command is not advertised for Rocket documents.
 - No public release, Cloudflare site, remote download, external production user, or certificate signature is claimed.
@@ -339,11 +354,20 @@ and dark/light original ambience. Actual native captures cover the full target
 matrix plus compact/standard active states; review found and fixed one compact
 Coop status overlap. All 47 tests pass in Debug and Release.
 
-The remaining Mines, Dice, Crash, and Slots interiors still render through
-compatibility-era views and remain visually rejected. No visual-completion
-claim is valid until those interiors, the aligned website, the real asset-
-bearing package, and the final acceptance matrix pass.
-`docs/UI_OVERHAUL_FOUNDATION.md` is the audit and acceptance ledger.
+Milestone 6 is complete. Mines, Dice, Crash, and Slots now use the shared
+responsive interior contract with privacy-safe cavern tiles, dimensional signal
+dice, public-only rocket flight data, and cell-clipped committed reels. Their
+full dark/light responsive matrix, active states, requested-1080p/maximized
+captures, and 48/48 Debug/Release gates pass.
+
+Milestone 7 is complete. The aligned website uses 13 verified native captures;
+the 19-file source and 20-file staged trees pass exact validation and responsive
+browser QA. The asset-bearing 17-file package is 6,963,264 bytes with SHA-256
+`83B4E94C24C196782CB04F209193303A6BD602A8A3E7B2B3A8E99548EC02D597`;
+recursive hashes, licenses, exact reviewed assets, forbidden-content scan, and
+relocated launch pass. `docs/UI_OVERHAUL_FOUNDATION.md` is the completed audit
+and acceptance ledger. Owner visual approval and any publication remain
+separate decisions.
 
 ## Milestones
 
@@ -433,8 +457,13 @@ bearing package, and the final acceptance matrix pass.
   exact signal and reel-result presentation; procedural gems, mines, dice,
   rocket/exhaust, cabinet, paylines, and eight symbols; actual dark/light,
   active-state, requested-1080p, and maximized native review; and passing 48/48
-  Debug and Release gates. All eleven native game interiors are now accepted;
-  website/package/final acceptance remains.
+  Debug and Release gates. All eleven native game interiors are accepted.
+- Completed: native UI overhaul milestone 7, including 13 tracked verified
+  native website captures; aligned semantic styling; source/staged validation;
+  1280x720 and 390x844 browser QA; the exact 17-file asset-bearing package;
+  recursive hashes, licenses, forbidden-content and relocated-smoke gates; final
+  documentation; and clean Scroll2Roll/frozen-Rocket audits. No publication,
+  deployment, push, release, purchase, signing, or owner-approval claim was made.
 
 ## Major decisions
 
@@ -481,16 +510,14 @@ Read `AGENTS.md`, `UI_OVERHAUL.md`, `docs/MASTER_PLAN.md`,
 `docs/UI_OVERHAUL_FOUNDATION.md`, `docs/EXPANSION_PLAN.md`,
 `docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
 status and preserve user changes. The accepted 0.2.0 baseline remains intact;
-Mines, Dice, HiLo, Crash, Slots, and the accepted save-v3 behavior baseline are
-complete. The UI-overhaul suite currently passes 48/48. The
-verified local 0.3.0 archive is 1,919,372 bytes with SHA-256
-`FD2B4EC31734DCB6E51707C862A439966E5771CBDA136DCD4F6B09726082688B`;
-source/staged website and responsive browser checks pass. Keep using frozen Rocket 2.0
-and the pinned raylib integration with custom frame control forced off. Do not
-push, publish, deploy, sign, or add an unapproved game without owner approval.
-UI overhaul milestones 1 through 6 pass 48/48 in Debug and Release. All eleven
-game interiors are visually accepted in both themes and across the responsive
-matrix. Continue with website alignment, the real asset-bearing Windows
-package, source/staged-site validation, final documentation, and the clean-tree
-acceptance audit. Do not reuse the superseded 0.3.0 package or stale website
-screenshots.
+Mines, Dice, HiLo, Crash, Slots, and save-v4 migration are complete. The full UI
+overhaul passes 48/48 in Debug and Release. The accepted asset-bearing 0.3.0
+archive is 6,963,264 bytes with SHA-256
+`83B4E94C24C196782CB04F209193303A6BD602A8A3E7B2B3A8E99548EC02D597`;
+package/relocation and 19-file source/20-file staged-site checks pass. All eleven
+interiors, both themes, every responsive target, and representative active
+states passed local visual review; tracked website captures present that work
+for owner approval. Keep using frozen Rocket 2.0 and the pinned raylib
+integration with custom frame control forced off. Preserve the untracked owner
+file `SCROLL2ROLL_MASTER_PLAN.md`. Do not push, publish, deploy, release, sign,
+purchase, or add an unapproved game without owner approval.

@@ -1,10 +1,10 @@
 # Visual Design
 
 The native 0.3.0 rectangle-and-default-text presentation is an explicitly
-rejected baseline. `UI_OVERHAUL.md` is the active owner mandate and
-`UI_OVERHAUL_FOUNDATION.md` records the implementation/acceptance ledger. This
-document describes the target system while views are replaced in logical
-groups; it does not claim visual acceptance before that work is complete.
+rejected baseline. `UI_OVERHAUL.md` is the owner mandate and
+`UI_OVERHAUL_FOUNDATION.md` records the completed engineering acceptance
+ledger. The replacement shell and all eleven interiors now match this document;
+final visual approval remains the owner's decision.
 
 ## Semantic color tokens
 
@@ -136,15 +136,16 @@ Turbo, finite autoplay, Stop, free-spin/Bonus state, result, and bounded history
 distinct. Sequential reveal consumes only precommitted stops; Turbo changes
 timing but not layout, outcome, or settlement.
 
-The static website now applies the same tokens in a three-page experience. The
-profile page pairs an editorial welcome panel with a raised local-profile card.
-The Play page follows a dense premium dashboard direction with a compact sticky
-header, a high-contrast catalog hero, and eleven wide rectangular game cards. Each
-card contains an original inline SVG illustration assembled from simple shapes;
-no casino-provider artwork, layout, or external asset is copied. The Download
-page gives the verified package its own gold-accented panel and separates
-integrity, installation, requirements, unsigned-build, troubleshooting, and
-privacy content into readable sections. Desktop cards use a two-column grid;
-phone layouts collapse to one column without horizontal overflow. Visible
+The static website now applies the same navy, blue, violet, cyan, gold, and
+semantic status tokens in a three-page experience. The profile page pairs an
+editorial welcome panel with a raised local-profile card. The Play page uses a
+compact sticky header, a high-contrast catalog hero, verified dark/light native
+lobby captures, and eleven equal cards whose art is the corresponding accepted
+native interior capture. It does not load casino-provider or external imagery.
+The Download page gives the exact asset-bearing package its own raised panel and
+separates integrity, installation, requirements, unsigned-build,
+troubleshooting, and privacy content into readable sections. Desktop cards use
+a two-column 581-by-544-pixel layout at the reviewed 1280-pixel viewport; phone
+layouts collapse to one 347-pixel-wide column without horizontal overflow. Visible
 focus, skip links, semantic landmarks, sufficient contrast, and reduced-motion
 rules apply across all three pages.

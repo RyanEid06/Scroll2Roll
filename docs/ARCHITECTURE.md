@@ -148,8 +148,9 @@ action rail from `layout.rocket`; individual games derive only local positive
 regions. `src/app/game_components.rocket` owns original atlas ambience and
 procedural felt, playing-card, suit, card-back, chip, metric, status, help, and
 committed-motion presentation. It accepts already-public game state and owns no
-rule, payout, deck, outcome, privacy, or settlement decision. Blackjack,
-Roulette, Hold'em, and HiLo are the first accepted consumers.
+rule, payout, deck, outcome, privacy, or settlement decision. All eleven
+accepted interiors use that contract; Mines and Crash additionally prove the
+private-state boundary, while Slots proves balanced nested reel clipping.
 
 Narrow additions to `native/rocket_raylib_adapter.*` may expose only primitive
 rendering, custom-font measurement, scissoring, mouse-wheel input, and resource
@@ -165,3 +166,17 @@ remain policy-free. `src/app/ui_resources.rocket` is the single owner for the
 bundled static Manrope Medium face and two reviewed cover atlases; it loads each
 independently,
 reports degraded mode, and releases every live handle before the window closes.
+
+The portable package preserves that runtime-relative resource contract.
+`scripts/package-windows.ps1` copies an explicit reviewed allowlist under
+`assets/`, the Manrope OFL, upstream metadata, ImageGen provenance, and the
+pinned raylib license. Recursive internal hashes cover every packaged file
+except their own checksum list. `scripts/test-package.ps1` rejects unexpected
+or missing paths, unsafe checksum paths, changed reviewed-asset hashes, native
+development artifacts, and a relocated launch whose working directory is not
+the package.
+
+The static website remains a separate catalog/download boundary. Its tracked
+captures are actual native output and its JavaScript owns only a
+non-authenticated browser-local profile. It cannot call network APIs or execute
+casino rules.

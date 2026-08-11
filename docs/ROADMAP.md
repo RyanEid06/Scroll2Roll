@@ -45,7 +45,7 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
 - [x] Replace Blackjack, European Roulette, No-Limit Hold'em, and HiLo with
   responsive, art-directed interiors while preserving every accepted engine,
   privacy boundary, and complete input flow.
-- [ ] Replace Plinko, Coop Climb, Midnight Crossing, Mines, Dice, Crash, and
+- [x] Replace Plinko, Coop Climb, Midnight Crossing, Mines, Dice, Crash, and
   Slots in reviewable groups with the same functional and visual gates.
-- [ ] Align the website, build and relocation-test the real asset-bearing
+- [x] Align the website, build and relocation-test the real asset-bearing
   package, and complete final functional, visual, Git, and frozen-Rocket audits.

@@ -675,7 +675,7 @@ games, save-v1 migration and corrupt/unsupported recovery, missing assets,
 native resource lifetimes, and clean shutdown. Package relocation and both site
 trees passed as described above. The frozen Rocket checkout remained clean.
 
-## Final 0.3.0 local acceptance
+## Pre-overhaul 0.3.0 local acceptance
 
 The final commands run on 2026-08-09 were:
 
@@ -715,3 +715,58 @@ The final commands run on 2026-08-09 were:
   ignored. The separate frozen Rocket checkout remained clean on `master` at
   `cbf7b1a`. No Git push, Cloudflare deployment, publication, public release,
   or signing was performed or claimed.
+
+## Native UI overhaul milestone 7 - website, package, and final acceptance
+
+The final local commands on 2026-08-11 are:
+
+```powershell
+.\scripts\validate.ps1 -Configuration Debug -RocketRoot "<frozen-rocket>"
+.\scripts\validate.ps1 -Configuration Release -RocketRoot "<frozen-rocket>"
+.\scripts\package-windows.ps1 -RocketRoot "<frozen-rocket>"
+.\scripts\test-package.ps1
+.\scripts\test-website.ps1
+.\scripts\prepare-cloudflare-site.ps1 -Output .\out\cloudflare-site-final-acceptance
+.\scripts\test-website.ps1 -Site .\out\cloudflare-site-final-acceptance
+```
+
+- Debug and Release each pass native generation/build, `rocketc check`, all 48
+  tests, source formatting, and test formatting. This includes deterministic
+  complete sessions and scripted keyboard/mouse flows for all eleven games;
+  save-v1/v2/v3 migration and save-v4 recovery/round-trip; dark/light and
+  reduced-motion drawing; safe Back; exact responsive geometry; private-state
+  boundaries; native adapter/resources; audio stress; and clean shutdown.
+- `out/package/Scroll2Roll-0.3.0-windows-x64.zip` is exactly 6,963,264 bytes
+  (6.64 MiB) with SHA-256
+  `83B4E94C24C196782CB04F209193303A6BD602A8A3E7B2B3A8E99548EC02D597`.
+  Its exact 17-file allowlist includes the executable/user docs, complete
+  pinned raylib license, both reviewed ImageGen atlases and provenance files,
+  Manrope variable/static fonts plus OFL/metadata, and recursive checksums.
+  Sidecar, allowlist, reviewed hashes, safe checksum paths, forbidden-content
+  scan, and relocated-working-directory `--headless-smoke` all pass.
+- The 19-file source site and fresh 20-file staged tree pass exact validation
+  against that archive. The validator pins all 13 native-capture hashes, eleven
+  game cards, profile safety, CSP, accessibility/reduced motion, semantic
+  palette, honest native-only language, file ceilings, and archive metadata.
+- In-app browser QA covers profile creation/editing/invalid-name focus, Play,
+  and Download at 1280x720 and 390x844. Desktop cards measure 581x544 in two
+  columns; phone cards measure 347x426 in one. Every visible capture loads at
+  its 1280-pixel source width, exact package metadata renders, horizontal
+  overflow is zero, and console warnings/errors are empty. QA found one mobile
+  lobby-preview height defect; explicit automatic image height fixed it, and the
+  replacement stage passed both static and browser checks.
+- Native screenshot evidence spans startup, shell, settings, help/modals, both
+  themes, all eleven ready/active/settled interiors, the exact five renderer
+  sizes, requested-1080p/current-display maximum, and true maximize. Ignored
+  audit evidence remains under `out/visual-audit/`; 13 representative actual
+  captures are tracked under `website/assets/` and are presented to the owner
+  for visual approval. The current display limitation is recorded honestly:
+  forced client 1920x1055 and true maximize 1920x991, with deterministic exact
+  1920x1080 renderer coverage.
+- Logical local implementation commits are `26c397b`, `6aec64b`, `0c022e8`,
+  `dcada3d`, `cb8c83e`, `8fbdce4`, and `851308f`. Generated builds, packages,
+  relocation trees, staged sites, and full audit evidence remain ignored. The
+  owner-provided untracked `SCROLL2ROLL_MASTER_PLAN.md` remains untouched.
+- The frozen Rocket 2.0 checkout remains unchanged. Nothing was pushed,
+  deployed, published, released, purchased, or signed, and visual approval is
+  not claimed on the owner's behalf.
