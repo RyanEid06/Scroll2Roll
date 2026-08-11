@@ -13,6 +13,8 @@ pub struct Settings:
     ai_count: Int
     play_balance: Int
     first_run: Bool
+    light_mode: Bool
+    reduced_motion: Bool
 
 pub struct LoadResult:
     settings: Settings
@@ -20,7 +22,7 @@ pub struct LoadResult:
     message: String
 
 pub fn defaults() -> Settings:
-    return Settings(3, true, 70, 1280, 720, 3, 1000, true)
+    return Settings(4, true, 70, 1280, 720, 3, 1000, true, false, false)
 
 fn bool_text(value: Bool) -> String:
     if value:
@@ -29,7 +31,7 @@ fn bool_text(value: Bool) -> String:
 
 fn encode(value: Settings) -> String:
     var lines: Array[String] = []
-    lines = collections.append(lines, "scroll2roll-save-3")
+    lines = collections.append(lines, "scroll2roll-save-4")
     lines = collections.append(lines, bool_text(value.audio_enabled))
     lines = collections.append(lines, string.from_int(value.volume_percent))
     lines = collections.append(lines, string.from_int(value.window_width))
@@ -37,14 +39,21 @@ fn encode(value: Settings) -> String:
     lines = collections.append(lines, string.from_int(value.ai_count))
     lines = collections.append(lines, string.from_int(value.play_balance))
     lines = collections.append(lines, bool_text(value.first_run))
+    lines = collections.append(lines, bool_text(value.light_mode))
+    lines = collections.append(lines, bool_text(value.reduced_motion))
     return string.concat(collections.join(lines, "\n"), "\n")
 
 pub fn parse(text: String) -> Result[Settings, String]:
     let lines = string.split(string.trim(text), "\n")
-    if collections.length(lines) != 8:
+    if collections.length(lines) != 8 and collections.length(lines) != 10:
         return Err("Save data has an unexpected field count")
-    if lines[0] != "scroll2roll-save-1" and lines[0] != "scroll2roll-save-2" and lines[0] != "scroll2roll-save-3":
+    let legacy = lines[0] == "scroll2roll-save-1" or lines[0] == "scroll2roll-save-2" or lines[0] == "scroll2roll-save-3"
+    if not legacy and lines[0] != "scroll2roll-save-4":
         return Err("Save data version is unsupported")
+    if legacy and collections.length(lines) != 8:
+        return Err("Legacy save data has an unexpected field count")
+    if not legacy and collections.length(lines) != 10:
+        return Err("Save data has an unexpected field count")
     let audio = string.parse_int(lines[1])?
     let volume = string.parse_int(lines[2])?
     let width = string.parse_int(lines[3])?
@@ -62,7 +71,14 @@ pub fn parse(text: String) -> Result[Settings, String]:
         return Err("Save data AI count is out of range")
     if balance < 10 or balance > 10000000000:
         return Err("Save data play balance is out of range")
-    return Ok(Settings(3, audio == 1, volume, width, height, ai_count, balance, first == 1))
+    var light = 0
+    var reduced = 0
+    if not legacy:
+        light = string.parse_int(lines[8])?
+        reduced = string.parse_int(lines[9])?
+        if light < 0 or light > 1 or reduced < 0 or reduced > 1:
+            return Err("Save data contains an invalid UI preference")
+    return Ok(Settings(4, audio == 1, volume, width, height, ai_count, balance, first == 1, light == 1, reduced == 1))
 
 pub fn load(file_path: String) -> LoadResult:
     if not file.exists(file_path):
@@ -73,9 +89,11 @@ pub fn load(file_path: String) -> LoadResult:
                 case Ok(settings):
                     let lines = string.split(string.trim(text), "\n")
                     if lines[0] == "scroll2roll-save-1":
-                        return LoadResult(settings, false, "Version 1 local settings migrated to version 3")
+                        return LoadResult(settings, false, "Version 1 local settings migrated to version 4")
                     if lines[0] == "scroll2roll-save-2":
-                        return LoadResult(settings, false, "Version 2 local settings migrated to version 3")
+                        return LoadResult(settings, false, "Version 2 local settings migrated to version 4")
+                    if lines[0] == "scroll2roll-save-3":
+                        return LoadResult(settings, false, "Version 3 local settings migrated to version 4")
                     return LoadResult(settings, false, "Local settings loaded")
                 case Err(error):
                     return LoadResult(defaults(), true, error)
@@ -100,7 +118,7 @@ pub fn default_path() -> Result[String, String]:
     return Ok(path.join(data_directory()?, "settings.s2r"))
 
 pub fn with_audio(value: Settings, enabled: Bool) -> Settings:
-    return Settings(3, enabled, value.volume_percent, value.window_width, value.window_height, value.ai_count, value.play_balance, false)
+    return Settings(4, enabled, value.volume_percent, value.window_width, value.window_height, value.ai_count, value.play_balance, false, value.light_mode, value.reduced_motion)
 
 pub fn with_volume(value: Settings, volume: Int) -> Settings:
     var clamped = volume
@@ -108,7 +126,7 @@ pub fn with_volume(value: Settings, volume: Int) -> Settings:
         clamped = 0
     if clamped > 100:
         clamped = 100
-    return Settings(3, value.audio_enabled, clamped, value.window_width, value.window_height, value.ai_count, value.play_balance, false)
+    return Settings(4, value.audio_enabled, clamped, value.window_width, value.window_height, value.ai_count, value.play_balance, false, value.light_mode, value.reduced_motion)
 
 pub fn with_ai_count(value: Settings, count: Int) -> Settings:
     var clamped = count
@@ -116,7 +134,7 @@ pub fn with_ai_count(value: Settings, count: Int) -> Settings:
         clamped = 0
     if clamped > 5:
         clamped = 5
-    return Settings(3, value.audio_enabled, value.volume_percent, value.window_width, value.window_height, clamped, value.play_balance, false)
+    return Settings(4, value.audio_enabled, value.volume_percent, value.window_width, value.window_height, clamped, value.play_balance, false, value.light_mode, value.reduced_motion)
 
 pub fn with_balance(value: Settings, balance: Int) -> Settings:
     var safe = balance
@@ -124,4 +142,10 @@ pub fn with_balance(value: Settings, balance: Int) -> Settings:
         safe = 1000
     if safe > 10000000000:
         safe = 10000000000
-    return Settings(3, value.audio_enabled, value.volume_percent, value.window_width, value.window_height, value.ai_count, safe, false)
+    return Settings(4, value.audio_enabled, value.volume_percent, value.window_width, value.window_height, value.ai_count, safe, false, value.light_mode, value.reduced_motion)
+
+pub fn with_theme(value: Settings, light_mode: Bool) -> Settings:
+    return Settings(4, value.audio_enabled, value.volume_percent, value.window_width, value.window_height, value.ai_count, value.play_balance, false, light_mode, value.reduced_motion)
+
+pub fn with_reduced_motion(value: Settings, reduced_motion: Bool) -> Settings:
+    return Settings(4, value.audio_enabled, value.volume_percent, value.window_width, value.window_height, value.ai_count, value.play_balance, false, value.light_mode, reduced_motion)

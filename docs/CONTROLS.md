@@ -6,6 +6,12 @@
 - `S`: open Settings from the lobby.
 - `Escape`: open the exit confirmation in the lobby; return from Settings or a ready/settled Blackjack table.
 - Mouse: select lobby tiles and controls.
+- Settings: `T` toggles the persisted dark/light theme; `R` toggles the
+  persisted reduced-motion preference; `M` toggles audio; Left/Right changes
+  volume; Down/Up changes Hold'em AI count.
+- The replacement shell keeps an obvious Back control on every non-lobby
+  screen. It returns immediately only at an engine-safe boundary and otherwise
+  leaves the current phase intact with an explanation.
 
 ## Blackjack
 

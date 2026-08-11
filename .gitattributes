@@ -15,3 +15,6 @@
 # Preserve the authoritative source plan and untouched historical draft byte-for-byte.
 docs/MASTER_PLAN.md -text
 legacy/** -text
+
+# Preserve licensed font files and upstream notices byte-for-byte.
+assets/fonts/manrope/** -text

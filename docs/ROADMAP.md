@@ -38,7 +38,7 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
 - [x] Audit and reject the 0.3.0 native visual baseline; define the dual-theme
   tokens, responsive geometry, asset ownership, adapter gaps, and visual gates
   for the complete owner-mandated UI overhaul.
-- [ ] Add reviewed original assets, licensed bundled typography, safe resource
+- [x] Add reviewed original assets, licensed bundled typography, safe resource
   ownership, theme migration, reduced motion, and the shared component system.
 - [ ] Replace startup, global shell, settings, help/modals, and the eleven-card
   lobby; validate dark/light rendering at every target desktop size.

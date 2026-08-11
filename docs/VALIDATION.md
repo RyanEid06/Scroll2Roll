@@ -36,6 +36,48 @@ This file records the complete local acceptance pass performed on Windows x64 on
   modified. Nothing was pushed, deployed, published, released, purchased, or
   signed.
 
+## Native UI overhaul milestone 2 - assets, typography, resources, and components
+
+- The built-in ImageGen workflow created two 1536x1024 3x2 atlases specifically
+  for Scroll2Roll with no external image input. Generation
+  `exec-1bb025af-9d20-458c-907f-63941af5f9f2` contains Blackjack, Roulette,
+  Plinko, Coop Climb, Midnight Crossing, and Hold'em. Generation
+  `exec-0e2406d9-680b-49ed-8fb2-b0811f830ecc` contains the brand hero, Mines,
+  Dice, HiLo, Crash, and Slots. Both were inspected at original resolution for
+  crop, silhouette, lighting, artifacts, unintended text, watermark, copied UI,
+  branding, and light/dark compatibility before acceptance. Exact prompts and
+  SHA-256 values are in `assets/ui/IMAGEGEN_PROMPTS.md` and `assets/MANIFEST.md`.
+- The exact unmodified Manrope variable font was retrieved from Google Fonts'
+  `ofl/manrope` directory with its OFL 1.1 license and metadata. Its SHA-256 is
+  `D0639BE45D0AF36E798172419D7BD173C4BD4F29E2B76CBB69DB1D11BF8B0A40`.
+  The license and metadata hashes are recorded in the manifest and the required
+  notice is in `THIRD_PARTY_NOTICES.md`. No asset was purchased.
+- The native adapter now validates and tests custom-font measurement,
+  destination/source-region textures, thick lines, triangles, rings, rounded
+  rectangles/outlines, balanced scissoring, and mouse-wheel input. It remains
+  primitive and policy-free. Production font loading rejects missing/corrupt
+  files and silent default-font substitution.
+- `ui_resources.rocket` independently loads the font and atlases, reports a
+  procedural degraded mode, and releases all live handles before window close.
+  The real Release executable log confirmed Manrope at a 512x256 glyph texture
+  and both RGB atlases at 1536x1024. The ignored
+  `out/visual-audit/milestone2-resource-startup.png` intentionally still shows
+  the rejected lobby because shell replacement belongs to milestone 3; it is
+  not claimed as visual acceptance.
+- Persistence now writes `scroll2roll-save-4`, adding only `light_mode` and
+  `reduced_motion`. Valid save-v1/v2/v3 data migrates with safe dark/full-motion
+  defaults; credits and all prior settings are preserved. Invalid UI values
+  recover to defaults. Settings keyboard paths toggle and save both preferences.
+- The replacement shared component layer covers custom type roles, rounded
+  elevated surfaces, complete button states, procedural icon buttons, pills,
+  badges, toggles, section headers, toasts, modals, illustrated cards, focus
+  rings, both themes, and a distinct per-game procedural art fallback.
+- Debug and Release `scripts/validate.ps1` each passed the native build,
+  `rocketc check`, all 44 tests, and both formatting checks. All 41 accepted game
+  and infrastructure regressions remain green. The frozen Rocket repository
+  remained clean. Nothing was pushed, deployed, published, released, signed,
+  or purchased.
+
 ## 0.2.0 expansion baseline
 
 Before expansion implementation, both Debug and Release

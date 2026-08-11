@@ -139,3 +139,11 @@ rendering, custom-font measurement, scissoring, mouse-wheel input, and resource
 lifetime facts required by the reviewed UI. The adapter cannot own themes,
 layout, animation policy, game meaning, or settlement. The detailed gap and
 asset ownership audit is in `UI_OVERHAUL_FOUNDATION.md`.
+
+The demonstrated additions are custom-font measurement, destination/source-
+region texture drawing, thick lines, triangles, rings, rounded rectangles and
+outlines, balanced scissoring, and consumable mouse-wheel input. All validate
+arguments and resource/frame handles, expose deterministic test behavior, and
+remain policy-free. `src/app/ui_resources.rocket` is the single owner for the
+bundled Manrope font and two reviewed cover atlases; it loads each independently,
+reports degraded mode, and releases every live handle before the window closes.

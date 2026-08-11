@@ -1,0 +1,39 @@
+import src.app.ui_resources
+import src.rocket_raylib
+import src.rocket_raylib_testing
+
+fn run() -> Result[Int, String]:
+    if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
+        return Ok(1)
+    match rocket_raylib.open_window(800, 600, "UI resource ownership"):
+        case Ok(window):
+            let loaded = ui_resources.load_from_paths(window, "font.ttf", "atlas-a.png", "atlas-b.png")
+            if not ui_resources.ready(loaded):
+                return Ok(2)
+            if rocket_raylib_testing.font_live_count() != 1 or rocket_raylib_testing.texture_live_count() != 2:
+                return Ok(3)
+            if ui_resources.atlas_index(0) != 0 or ui_resources.atlas_cell(5) != 5:
+                return Ok(4)
+            if ui_resources.atlas_index(6) != 1 or ui_resources.atlas_cell(10) != 5:
+                return Ok(5)
+            if ui_resources.source_x(5) != 1024 or ui_resources.source_y(5) != 512:
+                return Ok(6)
+            ui_resources.unload(loaded)?
+            let degraded = ui_resources.load_from_paths(window, "missing-font.ttf", "corrupt-a.png", "missing-b.png")
+            if ui_resources.ready(degraded) or degraded.font_ready or degraded.atlas_a_ready or degraded.atlas_b_ready:
+                return Ok(7)
+            ui_resources.unload(degraded)?
+            if rocket_raylib_testing.font_live_count() != 0 or rocket_raylib_testing.texture_live_count() != 0:
+                return Ok(8)
+            rocket_raylib.close_window(window)?
+            return Ok(0)
+        case Err(error):
+            return Ok(9)
+
+fn main() -> Int:
+    match run():
+        case Ok(status):
+            return status
+        case Err(error):
+            print(error)
+            return 90

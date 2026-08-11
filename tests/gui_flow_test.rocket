@@ -36,6 +36,14 @@ fn run() -> Result[Int, String]:
             state = press(window, rocket_raylib.key_right(), state)
             if state.settings.volume_percent <= volume_before:
                 return Ok(5)
+            let theme_before = state.settings.light_mode
+            state = press(window, rocket_raylib.key_t(), state)
+            if state.settings.light_mode == theme_before:
+                return Ok(21)
+            let motion_before = state.settings.reduced_motion
+            state = press(window, rocket_raylib.key_r(), state)
+            if state.settings.reduced_motion == motion_before:
+                return Ok(22)
             state = press(window, rocket_raylib.key_b(), state)
             if state.screen != 1:
                 return Ok(6)

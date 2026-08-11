@@ -34,6 +34,7 @@ struct AdapterState {
   bool testMode = false;
   bool windowOpen = false;
   bool drawing = false;
+  bool scissorActive = false;
   bool audioOpen = false;
   bool closeRequested = false;
   int64_t windowId = 0;
@@ -46,6 +47,7 @@ struct AdapterState {
   int64_t windowWidth = 0;
   int64_t windowHeight = 0;
   bool mousePressed = false;
+  double mouseWheel = 0.0;
   double testTime = 0.0;
   std::unordered_map<int64_t, std::string> buffers;
   std::unordered_map<int64_t, TextureRecord> textures;
@@ -89,7 +91,8 @@ const std::string* buffer(int64_t id) {
 }
 
 bool simulatedMissing(const std::string& path) {
-  return path.empty() || path.find("missing") != std::string::npos;
+  return path.empty() || path.find("missing") != std::string::npos ||
+         path.find("corrupt") != std::string::npos;
 }
 
 int64_t requireDrawing(int64_t frameId) {
@@ -224,6 +227,7 @@ extern "C" int64_t rlv_begin_drawing(int64_t windowId) {
 
 extern "C" int64_t rlv_end_drawing(int64_t frameId) {
   if (requireDrawing(frameId) != RLV_OK) return RLV_ERR_STALE_HANDLE;
+  if (state.scissorActive) return RLV_ERR_INVALID_STATE;
   if (!state.testMode) EndDrawing();
   state.drawing = false;
   state.frameId = 0;
@@ -272,6 +276,134 @@ extern "C" int64_t rlv_draw_circle(int64_t frameId, int64_t x, int64_t y, double
   return RLV_OK;
 }
 
+extern "C" int64_t rlv_draw_circle_pixels(
+    int64_t frameId, int64_t x, int64_t y, int64_t radius, int64_t red,
+    int64_t green, int64_t blue, int64_t alpha) {
+  if (!fitsInt(radius)) return RLV_ERR_INVALID_ARGUMENT;
+  return rlv_draw_circle(frameId, x, y, static_cast<double>(radius), red, green,
+                         blue, alpha);
+}
+
+extern "C" int64_t rlv_draw_rectangle_rounded(
+    int64_t frameId, int64_t x, int64_t y, int64_t width, int64_t height,
+    double roundness, int64_t segments, int64_t red, int64_t green,
+    int64_t blue, int64_t alpha) {
+  if (requireDrawing(frameId) != RLV_OK) return RLV_ERR_STALE_HANDLE;
+  if (!fitsInt(x) || !fitsInt(y) || !fitsInt(width) || !fitsInt(height) ||
+      !fitsInt(segments) || width < 0 || height < 0 ||
+      !std::isfinite(roundness) || roundness < 0.0 || roundness > 1.0 ||
+      segments < 0 || !validColor(red, green, blue, alpha)) {
+    return RLV_ERR_INVALID_ARGUMENT;
+  }
+  if (!state.testMode) {
+    DrawRectangleRounded(
+        Rectangle{static_cast<float>(x), static_cast<float>(y),
+                  static_cast<float>(width), static_cast<float>(height)},
+        static_cast<float>(roundness), static_cast<int>(segments),
+        color(red, green, blue, alpha));
+  }
+  ++state.drawCount;
+  return RLV_OK;
+}
+
+extern "C" int64_t rlv_draw_rectangle_rounded_lines(
+    int64_t frameId, int64_t x, int64_t y, int64_t width, int64_t height,
+    double roundness, int64_t segments, double thickness, int64_t red,
+    int64_t green, int64_t blue, int64_t alpha) {
+  if (requireDrawing(frameId) != RLV_OK) return RLV_ERR_STALE_HANDLE;
+  if (!fitsInt(x) || !fitsInt(y) || !fitsInt(width) || !fitsInt(height) ||
+      !fitsInt(segments) || width < 0 || height < 0 ||
+      !std::isfinite(roundness) || roundness < 0.0 || roundness > 1.0 ||
+      segments < 0 || !std::isfinite(thickness) || thickness <= 0.0 ||
+      !validColor(red, green, blue, alpha)) {
+    return RLV_ERR_INVALID_ARGUMENT;
+  }
+  if (!state.testMode) {
+    DrawRectangleRoundedLinesEx(
+        Rectangle{static_cast<float>(x), static_cast<float>(y),
+                  static_cast<float>(width), static_cast<float>(height)},
+        static_cast<float>(roundness), static_cast<int>(segments),
+        static_cast<float>(thickness), color(red, green, blue, alpha));
+  }
+  ++state.drawCount;
+  return RLV_OK;
+}
+
+extern "C" int64_t rlv_draw_line(int64_t frameId, int64_t startX,
+                                   int64_t startY, int64_t endX,
+                                   int64_t endY, double thickness,
+                                   int64_t red, int64_t green, int64_t blue,
+                                   int64_t alpha) {
+  if (requireDrawing(frameId) != RLV_OK) return RLV_ERR_STALE_HANDLE;
+  if (!fitsInt(startX) || !fitsInt(startY) || !fitsInt(endX) ||
+      !fitsInt(endY) || !std::isfinite(thickness) || thickness <= 0.0 ||
+      !validColor(red, green, blue, alpha)) {
+    return RLV_ERR_INVALID_ARGUMENT;
+  }
+  if (!state.testMode) {
+    DrawLineEx(Vector2{static_cast<float>(startX), static_cast<float>(startY)},
+               Vector2{static_cast<float>(endX), static_cast<float>(endY)},
+               static_cast<float>(thickness), color(red, green, blue, alpha));
+  }
+  ++state.drawCount;
+  return RLV_OK;
+}
+
+extern "C" int64_t rlv_draw_triangle(
+    int64_t frameId, int64_t firstX, int64_t firstY, int64_t secondX,
+    int64_t secondY, int64_t thirdX, int64_t thirdY, int64_t red,
+    int64_t green, int64_t blue, int64_t alpha) {
+  if (requireDrawing(frameId) != RLV_OK) return RLV_ERR_STALE_HANDLE;
+  if (!fitsInt(firstX) || !fitsInt(firstY) || !fitsInt(secondX) ||
+      !fitsInt(secondY) || !fitsInt(thirdX) || !fitsInt(thirdY) ||
+      !validColor(red, green, blue, alpha)) {
+    return RLV_ERR_INVALID_ARGUMENT;
+  }
+  if (!state.testMode) {
+    DrawTriangle(Vector2{static_cast<float>(firstX), static_cast<float>(firstY)},
+                 Vector2{static_cast<float>(secondX), static_cast<float>(secondY)},
+                 Vector2{static_cast<float>(thirdX), static_cast<float>(thirdY)},
+                 color(red, green, blue, alpha));
+  }
+  ++state.drawCount;
+  return RLV_OK;
+}
+
+extern "C" int64_t rlv_draw_ring(
+    int64_t frameId, int64_t centerX, int64_t centerY, double innerRadius,
+    double outerRadius, double startAngle, double endAngle, int64_t segments,
+    int64_t red, int64_t green, int64_t blue, int64_t alpha) {
+  if (requireDrawing(frameId) != RLV_OK) return RLV_ERR_STALE_HANDLE;
+  if (!fitsInt(centerX) || !fitsInt(centerY) || !fitsInt(segments) ||
+      !std::isfinite(innerRadius) || !std::isfinite(outerRadius) ||
+      !std::isfinite(startAngle) || !std::isfinite(endAngle) ||
+      innerRadius < 0.0 || outerRadius <= innerRadius || segments < 3 ||
+      !validColor(red, green, blue, alpha)) {
+    return RLV_ERR_INVALID_ARGUMENT;
+  }
+  if (!state.testMode) {
+    DrawRing(Vector2{static_cast<float>(centerX), static_cast<float>(centerY)},
+             static_cast<float>(innerRadius), static_cast<float>(outerRadius),
+             static_cast<float>(startAngle), static_cast<float>(endAngle),
+             static_cast<int>(segments), color(red, green, blue, alpha));
+  }
+  ++state.drawCount;
+  return RLV_OK;
+}
+
+extern "C" int64_t rlv_draw_ring_pixels(
+    int64_t frameId, int64_t centerX, int64_t centerY, int64_t innerRadius,
+    int64_t outerRadius, double startAngle, double endAngle, int64_t segments,
+    int64_t red, int64_t green, int64_t blue, int64_t alpha) {
+  if (!fitsInt(innerRadius) || !fitsInt(outerRadius)) {
+    return RLV_ERR_INVALID_ARGUMENT;
+  }
+  return rlv_draw_ring(frameId, centerX, centerY,
+                       static_cast<double>(innerRadius),
+                       static_cast<double>(outerRadius), startAngle, endAngle,
+                       segments, red, green, blue, alpha);
+}
+
 extern "C" int64_t rlv_draw_text(int64_t frameId, int64_t textBufferId, int64_t x, int64_t y,
                                    int64_t size, int64_t red, int64_t green,
                                    int64_t blue, int64_t alpha) {
@@ -297,6 +429,34 @@ extern "C" int64_t rlv_measure_text(int64_t windowId, int64_t textBufferId, int6
     return static_cast<int64_t>(text->size()) * size / 2;
   }
   return static_cast<int64_t>(MeasureText(text->c_str(), static_cast<int>(size)));
+}
+
+extern "C" int64_t rlv_scissor_begin(int64_t frameId, int64_t x, int64_t y,
+                                      int64_t width, int64_t height) {
+  if (requireDrawing(frameId) != RLV_OK) return RLV_ERR_STALE_HANDLE;
+  if (state.scissorActive) return RLV_ERR_INVALID_STATE;
+  if (!fitsInt(x) || !fitsInt(y) || !fitsInt(width) || !fitsInt(height) ||
+      width <= 0 || height <= 0) {
+    return RLV_ERR_INVALID_ARGUMENT;
+  }
+  if (!state.testMode) {
+    BeginScissorMode(static_cast<int>(x), static_cast<int>(y),
+                     static_cast<int>(width), static_cast<int>(height));
+  }
+  state.scissorActive = true;
+  return RLV_OK;
+}
+
+extern "C" int64_t rlv_scissor_end(int64_t frameId) {
+  if (requireDrawing(frameId) != RLV_OK) return RLV_ERR_STALE_HANDLE;
+  if (!state.scissorActive) return RLV_ERR_INVALID_STATE;
+  if (!state.testMode) EndScissorMode();
+  state.scissorActive = false;
+  return RLV_OK;
+}
+
+extern "C" rocket_bool rlv_scissor_active(void) {
+  return state.scissorActive ? 1 : 0;
 }
 
 extern "C" int64_t rlv_draw_count(void) { return state.drawCount; }
@@ -333,6 +493,14 @@ extern "C" int64_t rlv_mouse_x(int64_t windowId) {
 extern "C" int64_t rlv_mouse_y(int64_t windowId) {
   if (!validWindow(windowId)) return 0;
   return state.testMode ? state.mouseY : GetMouseY();
+}
+
+extern "C" double rlv_mouse_wheel(int64_t windowId) {
+  if (!validWindow(windowId)) return 0.0;
+  if (!state.testMode) return static_cast<double>(GetMouseWheelMove());
+  const double movement = state.mouseWheel;
+  state.mouseWheel = 0.0;
+  return movement;
 }
 
 extern "C" int64_t rlv_texture_load(int64_t windowId, int64_t pathBufferId) {
@@ -403,6 +571,38 @@ extern "C" int64_t rlv_texture_draw_scaled(int64_t frameId, int64_t textureId,
   return RLV_OK;
 }
 
+extern "C" int64_t rlv_texture_draw_region(
+    int64_t frameId, int64_t textureId, int64_t sourceX, int64_t sourceY,
+    int64_t sourceWidth, int64_t sourceHeight, int64_t destinationX,
+    int64_t destinationY, int64_t destinationWidth, int64_t destinationHeight,
+    int64_t red, int64_t green, int64_t blue, int64_t alpha) {
+  const auto found = state.textures.find(textureId);
+  if (requireDrawing(frameId) != RLV_OK) return RLV_ERR_STALE_HANDLE;
+  if (found == state.textures.end()) return RLV_ERR_STALE_HANDLE;
+  if (!fitsInt(sourceX) || !fitsInt(sourceY) || !fitsInt(sourceWidth) ||
+      !fitsInt(sourceHeight) || !fitsInt(destinationX) ||
+      !fitsInt(destinationY) || !fitsInt(destinationWidth) ||
+      !fitsInt(destinationHeight) || sourceWidth <= 0 || sourceHeight <= 0 ||
+      destinationWidth <= 0 || destinationHeight <= 0 ||
+      !validColor(red, green, blue, alpha)) {
+    return RLV_ERR_INVALID_ARGUMENT;
+  }
+  if (!state.testMode) {
+    DrawTexturePro(
+        found->second.value,
+        Rectangle{static_cast<float>(sourceX), static_cast<float>(sourceY),
+                  static_cast<float>(sourceWidth),
+                  static_cast<float>(sourceHeight)},
+        Rectangle{static_cast<float>(destinationX),
+                  static_cast<float>(destinationY),
+                  static_cast<float>(destinationWidth),
+                  static_cast<float>(destinationHeight)},
+        Vector2{0.0f, 0.0f}, 0.0f, color(red, green, blue, alpha));
+  }
+  ++state.drawCount;
+  return RLV_OK;
+}
+
 extern "C" int64_t rlv_texture_unload(int64_t textureId) {
   const auto found = state.textures.find(textureId);
   if (found == state.textures.end()) return RLV_ERR_STALE_HANDLE;
@@ -424,8 +624,12 @@ extern "C" int64_t rlv_font_load(int64_t windowId, int64_t pathBufferId) {
   if (state.testMode) {
     if (simulatedMissing(*path)) return RLV_ERR_NOT_FOUND;
   } else {
+    if (!FileExists(path->c_str())) return RLV_ERR_NOT_FOUND;
     record.value = LoadFont(path->c_str());
-    if (!IsFontValid(record.value)) return RLV_ERR_NOT_FOUND;
+    if (!IsFontValid(record.value) ||
+        record.value.texture.id == GetFontDefault().texture.id) {
+      return RLV_ERR_NOT_FOUND;
+    }
     record.native = true;
   }
   const int64_t id = nextId();
@@ -455,6 +659,29 @@ extern "C" int64_t rlv_font_draw(int64_t frameId, int64_t fontId,
   }
   ++state.drawCount;
   return RLV_OK;
+}
+
+extern "C" int64_t rlv_font_measure(int64_t windowId, int64_t fontId,
+                                     int64_t textBufferId, double size,
+                                     double spacing) {
+  const auto found = state.fonts.find(fontId);
+  const std::string* text = buffer(textBufferId);
+  if (!validWindow(windowId)) return RLV_ERR_STALE_HANDLE;
+  if (found == state.fonts.end()) return RLV_ERR_STALE_HANDLE;
+  if (!text || !std::isfinite(size) || !std::isfinite(spacing) ||
+      size <= 0.0 || spacing < 0.0) {
+    return RLV_ERR_INVALID_ARGUMENT;
+  }
+  if (state.testMode) {
+    const double characters = static_cast<double>(text->size());
+    const double gaps = characters > 0.0 ? characters - 1.0 : 0.0;
+    return static_cast<int64_t>(std::ceil(characters * size * 0.5 +
+                                          gaps * spacing));
+  }
+  const Vector2 measured = MeasureTextEx(found->second.value, text->c_str(),
+                                         static_cast<float>(size),
+                                         static_cast<float>(spacing));
+  return static_cast<int64_t>(std::ceil(measured.x));
 }
 
 extern "C" int64_t rlv_font_unload(int64_t fontId) {
@@ -595,6 +822,14 @@ extern "C" int64_t rlv_test_set_mouse(int64_t x, int64_t y,
   state.mouseX = x;
   state.mouseY = y;
   state.mousePressed = pressed != 0;
+  return RLV_OK;
+}
+
+extern "C" int64_t rlv_test_set_mouse_wheel(double movement) {
+  if (!state.testMode || !std::isfinite(movement)) {
+    return RLV_ERR_INVALID_STATE;
+  }
+  state.mouseWheel = movement;
   return RLV_OK;
 }
 

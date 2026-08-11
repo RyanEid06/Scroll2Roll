@@ -30,6 +30,7 @@ typedef uint8_t rocket_bool;
 #define RLV_KEY_P 80
 #define RLV_KEY_R 82
 #define RLV_KEY_S 83
+#define RLV_KEY_T 84
 #define RLV_MOUSE_LEFT 0
 
 #ifndef ROCKET_API
@@ -67,8 +68,18 @@ ROCKET_API int64_t rlv_end_drawing(int64_t frame_id);
 ROCKET_API int64_t rlv_clear_background(int64_t frame_id, int64_t red, int64_t green, int64_t blue, int64_t alpha);
 ROCKET_API int64_t rlv_draw_rectangle(int64_t frame_id, int64_t x, int64_t y, int64_t width, int64_t height, int64_t red, int64_t green, int64_t blue, int64_t alpha);
 ROCKET_API int64_t rlv_draw_circle(int64_t frame_id, int64_t x, int64_t y, double radius, int64_t red, int64_t green, int64_t blue, int64_t alpha);
+ROCKET_API int64_t rlv_draw_circle_pixels(int64_t frame_id, int64_t x, int64_t y, int64_t radius, int64_t red, int64_t green, int64_t blue, int64_t alpha);
+ROCKET_API int64_t rlv_draw_rectangle_rounded(int64_t frame_id, int64_t x, int64_t y, int64_t width, int64_t height, double roundness, int64_t segments, int64_t red, int64_t green, int64_t blue, int64_t alpha);
+ROCKET_API int64_t rlv_draw_rectangle_rounded_lines(int64_t frame_id, int64_t x, int64_t y, int64_t width, int64_t height, double roundness, int64_t segments, double thickness, int64_t red, int64_t green, int64_t blue, int64_t alpha);
+ROCKET_API int64_t rlv_draw_line(int64_t frame_id, int64_t start_x, int64_t start_y, int64_t end_x, int64_t end_y, double thickness, int64_t red, int64_t green, int64_t blue, int64_t alpha);
+ROCKET_API int64_t rlv_draw_triangle(int64_t frame_id, int64_t first_x, int64_t first_y, int64_t second_x, int64_t second_y, int64_t third_x, int64_t third_y, int64_t red, int64_t green, int64_t blue, int64_t alpha);
+ROCKET_API int64_t rlv_draw_ring(int64_t frame_id, int64_t center_x, int64_t center_y, double inner_radius, double outer_radius, double start_angle, double end_angle, int64_t segments, int64_t red, int64_t green, int64_t blue, int64_t alpha);
+ROCKET_API int64_t rlv_draw_ring_pixels(int64_t frame_id, int64_t center_x, int64_t center_y, int64_t inner_radius, int64_t outer_radius, double start_angle, double end_angle, int64_t segments, int64_t red, int64_t green, int64_t blue, int64_t alpha);
 ROCKET_API int64_t rlv_draw_text(int64_t frame_id, int64_t text_buffer_id, int64_t x, int64_t y, int64_t size, int64_t red, int64_t green, int64_t blue, int64_t alpha);
 ROCKET_API int64_t rlv_measure_text(int64_t window_id, int64_t text_buffer_id, int64_t size);
+ROCKET_API int64_t rlv_scissor_begin(int64_t frame_id, int64_t x, int64_t y, int64_t width, int64_t height);
+ROCKET_API int64_t rlv_scissor_end(int64_t frame_id);
+ROCKET_API rocket_bool rlv_scissor_active(void);
 ROCKET_API int64_t rlv_draw_count(void);
 
 ROCKET_API rocket_bool rlv_key_pressed(int64_t window_id, int64_t key);
@@ -76,17 +87,20 @@ ROCKET_API rocket_bool rlv_key_down(int64_t window_id, int64_t key);
 ROCKET_API rocket_bool rlv_mouse_pressed(int64_t window_id, int64_t button);
 ROCKET_API int64_t rlv_mouse_x(int64_t window_id);
 ROCKET_API int64_t rlv_mouse_y(int64_t window_id);
+ROCKET_API double rlv_mouse_wheel(int64_t window_id);
 
 ROCKET_API int64_t rlv_texture_load(int64_t window_id, int64_t path_buffer_id);
 ROCKET_API int64_t rlv_texture_width(int64_t texture_id);
 ROCKET_API int64_t rlv_texture_height(int64_t texture_id);
 ROCKET_API int64_t rlv_texture_draw(int64_t frame_id, int64_t texture_id, int64_t x, int64_t y, int64_t red, int64_t green, int64_t blue, int64_t alpha);
 ROCKET_API int64_t rlv_texture_draw_scaled(int64_t frame_id, int64_t texture_id, int64_t x, int64_t y, double scale, int64_t red, int64_t green, int64_t blue, int64_t alpha);
+ROCKET_API int64_t rlv_texture_draw_region(int64_t frame_id, int64_t texture_id, int64_t source_x, int64_t source_y, int64_t source_width, int64_t source_height, int64_t destination_x, int64_t destination_y, int64_t destination_width, int64_t destination_height, int64_t red, int64_t green, int64_t blue, int64_t alpha);
 ROCKET_API int64_t rlv_texture_unload(int64_t texture_id);
 ROCKET_API int64_t rlv_texture_live_count(void);
 
 ROCKET_API int64_t rlv_font_load(int64_t window_id, int64_t path_buffer_id);
 ROCKET_API int64_t rlv_font_draw(int64_t frame_id, int64_t font_id, int64_t text_buffer_id, int64_t x, int64_t y, double size, double spacing, int64_t red, int64_t green, int64_t blue, int64_t alpha);
+ROCKET_API int64_t rlv_font_measure(int64_t window_id, int64_t font_id, int64_t text_buffer_id, double size, double spacing);
 ROCKET_API int64_t rlv_font_unload(int64_t font_id);
 ROCKET_API int64_t rlv_font_live_count(void);
 
@@ -105,6 +119,7 @@ ROCKET_API int64_t rlv_apply_callback(RlvIntCallback callback, int64_t value);
 
 ROCKET_API int64_t rlv_test_set_key(int64_t key, rocket_bool pressed, rocket_bool down);
 ROCKET_API int64_t rlv_test_set_mouse(int64_t x, int64_t y, rocket_bool pressed);
+ROCKET_API int64_t rlv_test_set_mouse_wheel(double movement);
 ROCKET_API int64_t rlv_test_request_close(rocket_bool requested);
 
 #ifdef __cplusplus

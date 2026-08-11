@@ -288,6 +288,16 @@ inventory and adapter-gap audit were recorded; semantic dual-theme tokens and
 responsive layout helpers were added; and a five-viewport test brought the
 suite to 42/42. Debug and Release validation both pass.
 
+Milestone 2 is also complete. Two original ImageGen atlases provide the hero and
+eleven unique covers; the exact prompts, generation IDs, visual review, and
+hashes are committed. The unmodified Manrope variable family and its SIL OFL
+1.1 license/metadata are bundled with exact upstream URLs and hashes. The narrow
+native adapter now provides only the demonstrated primitives needed for the new
+presentation. `ui_resources.rocket` owns font/atlas success, degraded mode, and
+cleanup. Save-v4 adds only `light_mode` and `reduced_motion`, safely migrates
+valid save-v1/v2/v3, and preserves credits. The replacement component layer and
+focused tests bring the suite to 44/44 in both Debug and Release.
+
 The old views still render through compatibility token aliases at this precise
 milestone and remain visually rejected. No visual-completion claim is valid
 until original assets, bundled typography, resource ownership, persistence,
@@ -357,6 +367,11 @@ milestones. `docs/UI_OVERHAUL_FOUNDATION.md` is the audit and acceptance ledger.
   primitive-adapter/test-hook audit, purpose-designed dark/light semantic
   tokens, clamped responsive geometry for all five required viewports, one new
   focused test, and passing 42/42 Debug and Release gates.
+- Completed: native UI overhaul milestone 2, including two reviewed original
+  ImageGen atlases, unmodified SIL-OFL Manrope typography, exact asset/prompt
+  provenance, safe production load/degraded/unload ownership, narrow tested
+  raylib primitives, save-v4 theme/reduced-motion migration, the replacement
+  component system, and passing 44/44 Debug and Release gates.
 
 ## Major decisions
 
@@ -385,6 +400,9 @@ milestones. `docs/UI_OVERHAUL_FOUNDATION.md` is the audit and acceptance ledger.
   accepted engines and flows. Keep theme/layout/motion policy in Rocket, grow
   the Scroll2Roll-owned native adapter only with demonstrated primitive needs,
   and require visual inspection in both themes in addition to functional tests.
+- Use `scroll2roll-save-4` only for the two approved UI preferences. Migrate
+  valid save-v1/v2/v3 values with dark theme and full motion defaults; never
+  persist live wagers, private outcomes, or generated resource handles.
 
 ## Files that must remain out of Git
 
@@ -396,12 +414,14 @@ Read `AGENTS.md`, `UI_OVERHAUL.md`, `docs/MASTER_PLAN.md`,
 `docs/UI_OVERHAUL_FOUNDATION.md`, `docs/EXPANSION_PLAN.md`,
 `docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
 status and preserve user changes. The accepted 0.2.0 baseline remains intact;
-Mines, Dice, HiLo, Crash, Slots, and save-v3 are complete with 41/41 tests. The
+Mines, Dice, HiLo, Crash, Slots, and the accepted save-v3 behavior baseline are
+complete. The UI-overhaul suite currently passes 44/44. The
 verified local 0.3.0 archive is 1,919,372 bytes with SHA-256
 `FD2B4EC31734DCB6E51707C862A439966E5771CBDA136DCD4F6B09726082688B`;
 source/staged website and responsive browser checks pass. Keep using frozen Rocket 2.0
 and the pinned raylib integration with custom frame control forced off. Do not
 push, publish, deploy, sign, or add an unapproved game without owner approval.
-UI overhaul milestone 1 passes 42/42 in Debug and Release; continue with assets,
-bundled typography, safe resource handling, persistence migration, and shared
-components. Do not mistake the compatibility-rendered old views for accepted UI.
+UI overhaul milestones 1 and 2 pass 44/44 in Debug and Release. Continue with
+the startup, shell, persistent safe Back behavior, settings/help, and responsive
+eleven-card lobby. Do not mistake the compatibility-rendered old views for
+accepted UI.

@@ -1,4 +1,5 @@
 import src.app.theme
+import src.app.ui_resources
 import src.rocket_raylib
 
 pub struct Rect:
@@ -49,3 +50,279 @@ pub fn modal(window: rocket_raylib.Window, frame: rocket_raylib.Frame, title: St
     centered_label(window, frame, title, box.y + 34, theme.heading_size(), theme.gold())?
     centered_label(window, frame, message, box.y + 86, theme.body_size(), theme.text())?
     return centered_label(window, frame, "Enter confirms | Escape cancels", box.y + 138, theme.small_size(), theme.muted())
+
+pub fn type_display() -> Int:
+    return 0
+
+pub fn type_heading() -> Int:
+    return 1
+
+pub fn type_body() -> Int:
+    return 2
+
+pub fn type_label() -> Int:
+    return 3
+
+pub fn type_numeric() -> Int:
+    return 4
+
+pub fn type_caption() -> Int:
+    return 5
+
+fn type_size(role: Int) -> Int:
+    if role == 0:
+        return theme.display_size()
+    if role == 1:
+        return theme.heading_size()
+    if role == 3:
+        return theme.label_size()
+    if role == 4:
+        return theme.numeric_size()
+    if role == 5:
+        return theme.caption_size()
+    return theme.body_size()
+
+fn type_size_float(role: Int) -> Float:
+    if role == 0:
+        return 48.0
+    if role == 1:
+        return 28.0
+    if role == 3:
+        return 16.0
+    if role == 4:
+        return 32.0
+    if role == 5:
+        return 13.0
+    return 18.0
+
+fn type_spacing(role: Int) -> Float:
+    if role == 0 or role == 1:
+        return 0.5
+    return 0.2
+
+pub fn type_measure(window: rocket_raylib.Window, resources: ui_resources.UiResources, text: String, role: Int) -> Result[Int, String]:
+    if resources.font_ready:
+        return rocket_raylib.measure_font_text(window, resources.font, text, type_size_float(role), type_spacing(role))
+    return rocket_raylib.measure_text(window, text, type_size(role))
+
+pub fn type_text(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, text: String, x: Int, y: Int, role: Int, color: rocket_raylib.Color) -> Result[Bool, String]:
+    if resources.font_ready:
+        return rocket_raylib.draw_font_text(frame, resources.font, text, x, y, type_size_float(role), type_spacing(role), color)
+    return rocket_raylib.draw_text(frame, text, x, y, type_size(role), color)
+
+pub fn type_centered(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, text: String, value: Rect, role: Int, color: rocket_raylib.Color) -> Result[Bool, String]:
+    let width = type_measure(window, resources, text, role)?
+    return type_text(window, frame, resources, text, value.x +(value.width - width) / 2, value.y +(value.height - type_size(role)) / 2, role, color)
+
+pub fn modern_panel(frame: rocket_raylib.Frame, value: Rect, light_mode: Bool, elevated: Bool) -> Result[Bool, String]:
+    var shadow = rocket_raylib.color(2, 6, 23, 72)
+    if light_mode:
+        shadow = rocket_raylib.color(23, 32, 51, 30)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y + theme.elevation_offset(), value.width, value.height, 0.16, 12, shadow)?
+    var fill = theme.surface(light_mode)
+    if elevated:
+        fill = theme.elevated(light_mode)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.16, 12, fill)?
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.16, 12, 1.0, theme.subtle_border(light_mode))
+
+pub fn button_primary() -> Int:
+    return 0
+
+pub fn button_secondary() -> Int:
+    return 1
+
+pub fn button_quiet() -> Int:
+    return 2
+
+pub fn button_danger() -> Int:
+    return 3
+
+pub fn modern_button(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: Rect, text: String, variant: Int, enabled: Bool, hovered: Bool, focused: Bool, light_mode: Bool) -> Result[Bool, String]:
+    var fill = theme.surface(light_mode)
+    var ink = theme.primary_text(light_mode)
+    if variant == button_primary():
+        fill = theme.primary(light_mode)
+        ink = rocket_raylib.color(255, 255, 255, 255)
+    if variant == button_secondary():
+        fill = theme.elevated(light_mode)
+    if variant == button_quiet():
+        fill = theme.shell(light_mode)
+    if variant == button_danger():
+        fill = theme.destructive(light_mode)
+        ink = rocket_raylib.color(255, 255, 255, 255)
+    if hovered and enabled:
+        if variant == button_primary():
+            fill = theme.violet(light_mode)
+        else:
+            fill = theme.elevated(light_mode)
+    if not enabled:
+        fill = theme.elevated(light_mode)
+        ink = theme.secondary_text(light_mode)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y + 3, value.width, value.height, 0.25, 10, rocket_raylib.color(2, 6, 23, 48))?
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.25, 10, fill)?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.25, 10, 1.0, theme.subtle_border(light_mode))?
+    if focused:
+        rocket_raylib.draw_rounded_rectangle_lines(frame, value.x - 3, value.y - 3, value.width + 6, value.height + 6, 0.25, 10, 2.0, theme.cyan(light_mode))?
+    return type_centered(window, frame, resources, text, value, type_label(), ink)
+
+pub fn icon_button(frame: rocket_raylib.Frame, value: Rect, icon: Int, enabled: Bool, hovered: Bool, focused: Bool, light_mode: Bool) -> Result[Bool, String]:
+    var fill = theme.surface(light_mode)
+    if hovered and enabled:
+        fill = theme.elevated(light_mode)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.35, 10, fill)?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.35, 10, 1.0, theme.subtle_border(light_mode))?
+    let center_x = value.x + value.width / 2
+    let center_y = value.y + value.height / 2
+    let ink = theme.primary_text(light_mode)
+    if icon == 0:
+        rocket_raylib.draw_line(frame, center_x + 8, center_y - 9, center_x - 2, center_y, 3.0, ink)?
+        rocket_raylib.draw_line(frame, center_x - 2, center_y, center_x + 8, center_y + 9, 3.0, ink)?
+    if icon == 1:
+        rocket_raylib.draw_ring(frame, center_x, center_y, 6.0, 9.0, 35.0, 330.0, 24, ink)?
+        rocket_raylib.draw_triangle(frame, center_x + 8, center_y - 8, center_x + 3, center_y - 9, center_x + 7, center_y - 3, ink)?
+    if icon == 2:
+        rocket_raylib.draw_circle(frame, center_x, center_y - 7, 2.5, ink)?
+        rocket_raylib.draw_rounded_rectangle(frame, center_x - 2, center_y - 1, 4, 12, 0.4, 8, ink)?
+    if not enabled:
+        rocket_raylib.draw_line(frame, value.x + 11, value.y + 11, value.x + value.width - 11, value.y + value.height - 11, 2.0, theme.secondary_text(light_mode))?
+    if focused:
+        rocket_raylib.draw_rounded_rectangle_lines(frame, value.x - 3, value.y - 3, value.width + 6, value.height + 6, 0.35, 10, 2.0, theme.cyan(light_mode))?
+    return Ok(true)
+
+pub fn pill(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: Rect, text: String, positive: Bool, light_mode: Bool) -> Result[Bool, String]:
+    var fill = theme.elevated(light_mode)
+    var ink = theme.primary_text(light_mode)
+    if positive:
+        fill = theme.success(light_mode)
+        ink = rocket_raylib.color(255, 255, 255, 255)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.5, 12, fill)?
+    return type_centered(window, frame, resources, text, value, type_caption(), ink)
+
+pub fn badge(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: Rect, text: String, light_mode: Bool) -> Result[Bool, String]:
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.5, 12, theme.violet(light_mode))?
+    return type_centered(window, frame, resources, text, value, type_caption(), rocket_raylib.color(255, 255, 255, 255))
+
+pub fn toggle(frame: rocket_raylib.Frame, value: Rect, selected: Bool, focused: Bool, light_mode: Bool) -> Result[Bool, String]:
+    var track = theme.subtle_border(light_mode)
+    if selected:
+        track = theme.success(light_mode)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.5, 12, track)?
+    var knob_x = value.x + 4
+    if selected:
+        knob_x = value.x + value.width - value.height + 4
+    rocket_raylib.draw_circle_pixels(frame, knob_x +(value.height - 8) / 2, value.y + value.height / 2,(value.height - 10) / 2, rocket_raylib.color(255, 255, 255, 255))?
+    if focused:
+        rocket_raylib.draw_rounded_rectangle_lines(frame, value.x - 3, value.y - 3, value.width + 6, value.height + 6, 0.5, 12, 2.0, theme.cyan(light_mode))?
+    return Ok(true)
+
+pub fn section_header(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, title: String, x: Int, y: Int, width: Int, light_mode: Bool) -> Result[Bool, String]:
+    type_text(window, frame, resources, title, x, y, type_heading(), theme.primary_text(light_mode))?
+    return rocket_raylib.draw_line(frame, x, y + 38, x + width, y + 38, 1.0, theme.subtle_border(light_mode))
+
+pub fn toast(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: Rect, message: String, error: Bool, light_mode: Bool) -> Result[Bool, String]:
+    modern_panel(frame, value, light_mode, true)?
+    var accent = theme.cyan(light_mode)
+    if error:
+        accent = theme.destructive(light_mode)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, 5, value.height, 0.5, 8, accent)?
+    return type_text(window, frame, resources, message, value.x + 18, value.y + 15, type_label(), theme.primary_text(light_mode))
+
+pub fn modern_modal(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, title: String, message: String, light_mode: Bool) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    rocket_raylib.draw_rectangle(frame, 0, 0, width, height, rocket_raylib.color(3, 6, 20, 190))?
+    var modal_width = 560
+    if width < 900:
+        modal_width = width - 64
+    let box = rect((width - modal_width) / 2, height / 2 - 116, modal_width, 232)
+    modern_panel(frame, box, light_mode, true)?
+    type_text(window, frame, resources, title, box.x + 28, box.y + 28, type_heading(), theme.primary_text(light_mode))?
+    type_text(window, frame, resources, message, box.x + 28, box.y + 84, type_body(), theme.secondary_text(light_mode))?
+    let hint = rect(box.x + 28, box.y + 152, box.width - 56, 48)
+    return modern_button(window, frame, resources, hint, "Enter confirms  |  Escape cancels", button_secondary(), true, false, false, light_mode)
+
+fn fallback_game_glyph(frame: rocket_raylib.Frame, value: Rect, game_index: Int, light_mode: Bool) -> Result[Bool, String]:
+    let center_x = value.x + value.width / 2
+    let center_y = value.y + value.height / 2
+    let scale = value.width / 8
+    let accent = theme.highlight(light_mode)
+    let cool = theme.cyan(light_mode)
+    if game_index == 0 or game_index == 8:
+        rocket_raylib.draw_rounded_rectangle(frame, center_x - scale, center_y - scale * 2, scale * 2, scale * 3, 0.12, 8, rocket_raylib.color(250, 247, 239, 255))?
+        rocket_raylib.draw_triangle(frame, center_x, center_y - scale, center_x - scale / 2, center_y, center_x + scale / 2, center_y, theme.destructive(light_mode))?
+    if game_index == 1:
+        rocket_raylib.draw_ring_pixels(frame, center_x, center_y, scale, scale * 2, 0.0, 360.0, 32, accent)?
+        rocket_raylib.draw_circle_pixels(frame, center_x + scale, center_y + scale, scale / 4, rocket_raylib.color(255, 255, 255, 255))?
+    if game_index == 2:
+        var row = 0
+        while row < 5:
+            var column = 0
+            while column <= row:
+                rocket_raylib.draw_circle(frame, center_x - row * 10 + column * 20, center_y - 42 + row * 20, 4.0, cool)?
+                column = column + 1
+            row = row + 1
+    if game_index == 3:
+        rocket_raylib.draw_rounded_rectangle(frame, center_x - scale, center_y - scale * 2, scale * 2, scale * 4, 0.2, 8, theme.violet(light_mode))?
+        var rung = -1
+        while rung < 3:
+            rocket_raylib.draw_line(frame, center_x - scale, center_y + rung * scale, center_x + scale, center_y + rung * scale, 4.0, accent)?
+            rung = rung + 1
+    if game_index == 4:
+        rocket_raylib.draw_line(frame, center_x - scale * 2, center_y - scale, center_x + scale * 2, center_y - scale, 12.0, theme.violet(light_mode))?
+        rocket_raylib.draw_line(frame, center_x - scale * 2, center_y + scale, center_x + scale * 2, center_y + scale, 12.0, cool)?
+        rocket_raylib.draw_circle_pixels(frame, center_x, center_y, scale / 2, accent)?
+    if game_index == 5:
+        rocket_raylib.draw_ring_pixels(frame, center_x, center_y, scale, scale * 2, 0.0, 360.0, 32, theme.success(light_mode))?
+        rocket_raylib.draw_rounded_rectangle(frame, center_x - scale, center_y - scale / 2, scale * 2, scale, 0.15, 8, accent)?
+    if game_index == 6:
+        var row = 0
+        while row < 3:
+            var column = 0
+            while column < 3:
+                rocket_raylib.draw_rounded_rectangle(frame, center_x - 42 + column * 30, center_y - 42 + row * 30, 24, 24, 0.2, 6, theme.elevated(light_mode))?
+                column = column + 1
+            row = row + 1
+        rocket_raylib.draw_triangle(frame, center_x, center_y - 28, center_x - 15, center_y + 4, center_x + 15, center_y + 4, cool)?
+    if game_index == 7:
+        rocket_raylib.draw_rounded_rectangle(frame, center_x - scale * 2, center_y - scale, scale * 2, scale * 2, 0.2, 8, rocket_raylib.color(250, 247, 239, 255))?
+        rocket_raylib.draw_rounded_rectangle(frame, center_x, center_y - scale * 2, scale * 2, scale * 2, 0.2, 8, rocket_raylib.color(250, 247, 239, 255))?
+        rocket_raylib.draw_circle_pixels(frame, center_x - scale, center_y, scale / 4, theme.violet(light_mode))?
+        rocket_raylib.draw_circle_pixels(frame, center_x + scale, center_y - scale, scale / 4, theme.violet(light_mode))?
+    if game_index == 9:
+        rocket_raylib.draw_triangle(frame, center_x + scale * 2, center_y - scale * 2, center_x - scale, center_y + scale, center_x + scale, center_y + scale * 2, accent)?
+        rocket_raylib.draw_line(frame, center_x - scale, center_y + scale, center_x - scale * 2, center_y + scale * 2, 8.0, cool)?
+    if game_index == 10:
+        rocket_raylib.draw_rounded_rectangle(frame, center_x - scale * 2, center_y - scale * 2, scale * 4, scale * 4, 0.16, 10, theme.violet(light_mode))?
+        var reel = -1
+        while reel <= 1:
+            rocket_raylib.draw_circle_pixels(frame, center_x + reel * scale, center_y, scale / 3, accent)?
+            reel = reel + 1
+    return Ok(true)
+
+pub fn game_card(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: Rect, game_index: Int, title: String, subtitle: String, hovered: Bool, focused: Bool, light_mode: Bool) -> Result[Bool, String]:
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y + 7, value.width, value.height, 0.12, 12, rocket_raylib.color(2, 6, 23, 72))?
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.12, 12, theme.elevated(light_mode))?
+    var art_ready = resources.atlas_a_ready
+    var atlas = resources.atlas_a
+    if ui_resources.atlas_index(game_index) == 1:
+        art_ready = resources.atlas_b_ready
+        atlas = resources.atlas_b
+    let art_height = value.height - 72
+    if art_ready:
+        let cell = ui_resources.atlas_cell(game_index)
+        rocket_raylib.begin_scissor(frame, value.x, value.y, value.width, art_height)?
+        rocket_raylib.draw_texture_region(frame, atlas, ui_resources.source_x(cell), ui_resources.source_y(cell), 512, 512, value.x, value.y, value.width, art_height, rocket_raylib.color(255, 255, 255, 255))?
+        rocket_raylib.end_scissor(frame)?
+    else:
+        rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, art_height, 0.12, 12, theme.shell(light_mode))?
+        fallback_game_glyph(frame, rect(value.x, value.y, value.width, art_height), game_index, light_mode)?
+    rocket_raylib.draw_rectangle(frame, value.x, value.y + art_height - 28, value.width, 28, rocket_raylib.color(9, 11, 20, 150))?
+    type_text(window, frame, resources, title, value.x + 16, value.y + art_height + 10, type_label(), theme.primary_text(light_mode))?
+    type_text(window, frame, resources, subtitle, value.x + 16, value.y + art_height + 37, type_caption(), theme.secondary_text(light_mode))?
+    var outline = theme.subtle_border(light_mode)
+    if hovered:
+        outline = theme.primary(light_mode)
+    rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.12, 12, 2.0, outline)?
+    if focused:
+        rocket_raylib.draw_rounded_rectangle_lines(frame, value.x - 3, value.y - 3, value.width + 6, value.height + 6, 0.12, 12, 2.0, theme.cyan(light_mode))?
+    return Ok(true)

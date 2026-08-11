@@ -32,6 +32,27 @@ safe regions live in `src/app/layout.rocket`. Reusable presentation components
 live in `src/app/components.rocket`. Procedural raylib shapes, loaded fonts,
 textures, and sounds do not leak into engine APIs.
 
+## Typography and original art
+
+Manrope replaces the prototype bitmap face for the new display, heading, body,
+label, numeric, and caption roles. The exact unmodified font and SIL OFL 1.1
+notice are bundled under `assets/fonts/manrope/`; custom measurement uses the
+same loaded font as drawing. Default raylib text is an explicit tested degraded
+mode, not the intended presentation.
+
+Two reviewed 1536x1024 ImageGen atlases provide a coherent original hero and
+eleven distinct game covers. They are sampled as 512x512 source cells and paired
+with original procedural tables, boards, controls, objects, and effects rather
+than stretched over entire game screens. Exact provenance, prompts, dimensions,
+hashes, and visual-review notes live in `assets/MANIFEST.md` and
+`assets/ui/IMAGEGEN_PROMPTS.md`.
+
+The replacement component system supports elevated rounded surfaces; primary,
+secondary, quiet, danger, focused, hovered, and disabled buttons; procedural
+icon buttons; pills and badges; toggles; section headers; toasts; theme-aware
+modals; and illustrated game cards. Every game card has a distinct procedural
+degraded-mode glyph if its atlas cannot load.
+
 Keyboard focus, disabled states, hover/pressed states, readable hand totals, suit differentiation, and resolution-aware layout are required. Motion must never obscure legal actions or round state.
 
 The implemented startup, lobby, settings, exit confirmation, Blackjack table,

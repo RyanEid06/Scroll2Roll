@@ -10,36 +10,42 @@ fn run() -> Result[Int, String]:
     let missing = persistence.load(save_path)
     if missing.recovered or not missing.settings.first_run or missing.settings.play_balance != 1000:
         return Ok(1)
-    let changed = persistence.with_balance(persistence.with_ai_count(persistence.with_volume(persistence.with_audio(missing.settings, false), 35), 5), 1250)
+    let changed = persistence.with_reduced_motion(persistence.with_theme(persistence.with_balance(persistence.with_ai_count(persistence.with_volume(persistence.with_audio(missing.settings, false), 35), 5), 1250), true), true)
     persistence.save(save_path, changed)?
     let loaded = persistence.load(save_path)
     if loaded.recovered or loaded.settings.audio_enabled or loaded.settings.volume_percent != 35:
         return Ok(2)
-    if loaded.settings.version != 3 or loaded.settings.ai_count != 5 or loaded.settings.play_balance != 1250 or loaded.settings.first_run:
+    if loaded.settings.version != 4 or loaded.settings.ai_count != 5 or loaded.settings.play_balance != 1250 or loaded.settings.first_run:
         return Ok(3)
+    if not loaded.settings.light_mode or not loaded.settings.reduced_motion:
+        return Ok(13)
     file.write_text(save_path, "scroll2roll-save-1\n1\n45\n1440\n900\n4\n2340\n0\n")?
     let migrated = persistence.load(save_path)
-    if migrated.recovered or migrated.settings.version != 3 or migrated.settings.volume_percent != 45:
+    if migrated.recovered or migrated.settings.version != 4 or migrated.settings.volume_percent != 45:
         return Ok(4)
     if migrated.settings.window_width != 1440 or migrated.settings.ai_count != 4 or migrated.settings.play_balance != 2340:
         return Ok(5)
     persistence.save(save_path, migrated.settings)?
     let rewritten = string.split(string.trim(file.read_text(save_path)?), "\n")
-    if collections.length(rewritten) != 8 or rewritten[0] != "scroll2roll-save-3":
+    if collections.length(rewritten) != 10 or rewritten[0] != "scroll2roll-save-4":
         return Ok(6)
     file.write_text(save_path, "scroll2roll-save-2\n0\n55\n1366\n768\n2\n3450\n0\n")?
     let migrated_two = persistence.load(save_path)
-    if migrated_two.recovered or migrated_two.settings.version != 3 or migrated_two.settings.volume_percent != 55 or migrated_two.settings.play_balance != 3450:
+    if migrated_two.recovered or migrated_two.settings.version != 4 or migrated_two.settings.volume_percent != 55 or migrated_two.settings.play_balance != 3450:
         return Ok(11)
     persistence.save(save_path, migrated_two.settings)?
     let rewritten_two = string.split(string.trim(file.read_text(save_path)?), "\n")
-    if rewritten_two[0] != "scroll2roll-save-3":
+    if rewritten_two[0] != "scroll2roll-save-4":
         return Ok(12)
+    file.write_text(save_path, "scroll2roll-save-3\n1\n65\n1600\n900\n3\n4560\n0\n")?
+    let migrated_three = persistence.load(save_path)
+    if migrated_three.recovered or migrated_three.settings.version != 4 or migrated_three.settings.light_mode or migrated_three.settings.reduced_motion:
+        return Ok(14)
     file.write_text(save_path, "scroll2roll-save-0\n1\n70\n1280\n720\n3\n1000\n0\n")?
     let old = persistence.load(save_path)
     if not old.recovered or old.settings.play_balance != 1000:
         return Ok(7)
-    file.write_text(save_path, "scroll2roll-save-3\n2\n999\n1\n1\n99\n-5\n8\n")?
+    file.write_text(save_path, "scroll2roll-save-4\n2\n999\n1\n1\n99\n-5\n8\n2\n2\n")?
     let invalid = persistence.load(save_path)
     if not invalid.recovered or invalid.settings.volume_percent != 70:
         return Ok(8)

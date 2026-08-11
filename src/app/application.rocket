@@ -12,6 +12,7 @@ import src.app.registry
 import src.app.roulette_view
 import src.app.slots_view
 import src.app.theme
+import src.app.ui_resources
 import src.blackjack.blackjack_engine
 import src.blackjack.blackjack_model
 import src.chicken.chicken_api
@@ -366,6 +367,12 @@ fn settings_volume(state: State, delta: Int) -> State:
 fn settings_ai(state: State, delta: Int) -> State:
     return save_settings(state, persistence.with_ai_count(state.settings, state.settings.ai_count + delta))
 
+fn settings_theme(state: State) -> State:
+    return save_settings(state, persistence.with_theme(state.settings, not state.settings.light_mode))
+
+fn settings_motion(state: State) -> State:
+    return save_settings(state, persistence.with_reduced_motion(state.settings, not state.settings.reduced_motion))
+
 fn lobby_tile(index: Int, width: Int) -> components.Rect:
     let compact_width =(width - 528) / 2
     if index == 7:
@@ -416,6 +423,10 @@ fn update_settings(state: State, window: rocket_raylib.Window, clicked: Bool, mo
         return rebuild(state, 1, state.game, state.selected_bet, state.settings, "Settings saved locally", "", false, true, state.next_step, state.saved_round)
     if rocket_raylib.is_key_pressed(window, rocket_raylib.key_m()):
         return settings_audio(state)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_t()):
+        return settings_theme(state)
+    if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()):
+        return settings_motion(state)
     if rocket_raylib.is_key_pressed(window, rocket_raylib.key_left()):
         return settings_volume(state, -10)
     if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()):
@@ -1789,11 +1800,11 @@ fn draw_settings(window: rocket_raylib.Window, frame: rocket_raylib.Frame, state
         row = row + 1
     return rocket_raylib.draw_text(frame, "Escape or B returns to the lobby", 32, 540, theme.body_size(), theme.muted())
 
-fn draw(window: rocket_raylib.Window, state: State) -> Result[Bool, String]:
+fn draw(window: rocket_raylib.Window, state: State, resources: ui_resources.UiResources) -> Result[Bool, String]:
     let mouse_x = rocket_raylib.mouse_x(window)
     let mouse_y = rocket_raylib.mouse_y(window)
     let frame = rocket_raylib.begin_frame(window)?
-    rocket_raylib.clear(frame, theme.background())?
+    rocket_raylib.clear(frame, theme.canvas(state.settings.light_mode))?
     if state.screen == 0:
         draw_startup(window, frame)?
     if state.screen == 1:
@@ -1830,9 +1841,9 @@ fn draw(window: rocket_raylib.Window, state: State) -> Result[Bool, String]:
     if state.screen == 13:
         slots_view.draw(window, frame, state.slots, state.slots_help, state.slots_reel_stage, mouse_x, mouse_y)?
     if state.error != "":
-        components.modal(window, frame, "Something needs attention", state.error)?
+        components.modern_modal(window, frame, resources, "Something needs attention", state.error, state.settings.light_mode)?
     if state.exit_prompt:
-        components.modal(window, frame, "Leave Scroll2Roll?", "Your local settings and settled progress are saved")?
+        components.modern_modal(window, frame, resources, "Leave Scroll2Roll?", "Your local settings and settled progress are saved", state.settings.light_mode)?
     rocket_raylib.end_frame(frame)?
     return Ok(true)
 
@@ -1843,7 +1854,7 @@ pub fn step_for_test(state: State, window: rocket_raylib.Window) -> State:
     return update(state, window)
 
 pub fn draw_for_test(window: rocket_raylib.Window, state: State) -> Result[Bool, String]:
-    return draw(window, state)
+    return draw(window, state, ui_resources.empty())
 
 fn volume_value(percent: Int) -> Float:
     if percent <= 0:
@@ -1873,13 +1884,13 @@ fn event_sound(previous: State, current: State, sound: rocket_raylib.Sound, audi
         let played = rocket_raylib.play_sound(sound)
     return true
 
-fn loop(window: rocket_raylib.Window, initial_state: State, sound: rocket_raylib.Sound, audio_ready: Bool) -> Int:
+fn loop(window: rocket_raylib.Window, initial_state: State, resources: ui_resources.UiResources, sound: rocket_raylib.Sound, audio_ready: Bool) -> Int:
     var state = initial_state
     while state.running and not rocket_raylib.window_should_close(window):
         let previous = state
         state = update(state, window)
         let sounded = event_sound(previous, state, sound, audio_ready)
-        match draw(window, state):
+        match draw(window, state, resources):
             case Ok(drawn):
                 let expected = drawn
             case Err(error):
@@ -1887,16 +1898,30 @@ fn loop(window: rocket_raylib.Window, initial_state: State, sound: rocket_raylib
                 return 21
     return 0
 
-fn run_silent(window: rocket_raylib.Window, state: State) -> Int:
-    let status = loop(window, state, rocket_raylib.Sound(0), false)
+fn run_silent(window: rocket_raylib.Window, state: State, resources: ui_resources.UiResources) -> Int:
+    let status = loop(window, state, resources, rocket_raylib.Sound(0), false)
+    match ui_resources.unload(resources):
+        case Ok(unloaded):
+            let expected = unloaded
+        case Err(error):
+            print(error)
+            let closed = rocket_raylib.close_window(window)
+            return 22
     let closed = rocket_raylib.close_window(window)
     return status
 
-fn run_with_audio(window: rocket_raylib.Window, state: State, audio: rocket_raylib.AudioDevice, sound: rocket_raylib.Sound) -> Int:
-    let status = loop(window, state, sound, true)
+fn run_with_audio(window: rocket_raylib.Window, state: State, resources: ui_resources.UiResources, audio: rocket_raylib.AudioDevice, sound: rocket_raylib.Sound) -> Int:
+    let status = loop(window, state, resources, sound, true)
     let stopped = rocket_raylib.stop_sound(sound)
     let sound_closed = rocket_raylib.unload_sound(sound)
     let audio_closed = rocket_raylib.close_audio(audio)
+    match ui_resources.unload(resources):
+        case Ok(unloaded):
+            let expected = unloaded
+        case Err(error):
+            print(error)
+            let window_closed = rocket_raylib.close_window(window)
+            return 22
     let window_closed = rocket_raylib.close_window(window)
     return status
 
@@ -1914,16 +1939,17 @@ pub fn run() -> Int:
             match rocket_raylib.open_window(state.settings.window_width, state.settings.window_height, "Scroll2Roll"):
                 case Ok(window):
                     let fps = rocket_raylib.set_target_fps(window, 60)
+                    let resources = ui_resources.load(window)
                     match rocket_raylib.open_audio():
                         case Ok(audio):
                             match rocket_raylib.create_tone(audio, 523.25, 0.08):
                                 case Ok(sound):
-                                    return run_with_audio(window, state, audio, sound)
+                                    return run_with_audio(window, state, resources, audio, sound)
                                 case Err(error):
                                     let audio_closed = rocket_raylib.close_audio(audio)
-                                    return run_silent(window, state)
+                                    return run_silent(window, state, resources)
                         case Err(error):
-                            return run_silent(window, state)
+                            return run_silent(window, state, resources)
                 case Err(error):
                     print(error)
                     return 11

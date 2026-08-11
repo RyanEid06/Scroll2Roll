@@ -100,6 +100,9 @@ pub fn key_r() -> Int:
 pub fn key_s() -> Int:
     return rocket_raylib_adapter.RLV_KEY_S
 
+pub fn key_t() -> Int:
+    return rocket_raylib_adapter.RLV_KEY_T
+
 pub fn mouse_left() -> Int:
     return rocket_raylib_adapter.RLV_MOUSE_LEFT
 
@@ -217,6 +220,34 @@ pub fn draw_circle(frame: Frame, x: Int, y: Int, radius: Float, value: Color) ->
     unsafe:
         return status_result(rocket_raylib_adapter.rlv_draw_circle(frame.window_id, x, y, radius, value.red, value.green, value.blue, value.alpha))
 
+pub fn draw_circle_pixels(frame: Frame, x: Int, y: Int, radius: Int, value: Color) -> Result[Bool, String]:
+    unsafe:
+        return status_result(rocket_raylib_adapter.rlv_draw_circle_pixels(frame.window_id, x, y, radius, value.red, value.green, value.blue, value.alpha))
+
+pub fn draw_rounded_rectangle(frame: Frame, x: Int, y: Int, width: Int, height: Int, roundness: Float, segments: Int, value: Color) -> Result[Bool, String]:
+    unsafe:
+        return status_result(rocket_raylib_adapter.rlv_draw_rectangle_rounded(frame.window_id, x, y, width, height, roundness, segments, value.red, value.green, value.blue, value.alpha))
+
+pub fn draw_rounded_rectangle_lines(frame: Frame, x: Int, y: Int, width: Int, height: Int, roundness: Float, segments: Int, thickness: Float, value: Color) -> Result[Bool, String]:
+    unsafe:
+        return status_result(rocket_raylib_adapter.rlv_draw_rectangle_rounded_lines(frame.window_id, x, y, width, height, roundness, segments, thickness, value.red, value.green, value.blue, value.alpha))
+
+pub fn draw_line(frame: Frame, start_x: Int, start_y: Int, end_x: Int, end_y: Int, thickness: Float, value: Color) -> Result[Bool, String]:
+    unsafe:
+        return status_result(rocket_raylib_adapter.rlv_draw_line(frame.window_id, start_x, start_y, end_x, end_y, thickness, value.red, value.green, value.blue, value.alpha))
+
+pub fn draw_triangle(frame: Frame, first_x: Int, first_y: Int, second_x: Int, second_y: Int, third_x: Int, third_y: Int, value: Color) -> Result[Bool, String]:
+    unsafe:
+        return status_result(rocket_raylib_adapter.rlv_draw_triangle(frame.window_id, first_x, first_y, second_x, second_y, third_x, third_y, value.red, value.green, value.blue, value.alpha))
+
+pub fn draw_ring(frame: Frame, center_x: Int, center_y: Int, inner_radius: Float, outer_radius: Float, start_angle: Float, end_angle: Float, segments: Int, value: Color) -> Result[Bool, String]:
+    unsafe:
+        return status_result(rocket_raylib_adapter.rlv_draw_ring(frame.window_id, center_x, center_y, inner_radius, outer_radius, start_angle, end_angle, segments, value.red, value.green, value.blue, value.alpha))
+
+pub fn draw_ring_pixels(frame: Frame, center_x: Int, center_y: Int, inner_radius: Int, outer_radius: Int, start_angle: Float, end_angle: Float, segments: Int, value: Color) -> Result[Bool, String]:
+    unsafe:
+        return status_result(rocket_raylib_adapter.rlv_draw_ring_pixels(frame.window_id, center_x, center_y, inner_radius, outer_radius, start_angle, end_angle, segments, value.red, value.green, value.blue, value.alpha))
+
 pub fn draw_text(frame: Frame, text: String, x: Int, y: Int, size: Int, value: Color) -> Result[Bool, String]:
     match encode_text(text):
         case Ok(buffer_id):
@@ -241,6 +272,14 @@ pub fn measure_text(window: Window, text: String, size: Int) -> Result[Int, Stri
         case Err(error):
             return Err(error)
 
+pub fn begin_scissor(frame: Frame, x: Int, y: Int, width: Int, height: Int) -> Result[Bool, String]:
+    unsafe:
+        return status_result(rocket_raylib_adapter.rlv_scissor_begin(frame.window_id, x, y, width, height))
+
+pub fn end_scissor(frame: Frame) -> Result[Bool, String]:
+    unsafe:
+        return status_result(rocket_raylib_adapter.rlv_scissor_end(frame.window_id))
+
 pub fn is_key_pressed(window: Window, key: Int) -> Bool:
     unsafe:
         return rocket_raylib_adapter.rlv_key_pressed(window.id, key)
@@ -260,6 +299,10 @@ pub fn mouse_x(window: Window) -> Int:
 pub fn mouse_y(window: Window) -> Int:
     unsafe:
         return rocket_raylib_adapter.rlv_mouse_y(window.id)
+
+pub fn mouse_wheel(window: Window) -> Float:
+    unsafe:
+        return rocket_raylib_adapter.rlv_mouse_wheel(window.id)
 
 pub fn load_texture(window: Window, path: String) -> Result[Texture, String]:
     match encode_text(path):
@@ -284,6 +327,10 @@ pub fn draw_texture(frame: Frame, texture: Texture, x: Int, y: Int, tint: Color)
 pub fn draw_texture_scaled(frame: Frame, texture: Texture, x: Int, y: Int, scale: Float, tint: Color) -> Result[Bool, String]:
     unsafe:
         return status_result(rocket_raylib_adapter.rlv_texture_draw_scaled(frame.window_id, texture.id, x, y, scale, tint.red, tint.green, tint.blue, tint.alpha))
+
+pub fn draw_texture_region(frame: Frame, texture: Texture, source_x: Int, source_y: Int, source_width: Int, source_height: Int, destination_x: Int, destination_y: Int, destination_width: Int, destination_height: Int, tint: Color) -> Result[Bool, String]:
+    unsafe:
+        return status_result(rocket_raylib_adapter.rlv_texture_draw_region(frame.window_id, texture.id, source_x, source_y, source_width, source_height, destination_x, destination_y, destination_width, destination_height, tint.red, tint.green, tint.blue, tint.alpha))
 
 pub fn unload_texture(texture: Texture) -> Result[Bool, String]:
     unsafe:
@@ -310,6 +357,19 @@ pub fn draw_font_text(frame: Frame, font: Font, text: String, x: Int, y: Int, si
                 status = rocket_raylib_adapter.rlv_font_draw(frame.window_id, font.id, buffer_id, x, y, size, spacing, value.red, value.green, value.blue, value.alpha)
             let released = release_text(buffer_id)
             return status_result(status)
+        case Err(error):
+            return Err(error)
+
+pub fn measure_font_text(window: Window, font: Font, text: String, size: Float, spacing: Float) -> Result[Int, String]:
+    match encode_text(text):
+        case Ok(buffer_id):
+            var measured = rocket_raylib_adapter.RLV_ERR_INVALID_STATE
+            unsafe:
+                measured = rocket_raylib_adapter.rlv_font_measure(window.id, font.id, buffer_id, size, spacing)
+            let released = release_text(buffer_id)
+            if measured >= 0:
+                return Ok(measured)
+            return Err(status_message(measured))
         case Err(error):
             return Err(error)
 

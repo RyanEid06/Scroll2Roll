@@ -22,6 +22,10 @@ pub fn set_mouse(x: Int, y: Int, pressed: Bool) -> Bool:
     unsafe:
         return checked(rocket_raylib_adapter.rlv_test_set_mouse(x, y, pressed))
 
+pub fn set_mouse_wheel(movement: Float) -> Bool:
+    unsafe:
+        return checked(rocket_raylib_adapter.rlv_test_set_mouse_wheel(movement))
+
 pub fn request_close(value: Bool) -> Bool:
     unsafe:
         return checked(rocket_raylib_adapter.rlv_test_request_close(value))
@@ -29,6 +33,10 @@ pub fn request_close(value: Bool) -> Bool:
 pub fn draw_count() -> Int:
     unsafe:
         return rocket_raylib_adapter.rlv_draw_count()
+
+pub fn scissor_active() -> Bool:
+    unsafe:
+        return rocket_raylib_adapter.rlv_scissor_active()
 
 pub fn buffer_live_count() -> Int:
     unsafe:

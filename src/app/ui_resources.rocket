@@ -1,0 +1,92 @@
+import src.rocket_raylib
+
+pub struct UiResources:
+    font: rocket_raylib.Font
+    font_ready: Bool
+    atlas_a: rocket_raylib.Texture
+    atlas_a_ready: Bool
+    atlas_b: rocket_raylib.Texture
+    atlas_b_ready: Bool
+    message: String
+
+pub fn empty() -> UiResources:
+    return UiResources(rocket_raylib.Font(0), false, rocket_raylib.Texture(0, 0, 0), false, rocket_raylib.Texture(0, 0, 0), false, "Procedural visual fallback active")
+
+pub fn load_from_paths(window: rocket_raylib.Window, font_path: String, atlas_a_path: String, atlas_b_path: String) -> UiResources:
+    var font = rocket_raylib.Font(0)
+    var font_ready = false
+    var atlas_a = rocket_raylib.Texture(0, 0, 0)
+    var atlas_a_ready = false
+    var atlas_b = rocket_raylib.Texture(0, 0, 0)
+    var atlas_b_ready = false
+    match rocket_raylib.load_font(window, font_path):
+        case Ok(loaded):
+            font = loaded
+            font_ready = true
+        case Err(error):
+            let expected = error
+    match rocket_raylib.load_texture(window, atlas_a_path):
+        case Ok(loaded):
+            atlas_a = loaded
+            atlas_a_ready = true
+        case Err(error):
+            let expected = error
+    match rocket_raylib.load_texture(window, atlas_b_path):
+        case Ok(loaded):
+            atlas_b = loaded
+            atlas_b_ready = true
+        case Err(error):
+            let expected = error
+    var message = "Some visual resources unavailable; procedural fallback active"
+    if font_ready and atlas_a_ready and atlas_b_ready:
+        message = "Original artwork and bundled typography loaded"
+    return UiResources(font, font_ready, atlas_a, atlas_a_ready, atlas_b, atlas_b_ready, message)
+
+pub fn load(window: rocket_raylib.Window) -> UiResources:
+    return load_from_paths(window, "assets/fonts/manrope/Manrope-wght.ttf", "assets/ui/scroll2roll-cover-atlas-a.png", "assets/ui/scroll2roll-cover-atlas-b.png")
+
+pub fn ready(value: UiResources) -> Bool:
+    return value.font_ready and value.atlas_a_ready and value.atlas_b_ready
+
+pub fn unload(value: UiResources) -> Result[Bool, String]:
+    var clean = true
+    if value.atlas_a_ready:
+        match rocket_raylib.unload_texture(value.atlas_a):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.atlas_b_ready:
+        match rocket_raylib.unload_texture(value.atlas_b):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.font_ready:
+        match rocket_raylib.unload_font(value.font):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if not clean:
+        return Err("One or more UI resources could not be released")
+    return Ok(true)
+
+pub fn atlas_index(game_index: Int) -> Int:
+    if game_index < 6:
+        return 0
+    return 1
+
+pub fn atlas_cell(game_index: Int) -> Int:
+    if game_index < 6:
+        return game_index
+    return game_index - 5
+
+pub fn source_x(cell: Int) -> Int:
+    return(cell -(cell / 3) * 3) * 512
+
+pub fn source_y(cell: Int) -> Int:
+    return(cell / 3) * 512
+
+pub fn hero_cell() -> Int:
+    return 0

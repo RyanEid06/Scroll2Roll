@@ -85,7 +85,7 @@ Test setup helpers must return explicit failure or a nonzero test status when co
   sequential reveal, persistence, restart, lobby, drawing, and native cleanup.
 - Four reviewed raylib tests cover API behavior, audio stress, resource lifetime, and missing assets.
 
-The current post-Slots suite passes 41/41 tests. Before those gates run,
+The accepted pre-overhaul post-Slots suite passed 41/41 tests. Before those gates run,
 `scripts/validate.ps1` also rejects duplicate `.rocket` basenames under `src` so
 the frozen CodeView debugger can map every source unambiguously. Package
 relocation and source/staged website checks are separate scripts. The website
@@ -110,6 +110,18 @@ tests for theme migration/round-trip, persistent safe Back behavior, both-theme
 drawing for every screen, custom-font success/fallback/cleanup, texture and
 scissor lifetimes, mouse-wheel scroll bounds, reduced motion, and non-overlap
 layout invariants.
+
+`ui_resources_test.rocket` covers independent font/atlas success, missing and
+corrupt degradation, exact atlas mapping, and balanced unload/close lifetimes.
+`ui_components_test.rocket` draws both-theme surfaces and every shared state,
+uses real-font and atlas handles through the deterministic adapter, exercises an
+illustrated card and a distinct procedural fallback, and proves scissor/resource
+cleanup. The adapter smoke test now covers custom-font measurement, source-
+region texture drawing, rounded fill/outline, line, triangle, ring, balanced
+scissor, and consumable mouse wheel. Persistence tests cover save-v1, save-v2,
+and save-v3 migration to save-v4, save-v4 round-trip, theme/reduced-motion
+integrity, and invalid recovery. The current suite passes 44/44 in Debug and
+Release.
 
 Functional drawing tests are necessary but not visual acceptance. Each visual
 milestone launches the actual native executable and records dark/light captures
