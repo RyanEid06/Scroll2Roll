@@ -294,6 +294,25 @@ Rendering never owns game rules or random outcomes. The C++ adapter never owns a
 
 ## Native UI overhaul status
 
+The owner has reviewed the accepted native captures and set a higher visual
+quality bar: modern, smooth, fun game interiors with convincing physical
+objects and surrounding places, including recognizable vehicles, roads,
+tables, rockets, slot machines, characters, boards, and environmental props.
+Engineering acceptance of the current 48/48 baseline remains valid, but it is
+not owner visual approval. `docs/GAME_VISUAL_REFINEMENT_PLAN.md` is the durable
+four-chat execution plan. It assigns sequential groups for living worlds and
+motion; physical casino tables; arcade cabinets and tactile boards; and Dice,
+HiLo, final cohesion, website captures, packaging, and acceptance. It also
+defines how owner-generated art may be briefed, reviewed, licensed, manifested,
+integrated, and tested without weakening engine/privacy boundaries.
+`docs/OWNER_ASSET_GENERATION_PROMPTS.md` supplies the exact PNG formats,
+filenames, per-game prompts, and provenance record for those owner assets.
+`docs/ASSET_ANIMATION_IMPLEMENTATION_PLAN.md` is the durable next-step
+handoff: promote only selected reviewed assets, integrate each game's visual
+composition and committed/reduced-motion animation together, complete the four
+groups sequentially, and defer website/package refresh until final native
+acceptance.
+
 The owner rejected the accepted 0.3.0 native presentation and mandated a full
 dark/light, illustration-led replacement of the shell and all eleven game
 interiors in `UI_OVERHAUL.md`. Milestone 1 is complete: the actual package was
@@ -467,6 +486,13 @@ separate decisions.
 
 ## Major decisions
 
+- Created an unintegrated owner-art staging package at `owner-art-20260812`:
+  37 visually reviewed high-resolution PNGs and 29 retained source originals.
+  The package covers all eleven games with coordinated environments, physical
+  props, character/vehicle pieces, VFX, and reusable atlases. It is art-only;
+  no native or web implementation, game rules, package, deployment, or Git
+  promotion occurred in this milestone.
+
 - Preserve the draft under `legacy/Blackjack-v1` so the repaired implementation never destroys historical evidence.
 - Use integer credits and even bet units so Blackjack 3:2 payouts remain exact.
 - Keep the casino economy local and deliberately small; persistence contains only versioned preferences, first-run state, AI count, and play-money progress.
@@ -506,7 +532,8 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 
 ## New-chat handoff
 
-Read `AGENTS.md`, `UI_OVERHAUL.md`, `docs/MASTER_PLAN.md`,
+Read `AGENTS.md`, `UI_OVERHAUL.md`, `docs/GAME_VISUAL_REFINEMENT_PLAN.md`,
+`docs/OWNER_ASSET_GENERATION_PROMPTS.md`, `docs/MASTER_PLAN.md`,
 `docs/UI_OVERHAUL_FOUNDATION.md`, `docs/EXPANSION_PLAN.md`,
 `docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
 status and preserve user changes. The accepted 0.2.0 baseline remains intact;
