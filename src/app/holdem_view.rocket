@@ -13,6 +13,25 @@ import std.string
 fn interior(width: Int, height: Int) -> game_layout.Interior:
     return game_layout.interior(width, height)
 
+fn table_rect(value: game_layout.Interior) -> components.Rect:
+    var top = 42
+    if value.compact:
+        top = 28
+    return components.rect(value.stage.x + 14, value.stage.y + top, value.stage.width - 28, value.stage.height - top - 10)
+
+fn draw_lounge(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    if not resources.tables.holdem_lounge_ready:
+        return game_components.ambient_stage(frame, resources, value, 5, light_mode)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.04, 12, theme.surface(light_mode))?
+    rocket_raylib.begin_scissor(frame, value.x, value.y, value.width, value.height)?
+    game_components.texture_cover(frame, resources.tables.holdem_lounge, value, 255)?
+    var veil = rocket_raylib.color(3, 9, 16, 82)
+    if light_mode:
+        veil = rocket_raylib.color(240, 244, 248, 104)
+    rocket_raylib.draw_rectangle(frame, value.x, value.y, value.width, value.height, veil)?
+    rocket_raylib.end_scissor(frame)?
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.04, 12, 1.0, theme.subtle_border(light_mode))
+
 pub fn help_rect(width: Int, height: Int) -> components.Rect:
     let value = interior(width, height)
     return components.rect(value.stage.x + value.stage.width - 88, value.stage.y + 6, 76, 44)
@@ -119,6 +138,35 @@ fn card_width(table: components.Rect) -> Int:
 fn card_height(width: Int) -> Int:
     return width * 7 / 5
 
+fn chip_cell(index: Int) -> Int:
+    return index - index / 3 * 3
+
+fn draw_chip_prop(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, index: Int, value: components.Rect, alpha: Int) -> Result[Bool, String]:
+    if not resources.tables.holdem_props_ready:
+        return Ok(false)
+    return game_components.texture_cell(frame, resources.tables.holdem_props, 4, 2, chip_cell(index), value, alpha)
+
+fn draw_marker_prop(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, player: holdem_model.PublicPlayer, x: Int, y: Int, light_mode: Bool) -> Result[Bool, String]:
+    var label = ""
+    var cell = 5
+    if player.dealer:
+        label = "D"
+    else:
+        if player.small_blind:
+            label = "SB"
+            cell = 6
+        if player.big_blind:
+            label = "BB"
+            cell = 6
+    if label == "":
+        return Ok(true)
+    let marker = components.rect(x, y, 28, 28)
+    if resources.tables.holdem_props_ready:
+        game_components.texture_cell(frame, resources.tables.holdem_props, 4, 2, cell, marker, 245)?
+    else:
+        rocket_raylib.draw_circle_pixels(frame, marker.x + 14, marker.y + 14, 13, theme.highlight(light_mode))?
+    return components.type_centered(window, frame, resources, label, marker, components.type_caption(), rocket_raylib.color(6, 14, 24, 255))
+
 fn draw_card(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, card: holdem_model.Card, value: components.Rect, hidden: Bool, active: Bool, light_mode: Bool) -> Result[Bool, String]:
     return game_components.playing_card(window, frame, resources, value, holdem_cards.rank_name(card.rank), card.suit, hidden, active, light_mode)
 
@@ -171,9 +219,15 @@ fn draw_opponents(window: rocket_raylib.Window, frame: rocket_raylib.Frame, reso
             outline = theme.cyan(light_mode)
             rocket_raylib.draw_rounded_rectangle_lines(frame, x - 3, y - 3, seat_width + 6, seat_height + 6, 0.22, 10, 2.0, outline)?
         rocket_raylib.draw_rounded_rectangle_lines(frame, x, y, seat_width, seat_height, 0.22, 10, 1.0, outline)?
+        if player.active and resources.tables.holdem_props_ready:
+            let active_ring = components.rect(x + 2, y + seat_height - 58, 44, 56)
+            game_components.texture_cell(frame, resources.tables.holdem_props, 4, 2, 7, active_ring, 220)?
         components.type_text(window, frame, resources, player.name, x + 10, y + 8, components.type_caption(), theme.primary_text(light_mode))?
         components.type_text(window, frame, resources, string.concat("STACK  ", string.from_int(player.stack)), x + 10, y + 30, components.type_caption(), theme.highlight(light_mode))?
-        components.type_text(window, frame, resources, markers(player), x + 10, y + seat_height - 22, components.type_caption(), theme.secondary_text(light_mode))?
+        let chip = components.rect(x + 6, y + seat_height - 48 + offset / 5, 34, 44)
+        draw_chip_prop(frame, resources, index, chip, 245)?
+        draw_marker_prop(window, frame, resources, player, x + 42, y + seat_height - 34, light_mode)?
+        components.type_text(window, frame, resources, markers(player), x + 74, y + seat_height - 24, components.type_caption(), theme.secondary_text(light_mode))?
         var mini_width = 30
         if seat_width >= 138:
             mini_width = 36
@@ -223,21 +277,28 @@ fn draw_human(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resource
     components.type_text(window, frame, resources, player.name, panel.x + 16, panel.y + 12, components.type_label(), theme.primary_text(light_mode))?
     components.type_text(window, frame, resources, string.concat("STACK  ", string.from_int(player.stack)), panel.x + 16, panel.y + 42, components.type_caption(), theme.highlight(light_mode))?
     components.type_text(window, frame, resources, string.concat("IN POT  ", string.from_int(player.total_contribution)), panel.x + 16, panel.y + 64, components.type_caption(), theme.secondary_text(light_mode))?
-    components.type_text(window, frame, resources, markers(player), panel.x + 16, panel.y + panel.height - 24, components.type_caption(), theme.secondary_text(light_mode))?
+    if player.active and resources.tables.holdem_props_ready:
+        game_components.texture_cell(frame, resources.tables.holdem_props, 4, 2, 7, components.rect(panel.x + 104, panel.y + panel.height - 62, 48, 60), 220)?
+    draw_chip_prop(frame, resources, 2, components.rect(panel.x + 111, panel.y + panel.height - 53 + offset / 5, 34, 44), 245)?
+    draw_marker_prop(window, frame, resources, player, panel.x + 156, panel.y + panel.height - 38, light_mode)?
+    components.type_text(window, frame, resources, markers(player), panel.x + 190, panel.y + panel.height - 24, components.type_caption(), theme.secondary_text(light_mode))?
     if player.last_action != "":
         components.type_text(window, frame, resources, player.last_action, panel.x + panel.width / 2 - 12, panel.y + 12, components.type_caption(), theme.highlight(light_mode))?
     draw_hole_cards(window, frame, resources, player, panel.x + panel.width - card_w * 8 / 5 - 14, panel.y + panel.height - card_h - 8, card_w, card_h, offset, light_mode)?
     return Ok(true)
 
 fn draw_table(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table_data: holdem_model.PublicTable, value: game_layout.Interior, offset: Int, light_mode: Bool) -> Result[Bool, String]:
-    let table = game_layout.inset(value.stage, 12)
+    let table = table_rect(value)
     game_components.felt_table(frame, table, light_mode)?
     let card_w = card_width(table)
     let card_h = card_height(card_w)
     components.type_centered(window, frame, resources, "SCROLL2ROLL  /  NO-LIMIT HOLD'EM", components.rect(table.x, table.y + table.height / 2 - 64, table.width, 24), components.type_caption(), rocket_raylib.color(255, 255, 255, 88))?
     draw_opponents(window, frame, resources, table_data, table, offset, light_mode)?
     draw_community(window, frame, resources, table_data, table, card_w, card_h, offset, light_mode)?
-    game_components.chip_stack(window, frame, resources, table.x + table.width - 86, table.y + table.height / 2 - 20, table_data.pot_total, theme.highlight(light_mode), light_mode)?
+    if resources.tables.holdem_props_ready:
+        game_components.texture_cell(frame, resources.tables.holdem_props, 4, 2, 4, components.rect(table.x + table.width - 114, table.y + table.height / 2 - 52 - offset / 3, 98, 66), 245)?
+    else:
+        game_components.chip_stack(window, frame, resources, table.x + table.width - 86, table.y + table.height / 2 - 20, table_data.pot_total, theme.highlight(light_mode), light_mode)?
     components.badge(window, frame, resources, components.rect(table.x + table.width - 122, table.y + table.height / 2 + 18, 108, 28), string.concat("POT  ", string.from_int(table_data.pot_total)), light_mode)?
     draw_human(window, frame, resources, table_data.players[0], table, card_w, card_h, offset, light_mode)?
     return Ok(true)
@@ -317,7 +378,7 @@ pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     let value = interior(width, height)
-    game_components.ambient_stage(frame, resources, value.stage, 5, light_mode)?
+    draw_lounge(frame, resources, value.stage, light_mode)?
     let offset = game_components.motion_offset(now, animation_end, reduced_motion, 22)
     draw_table(window, frame, resources, table, value, offset, light_mode)?
     draw_controls(window, frame, resources, table, target, can_fold, can_call_check, can_raise, can_all_in, value, mouse_x, mouse_y, light_mode)?

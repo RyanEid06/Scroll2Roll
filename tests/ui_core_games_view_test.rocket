@@ -80,8 +80,7 @@ fn settle_blackjack(source: blackjack_model.Game) -> Result[blackjack_model.Game
         return Err("Blackjack view fixture did not settle")
     return Ok(game)
 
-fn draw_states(window: rocket_raylib.Window, light_mode: Bool) -> Result[Bool, String]:
-    let resources = ui_resources.empty()
+fn draw_states(window: rocket_raylib.Window, resources: ui_resources.UiResources, light_mode: Bool) -> Result[Bool, String]:
     var blackjack_ready = blackjack_engine.new_game("Player", 1000, 3, 20260841)?
     blackjack_ready = blackjack_engine.set_bet(blackjack_ready, 0, 10)?
     let blackjack_active = blackjack_engine.start_round(blackjack_ready)?
@@ -111,14 +110,17 @@ fn draw_states(window: rocket_raylib.Window, light_mode: Bool) -> Result[Bool, S
     rocket_raylib.clear(frame, rocket_raylib.black())?
     blackjack_view.draw(window, frame, resources, blackjack_ready, 10, light_mode, false, 0.0, 0.0, -100, -100)?
     blackjack_view.draw(window, frame, resources, blackjack_active, 10, light_mode, false, 0.0, 0.3, -100, -100)?
+    blackjack_view.draw(window, frame, resources, blackjack_active, 10, light_mode, true, 0.0, 0.3, -100, -100)?
     blackjack_view.draw(window, frame, resources, blackjack_settled, 10, light_mode, true, 1.0, 0.0, -100, -100)?
     roulette_view.draw(window, frame, resources, roulette_bet_session.game, 0, 17, false, light_mode, false, 0.0, 0.0, -100, -100)?
     roulette_view.draw(window, frame, resources, roulette_spinning.game, 0, 17, false, light_mode, false, 0.0, 0.6, -100, -100)?
+    roulette_view.draw(window, frame, resources, roulette_spinning.game, 0, 17, false, light_mode, true, 0.0, 0.6, -100, -100)?
     roulette_view.draw(window, frame, resources, roulette_settled.game, 0, 17, light_mode, light_mode, true, 1.0, 0.0, -100, -100)?
     let active_table = holdem_api.public_table(holdem_active)
     let settled_table = holdem_api.public_table(holdem_settled)
     holdem_view.draw(window, frame, resources, holdem_api.public_table(holdem_ready), 10, false, false, false, false, false, light_mode, false, 0.0, 0.0, -100, -100)?
     holdem_view.draw(window, frame, resources, active_table, holdem_api.minimum_target(holdem_active), holdem_api.can_action(holdem_active, 0, 0), holdem_api.can_action(holdem_active, 1, 0) or holdem_api.can_action(holdem_active, 2, 0), holdem_api.can_action(holdem_active, 3, holdem_api.minimum_target(holdem_active)), holdem_api.can_action(holdem_active, 4, 0), false, light_mode, false, 0.0, 0.3, -100, -100)?
+    holdem_view.draw(window, frame, resources, active_table, holdem_api.minimum_target(holdem_active), holdem_api.can_action(holdem_active, 0, 0), holdem_api.can_action(holdem_active, 1, 0) or holdem_api.can_action(holdem_active, 2, 0), holdem_api.can_action(holdem_active, 3, holdem_api.minimum_target(holdem_active)), holdem_api.can_action(holdem_active, 4, 0), false, light_mode, true, 0.0, 0.3, -100, -100)?
     holdem_view.draw(window, frame, resources, settled_table, 10, false, false, false, false, light_mode, light_mode, true, 1.0, 0.0, -100, -100)?
     hilo_view.draw(window, frame, resources, hilo_api.public_table(hilo_ready)?, false, light_mode, false, 0.0, 0.0, -100, -100)?
     hilo_view.draw(window, frame, resources, hilo_api.public_table(hilo_active)?, false, light_mode, false, 0.0, 0.3, -100, -100)?
@@ -138,12 +140,21 @@ fn run() -> Result[Int, String]:
         if not layout_valid(widths[index], heights[index]):
             return Ok(2 + index)
         let window = rocket_raylib.open_window(widths[index], heights[index], "Core game interior states")?
-        if not draw_states(window, false)? or not draw_states(window, true)?:
+        let fallback = ui_resources.empty()
+        if not draw_states(window, fallback, false)? or not draw_states(window, fallback, true)?:
             return Ok(10 + index)
         rocket_raylib.close_window(window)?
         index = index + 1
-    if rocket_raylib_testing.buffer_live_count() != 0:
+    let production_window = rocket_raylib.open_window(1280, 720, "Core game production resources")?
+    let production = ui_resources.load(production_window)
+    if not draw_states(production_window, production, false)? or not draw_states(production_window, production, true)?:
         return Ok(20)
+    ui_resources.unload(production)?
+    rocket_raylib.close_window(production_window)?
+    if rocket_raylib_testing.buffer_live_count() != 0:
+        return Ok(21)
+    if rocket_raylib_testing.font_live_count() != 0 or rocket_raylib_testing.texture_live_count() != 0:
+        return Ok(22)
     return Ok(0)
 
 fn main() -> Int:

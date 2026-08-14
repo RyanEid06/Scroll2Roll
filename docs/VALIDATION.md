@@ -330,6 +330,68 @@ This file records the complete local acceptance pass performed on Windows x64 on
   package. Groups 2-4 were not started. Nothing was pushed, published,
   deployed, packaged, signed, or described as owner-approved.
 
+## Post-art implementation Group 2 - Blackjack, Hold'em, and Roulette
+
+- On 2026-08-14, Group 1 was verified before Group 2 changes: its committed
+  scope and eleven runtime assets matched the accepted hashes, and fresh Debug
+  and Release baseline passes each completed the native build, `rocketc check`,
+  all 48 tests, and both formatting checks. No Group 1 game view or runtime
+  asset is changed by the Group 2 diff; the shared resource owner is extended
+  with its lifecycle tests still passing.
+- Only seven reviewed files were promoted byte-identically from
+  `owner-art-20260812/accepted` to `assets/games/group2-v1/`: the Blackjack
+  room and dealing shoe, shared chip stack, Hold'em lounge and props atlas, and
+  Roulette room and wheel. `assets/MANIFEST.md` records exact accepted/runtime
+  hashes, the available source counterpart hashes, dimensions, provenance
+  limits, and the 4x2 Hold'em atlas cell map. The baked rectangular premium
+  table was excluded because it conflicts with responsive code-owned table
+  geometry. The decorative roulette cradle was excluded because it is not an
+  isolated ball aligned to the engine's 37 pockets.
+- Blackjack retains its exact table and existing rule/action rectangles. Its
+  reviewed room, shoe, chips, rail seats, wager markers, active-hand ring,
+  committed card offset, and public settlement response are presentation-only.
+  Hold'em retains the privacy-safe `PublicTable`: rival cards remain back-only
+  unless that projection supplies two public cards, while atlas chips, pot,
+  dealer/blind markers, active-player ring, and committed deal/chip offsets add
+  visual weight. Roulette retains every board, number, rail, and mouse-bet
+  rectangle; the physical wheel maps the engine's canonical 37-pocket order
+  to the locked result, and the wheel marker and table highlight use the same
+  committed winner.
+- Reduced motion removes Blackjack and Hold'em interpolation offsets and locks
+  the Roulette ball to its committed pocket without changing phase timing,
+  state, outcomes, focus, controls, or geometry. Deterministic core-game view
+  fallback fixtures exercise normal and reduced active states in both themes at
+  exact 800x600, 1024x768, 1280x720, 1600x900, and 1920x1080 client dimensions.
+  The production-resource fixture exercises both themes at 1280x720 with the
+  same active-state profiles. Both paths verify balanced scissoring and zero
+  live handles after close.
+- `ui_resources.rocket` remains the sole texture owner. It loads the seven new
+  textures once, exposes explicit ready flags and fallbacks, and unloads each
+  live handle exactly once. `ui_resources_test.rocket` verifies one font and
+  all 20 production textures, then verifies both live counts return to zero.
+  Focused rules, session, GUI-flow, privacy, resource, and core-view tests pass
+  for the three games; rendering does not load or allocate assets per frame.
+- Actual Release-window inspection used isolated ignored settings profiles and
+  Windows Graphics Capture. Dark and light ready composition passed at
+  800x600, 1024x768, 1280x720, and 1600x900, followed by both themes at the
+  current maximized 1920x991 client (1536x816 outer capture at 125% scaling).
+  A requested decorated 1920x1080 window extends outside the capturable work
+  area; the exact 1920x1080 contract is therefore deterministic-test evidence,
+  not a claimed native capture. Compact active/settled review confirmed the
+  bottom dock, focus rings, disabled actions, Blackjack dealer-hole concealment,
+  Hold'em rival back-only cards until settlement, and Roulette wheel/table
+  result agreement. Standard and wide review confirmed the action rail and
+  unclipped table composition. The visibly enabled reduced-motion profile was
+  also inspected maximized for all three games, including a live Hold'em hand
+  and committed Blackjack/Roulette settlements.
+- Final sequential Debug and Release `scripts/validate.ps1` passes each
+  completed native generation/build, `rocketc check`, all 48 tests, and both
+  source/test formatting checks. This group changes no game rule, private-state
+  boundary, persistence format, Roulette hit region, legal-action contract,
+  frozen Rocket contract, raylib ABI, website, or package. Groups 3-4 were not
+  started. Nothing was pushed, published, deployed, packaged, signed, or
+  described as owner-approved.
+
 ## 0.2.0 expansion baseline
 
 Before expansion implementation, both Debug and Release

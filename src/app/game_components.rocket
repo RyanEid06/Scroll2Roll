@@ -29,6 +29,29 @@ fn draw_cover(frame: rocket_raylib.Frame, texture: rocket_raylib.Texture, cell: 
         source_x = source_x +(512 - source_width) / 2
     return rocket_raylib.draw_texture_region(frame, texture, source_x, source_y, source_width, source_height, value.x, value.y, value.width, value.height, rocket_raylib.color(255, 255, 255, alpha))
 
+pub fn texture_cover(frame: rocket_raylib.Frame, texture: rocket_raylib.Texture, value: components.Rect, alpha: Int) -> Result[Bool, String]:
+    var source_x = 0
+    var source_y = 0
+    var source_width = texture.width
+    var source_height = texture.height
+    if value.width * source_height > value.height * source_width:
+        source_height = source_width * value.height / value.width
+        source_y =(texture.height - source_height) / 2
+    else:
+        source_width = source_height * value.width / value.height
+        source_x =(texture.width - source_width) / 2
+    return rocket_raylib.draw_texture_region(frame, texture, source_x, source_y, source_width, source_height, value.x, value.y, value.width, value.height, rocket_raylib.color(255, 255, 255, alpha))
+
+pub fn texture_full(frame: rocket_raylib.Frame, texture: rocket_raylib.Texture, value: components.Rect, alpha: Int) -> Result[Bool, String]:
+    return rocket_raylib.draw_texture_region(frame, texture, 0, 0, texture.width, texture.height, value.x, value.y, value.width, value.height, rocket_raylib.color(255, 255, 255, alpha))
+
+pub fn texture_cell(frame: rocket_raylib.Frame, texture: rocket_raylib.Texture, columns: Int, rows: Int, cell: Int, value: components.Rect, alpha: Int) -> Result[Bool, String]:
+    let cell_width = texture.width / columns
+    let cell_height = texture.height / rows
+    let column = cell - cell / columns * columns
+    let row = cell / columns
+    return rocket_raylib.draw_texture_region(frame, texture, column * cell_width, row * cell_height, cell_width, cell_height, value.x, value.y, value.width, value.height, rocket_raylib.color(255, 255, 255, alpha))
+
 fn fallback_ambient(frame: rocket_raylib.Frame, value: components.Rect, game_index: Int, light_mode: Bool) -> Result[Bool, String]:
     let center_x = value.x + value.width * 3 / 4
     let center_y = value.y + value.height / 3

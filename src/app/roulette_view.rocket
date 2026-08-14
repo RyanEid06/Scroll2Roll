@@ -17,6 +17,19 @@ fn remainder(value: Int, divisor: Int) -> Int:
 fn interior(width: Int, height: Int) -> game_layout.Interior:
     return game_layout.interior(width, height)
 
+fn draw_room(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    if not resources.tables.roulette_room_ready:
+        return game_components.ambient_stage(frame, resources, value, 1, light_mode)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.04, 12, theme.surface(light_mode))?
+    rocket_raylib.begin_scissor(frame, value.x, value.y, value.width, value.height)?
+    game_components.texture_cover(frame, resources.tables.roulette_room, value, 255)?
+    var veil = rocket_raylib.color(3, 7, 18, 92)
+    if light_mode:
+        veil = rocket_raylib.color(240, 244, 250, 108)
+    rocket_raylib.draw_rectangle(frame, value.x, value.y, value.width, value.height, veil)?
+    rocket_raylib.end_scissor(frame)?
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.04, 12, 1.0, theme.subtle_border(light_mode))
+
 fn board_rect(width: Int, height: Int) -> components.Rect:
     let value = interior(width, height)
     let wheel_width = value.stage.width * 31 / 100
@@ -368,6 +381,9 @@ fn draw_board(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resource
         rocket_raylib.draw_ring_pixels(frame, anchor.x, anchor.y, 6, 11, 0.0, 360.0, 18, theme.highlight(light_mode))?
         rocket_raylib.draw_circle_pixels(frame, anchor.x, anchor.y, 5, theme.violet(false))?
         index = index + 1
+    if roulette_engine.phase_code(game.phase) == 2:
+        let winner = number_center(game.result.winning_number, width, height)
+        rocket_raylib.draw_ring_pixels(frame, winner.x, winner.y, 13, 17, 0.0, 360.0, 24, theme.highlight(light_mode))?
     match focus_bet(focus_kind, focus_target, game.selected_chip):
         case Ok(focus):
             let anchor = bet_anchor(focus, width, height)
@@ -381,27 +397,38 @@ fn wheel_step(now: Float, end_time: Float, reduced_motion: Bool) -> Int:
         return 0
     let remaining = end_time - now
     if remaining > 1.80:
-        return 1
+        return 30
     if remaining > 1.60:
-        return 2
+        return 26
     if remaining > 1.40:
-        return 3
+        return 22
     if remaining > 1.20:
-        return 4
+        return 19
     if remaining > 1.00:
-        return 5
+        return 16
     if remaining > 0.82:
-        return 6
+        return 13
     if remaining > 0.66:
-        return 7
+        return 10
     if remaining > 0.52:
         return 8
     if remaining > 0.40:
-        return 9
+        return 6
     if remaining > 0.30:
-        return 10
+        return 4
     if remaining > 0.20:
-        return 11
+        return 2
+    if remaining > 0.10:
+        return 1
+    return 0
+
+fn wheel_index(number: Int) -> Int:
+    let order = roulette_rules.wheel_order()
+    var index = 0
+    while index < collections.length(order):
+        if order[index] == number:
+            return index
+        index = index + 1
     return 0
 
 fn draw_wheel(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: roulette_model.Game, now: Float, spin_end: Float, reduced_motion: Bool, light_mode: Bool) -> Result[Bool, String]:
@@ -413,26 +440,39 @@ fn draw_wheel(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resource
     if radius > value.stage.height / 2 - 42:
         radius = value.stage.height / 2 - 42
     rocket_raylib.draw_circle_pixels(frame, center_x + 5, center_y + 8, radius + 9, rocket_raylib.color(2, 6, 23, 110))?
-    rocket_raylib.draw_ring_pixels(frame, center_x, center_y, radius * 76 / 100, radius, 0.0, 360.0, 72, rocket_raylib.color(115, 72, 25, 255))?
-    let starts = [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0, 210.0, 240.0, 270.0, 300.0, 330.0]
-    var index = 0
-    while index < 12:
-        var color = rocket_raylib.color(20, 28, 43, 255)
-        if remainder(index, 2) == 0:
-            color = rocket_raylib.color(185, 34, 66, 255)
-        rocket_raylib.draw_ring_pixels(frame, center_x, center_y, radius * 48 / 100, radius * 72 / 100, starts[index], starts[index] + 27.0, 12, color)?
-        index = index + 1
-    rocket_raylib.draw_ring_pixels(frame, center_x, center_y, radius * 31 / 100, radius * 46 / 100, 0.0, 360.0, 48, theme.highlight(light_mode))?
-    rocket_raylib.draw_circle_pixels(frame, center_x, center_y, radius * 29 / 100, rocket_raylib.color(63, 30, 91, 255))?
-    rocket_raylib.draw_ring_pixels(frame, center_x, center_y, radius * 12 / 100, radius * 22 / 100, 0.0, 360.0, 32, theme.highlight(light_mode))?
-    components.type_centered(window, frame, resources, "S2R", components.rect(center_x - 40, center_y - 12, 80, 24), components.type_label(), rocket_raylib.color(255, 255, 255, 255))?
-    let x_offsets = [0, 35, 61, 70, 61, 35, 0, -35, -61, -70, -61, -35]
-    let y_offsets = [-70, -61, -35, 0, 35, 61, 70, 61, 35, 0, -35, -61]
+    if resources.tables.roulette_wheel_ready:
+        let art_width = radius * 2 + 24
+        let art_height = art_width * 4 / 5
+        game_components.texture_full(frame, resources.tables.roulette_wheel, components.rect(center_x - art_width / 2, center_y - art_height / 2, art_width, art_height), 255)?
+    else:
+        rocket_raylib.draw_ring_pixels(frame, center_x, center_y, radius * 76 / 100, radius, 0.0, 360.0, 72, rocket_raylib.color(115, 72, 25, 255))?
+        let starts = [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0, 210.0, 240.0, 270.0, 300.0, 330.0]
+        var index = 0
+        while index < 12:
+            var color = rocket_raylib.color(20, 28, 43, 255)
+            if remainder(index, 2) == 0:
+                color = rocket_raylib.color(185, 34, 66, 255)
+            rocket_raylib.draw_ring_pixels(frame, center_x, center_y, radius * 48 / 100, radius * 72 / 100, starts[index], starts[index] + 27.0, 12, color)?
+            index = index + 1
+        rocket_raylib.draw_ring_pixels(frame, center_x, center_y, radius * 31 / 100, radius * 46 / 100, 0.0, 360.0, 48, theme.highlight(light_mode))?
+        rocket_raylib.draw_circle_pixels(frame, center_x, center_y, radius * 29 / 100, rocket_raylib.color(63, 30, 91, 255))?
+        rocket_raylib.draw_ring_pixels(frame, center_x, center_y, radius * 12 / 100, radius * 22 / 100, 0.0, 360.0, 32, theme.highlight(light_mode))?
+        components.type_centered(window, frame, resources, "S2R", components.rect(center_x - 40, center_y - 12, 80, 24), components.type_label(), rocket_raylib.color(255, 255, 255, 255))?
+    let x_offsets = [0, 17, 33, 49, 63, 75, 85, 93, 98, 100, 99, 96, 89, 80, 69, 56, 41, 25, 8, -8, -25, -41, -56, -69, -80, -89, -96, -99, -100, -98, -93, -85, -75, -63, -49, -33, -17]
+    let y_offsets = [-100, -99, -94, -87, -78, -66, -52, -37, -21, -4, 13, 29, 45, 59, 72, 83, 91, 97, 100, 100, 97, 91, 83, 72, 59, 45, 29, 13, -4, -21, -37, -52, -66, -78, -87, -94, -99]
     let phase = roulette_engine.phase_code(game.phase)
+    if phase == 1 or phase == 2:
+        var winner = game.pending_winner
+        if phase == 2:
+            winner = game.result.winning_number
+        let slot = remainder(wheel_index(winner) + wheel_step(now, spin_end, reduced_motion), 37)
+        let ball_x = center_x + x_offsets[slot] * radius * 61 / 10000
+        let ball_y = center_y + y_offsets[slot] * radius * 42 / 10000
+        rocket_raylib.draw_circle_pixels(frame, ball_x + 2, ball_y + 3, 8, rocket_raylib.color(2, 6, 15, 150))?
+        rocket_raylib.draw_circle_pixels(frame, ball_x, ball_y, 7, rocket_raylib.color(255, 255, 255, 255))?
+        if phase == 2:
+            rocket_raylib.draw_ring_pixels(frame, ball_x, ball_y, 9, 13, 0.0, 360.0, 24, theme.highlight(light_mode))?
     if phase == 1:
-        let target = remainder(game.pending_winner, 12)
-        let slot = remainder(target + wheel_step(now, spin_end, reduced_motion), 12)
-        rocket_raylib.draw_circle_pixels(frame, center_x + x_offsets[slot] * radius / 92, center_y + y_offsets[slot] * radius / 92, 7, rocket_raylib.color(255, 255, 255, 255))?
         components.pill(window, frame, resources, components.rect(center_x - 76, center_y + radius + 10, 152, 28), "RESULT LOCKED", false, light_mode)?
     if phase == 2:
         components.type_centered(window, frame, resources, string.from_int(game.result.winning_number), components.rect(center_x - 40, center_y - 26, 80, 54), components.type_numeric(), theme.highlight(light_mode))?
@@ -502,7 +542,7 @@ pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     let value = interior(width, height)
-    game_components.ambient_stage(frame, resources, value.stage, 1, light_mode)?
+    draw_room(frame, resources, value.stage, light_mode)?
     components.type_text(window, frame, resources, "EUROPEAN TABLE", value.stage.x + 18, value.stage.y + 14, components.type_caption(), theme.secondary_text(light_mode))?
     let help_button = help_rect(width, height)
     components.modern_button(window, frame, resources, help_button, "RULES", components.button_quiet(), true, components.contains(help_button, mouse_x, mouse_y), false, light_mode)?

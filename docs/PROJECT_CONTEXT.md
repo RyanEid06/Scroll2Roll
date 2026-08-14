@@ -497,6 +497,24 @@ separate decisions.
   states. This is verified local evidence for owner review, not owner visual
   approval; Groups 2-4, website/package refresh, push, publication, deployment,
   release, and signing were not performed.
+- Completed locally: post-art implementation Group 2 for Blackjack, No-Limit
+  Texas Hold'em, and European Roulette. Group 1 was revalidated first and its
+  game-specific views and runtime assets remain unchanged. Seven reviewed
+  assets were promoted byte-identically to `assets/games/group2-v1/`; the manifest records accepted,
+  runtime, and available source hashes plus two geometry-driven exclusions.
+  The three exact code-owned tables now use room art and physical props with
+  committed/reduced-motion presentation while preserving Blackjack action
+  legality, Hold'em public-card boundaries, and every Roulette betting hit
+  region. Fallback view fixtures cover both themes and all five exact viewports;
+  a production-resource fixture covers both themes at 1280x720. Both include
+  normal/reduced active states, balanced scissoring, and zero live handles.
+  Sequential full Debug and Release validation passes 48/48.
+  Actual native review covers dark/light ready composition at 800x600,
+  1024x768, 1280x720, 1600x900, and the current maximized 1920x991 client,
+  plus representative active, settled, focused, disabled, compact, wide, and
+  reduced-motion states. This is verified local evidence for owner review,
+  not owner visual approval; Groups 3-4, website/package refresh, push,
+  publication, deployment, release, and signing were not performed.
 
 ## Major decisions
 
@@ -564,12 +582,16 @@ archive is 6,963,264 bytes with SHA-256
 package/relocation and 19-file source/20-file staged-site checks pass. All eleven
 interiors, both themes, every responsive target, and representative active
 states passed local visual review; tracked website captures present that work
-for owner approval. Post-art implementation Group 1 is now complete locally for
-Midnight Crossing, Crash, and Coop Climb: its versioned asset provenance,
-resource lifecycle, focused tests, 48/48 Debug/Release gates, and 46 ignored
-native dark/light/reduced-motion evidence captures are verified. Group 2 is the
-next sequential plan boundary, but this Group 1 goal does not authorize it;
-do not start Groups 2-4 without a new owner direction. Keep
+for owner approval. Post-art implementation Groups 1 and 2 are now complete
+locally. Group 1's game views and runtime assets remain unchanged and verified.
+Group 2 adds the seven-file
+`assets/games/group2-v1/` runtime set and resource-backed, committed/reduced-
+motion Blackjack, No-Limit Hold'em, and European Roulette compositions while
+preserving exact rules, private cards, legal controls, and Roulette hit regions.
+Its fallback and production-resource fixtures, native dark/light responsive review, and
+sequential 48/48 Debug/Release gates pass. Group 3 is the next sequential plan
+boundary, but this Group 2 goal does not authorize it; do not start Groups 3-4
+without a new owner direction. Keep
 using frozen Rocket 2.0 and the pinned raylib integration with custom frame
 control forced off. Preserve the untracked owner files and audit artifacts.
 Do not refresh the website/package before the plan's final Group 4 acceptance,

@@ -98,6 +98,59 @@ rendering for every game, and unloads every successful texture exactly once.
 The focused adapter test verifies all promoted loads and returns the texture
 and font live counts to zero.
 
+## Owner-provided Group 2 runtime artwork
+
+These seven files are byte-identical promotions from the visually reviewed
+`owner-art-20260812/accepted/` staging set. The owner directed this local Group
+2 implementation on 2026-08-14. That direction is the use basis for this
+repository work; it is not a claim of final visual approval, publication
+approval, or a third-party/public-domain license. The staging package retains
+the same provenance limits documented above: exact generator, model,
+generation-run, and per-file prompt identifiers are unavailable and are not
+inferred.
+
+| Runtime path | Game / purpose | Dimensions | Reviewed source decision | SHA-256 |
+| --- | --- | --- | --- | --- |
+| `assets/games/group2-v1/blackjack-room-background.png` | Blackjack room framing behind the code-owned table | 1369x1149 | Accepted full-frame source; promoted unchanged | `3C79825E666278D077C263587F5BB59CBBC4A43BC8AD2AD91F14FD8FD9192CBB` |
+| `assets/games/group2-v1/blackjack-dealing-shoe.png` | Blackjack physical dealing shoe | 1402x1122 | Accepted alpha conversion; promoted unchanged | `9F0040E8B708CB52EA53E1FDA3F77D6549FD5C34162D4D3009CF365EB394984D` |
+| `assets/games/group2-v1/casino-chip-stack.png` | Blackjack physical wager stack | 1254x1254 | Accepted alpha conversion; promoted unchanged | `1578715EBF69AB7804517F111A7B7E8D57D02AD388D856FA859C2CA3040FA674` |
+| `assets/games/group2-v1/holdem-lounge-background.png` | Hold'em lounge framing behind the code-owned oval | 1672x941 | Accepted full-frame source; promoted unchanged | `BCAF36EFC9E3F1A7D5CF5459A24B00BC3B09A771DF9F633CF313048C0CD2FE98` |
+| `assets/games/group2-v1/holdem-props-atlas.png` | Hold'em chip stacks, pot, dealer/blind markers, and actor ring | 1536x1024 | Accepted alpha conversion; promoted unchanged | `446301089F381CE7057CDFBE64F01B7BCC6FEC0FFD7DE83AD8522BE0305ABB3B` |
+| `assets/games/group2-v1/roulette-room-background.png` | Roulette salon framing behind the code-owned betting layout | 1672x941 | Accepted full-frame source; promoted unchanged | `CE98C2A5F623E34D53E71F227B80E961B3D9A6C588B23B7478F3E363FC87F114` |
+| `assets/games/group2-v1/roulette-wheel.png` | European Roulette 37-pocket physical wheel under the engine-locked ball | 1402x1122 | Accepted alpha conversion; promoted unchanged | `ACFFC6F576ED69FAFCB60ED9592E42E617EC0F99EA2BE9EFF22F1A4A6CE6ED22` |
+
+The retained Hold'em atlas is sliced as a 4x2 grid of 384x512 source regions:
+cells 0-2 are black, green, and gold chip stacks; cell 3 is intentionally
+blank; cell 4 is the mixed pot pile; cell 5 is the ivory dealer marker; cell 6
+is the gold blind marker; and cell 7 is the cyan current-actor ring. The
+runtime keeps the original atlas intact and selects these regions only when
+drawing.
+
+Retained alpha-source counterparts in the ignored owner-art staging package:
+
+| Source counterpart | Dimensions | SHA-256 |
+| --- | --- | --- |
+| `blackjack-dealing-shoe-source.png` | 1402x1122 | `7AC6416F556C4027B0CC3AD21CAD37704D7623F1F952660571988287B4D07CDA` |
+| `casino-chip-stack-source.png` | 1254x1254 | `031F9832CB6172C44D3750DA09C2F2709547242DF2716C525BBCAEF02A91ED43` |
+| `holdem-props-atlas-source.png` | 1536x1024 | `B856CB77444AC12E5DFEAF1A7803FB2D4E4941720995C37E1F8CAB0838A8D28C` |
+| `roulette-wheel-source.png` | 1402x1122 | `82FE6BAEB403CFE3F982F6EE1AE876448829D6F586AEE336D1C49C784C89FBE5` |
+
+Two reviewed Group 2 candidates remain in ignored staging and were not
+promoted. `premium-table-surface.png`
+(`8C5999DE975A725095C578339D658B18D80A0713C0571095E752D718E0249EC3`)
+contains a baked rectangular table that does not match the responsive
+code-owned Blackjack/Hold'em geometry. `roulette-ball-cradle.png`
+(`91AA84BB02A7FDBB3BF75AAB4DBDD2F8AEFA6B07210FFA6DADE92F1AF1F23A5F`)
+is a decorative cradle rather than an isolated ball that can align to the
+engine's canonical 37-pocket order. Their exclusion preserves exact hit
+regions, responsive table geometry, and outcome ownership.
+
+`src/app/ui_resources.rocket` loads the Group 2 textures once alongside Group
+1, exposes explicit readiness flags, preserves procedural degraded rendering,
+and unloads every successful handle exactly once. The adapter-backed resource
+test verifies one font plus twenty production textures and returns all live
+counts to zero.
+
 ## Legacy test assets
 
 `assets/orbit.ppm` and `assets/about.txt` predate the overhaul and remain test or
