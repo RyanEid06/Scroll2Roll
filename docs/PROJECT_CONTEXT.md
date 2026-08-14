@@ -483,6 +483,20 @@ separate decisions.
   recursive hashes, licenses, forbidden-content and relocated-smoke gates; final
   documentation; and clean Scroll2Roll/frozen-Rocket audits. No publication,
   deployment, push, release, purchase, signing, or owner-approval claim was made.
+- Completed locally: post-art implementation Group 1 for Midnight Crossing,
+  Crash, and Coop Climb. Eleven reviewed assets were promoted to the versioned
+  `assets/games/group1-v1/` runtime set with accepted/runtime/source hashes and
+  explicit provenance limits. Each game now combines its final resource-backed
+  composition with committed, reduced-motion-aware presentation while keeping
+  fixed-tick geometry, hidden outcomes, controls, and rule ownership unchanged.
+  Resource-backed and fallback view fixtures pass with balanced scissoring and
+  zero live handles. Focused tests and sequential full Debug/Release validation
+  pass 48/48. Forty-six ignored native evidence captures cover all three games
+  in dark/light at 800x600, 1024x768, 1280x720, 1600x900, and the current
+  maximized 1920x991 client, plus active, settled, disabled, and reduced-motion
+  states. This is verified local evidence for owner review, not owner visual
+  approval; Groups 2-4, website/package refresh, push, publication, deployment,
+  release, and signing were not performed.
 
 ## Major decisions
 
@@ -525,6 +539,11 @@ separate decisions.
   `game_components.rocket`: compact viewports use a bottom dock, larger
   viewports use an action rail, and all rule/state meaning continues to come
   from the existing engine or privacy-safe public projection.
+- Promote reviewed post-art runtime files in versioned per-group directories,
+  keep their exact accepted/runtime/source counterpart hashes in
+  `assets/MANIFEST.md`, and preserve procedural fallbacks. The owner-art staging
+  directory remains ignored source evidence; local integration direction is not
+  owner visual approval or release approval.
 
 ## Files that must remain out of Git
 
@@ -534,6 +553,7 @@ Generated bindings, `.rocketc`, `out`, `build`, `.vs`, Visual Studio experimenta
 
 Read `AGENTS.md`, `UI_OVERHAUL.md`, `docs/GAME_VISUAL_REFINEMENT_PLAN.md`,
 `docs/OWNER_ASSET_GENERATION_PROMPTS.md`, `docs/MASTER_PLAN.md`,
+`docs/ASSET_ANIMATION_IMPLEMENTATION_PLAN.md`,
 `docs/UI_OVERHAUL_FOUNDATION.md`, `docs/EXPANSION_PLAN.md`,
 `docs/EXPANSION_0_3_IMPLEMENTATION.md`, and this file completely. Inspect Git
 status and preserve user changes. The accepted 0.2.0 baseline remains intact;
@@ -544,7 +564,14 @@ archive is 6,963,264 bytes with SHA-256
 package/relocation and 19-file source/20-file staged-site checks pass. All eleven
 interiors, both themes, every responsive target, and representative active
 states passed local visual review; tracked website captures present that work
-for owner approval. Keep using frozen Rocket 2.0 and the pinned raylib
-integration with custom frame control forced off. Preserve the untracked owner
-file `SCROLL2ROLL_MASTER_PLAN.md`. Do not push, publish, deploy, release, sign,
-purchase, or add an unapproved game without owner approval.
+for owner approval. Post-art implementation Group 1 is now complete locally for
+Midnight Crossing, Crash, and Coop Climb: its versioned asset provenance,
+resource lifecycle, focused tests, 48/48 Debug/Release gates, and 46 ignored
+native dark/light/reduced-motion evidence captures are verified. Group 2 is the
+next sequential plan boundary, but this Group 1 goal does not authorize it;
+do not start Groups 2-4 without a new owner direction. Keep
+using frozen Rocket 2.0 and the pinned raylib integration with custom frame
+control forced off. Preserve the untracked owner files and audit artifacts.
+Do not refresh the website/package before the plan's final Group 4 acceptance,
+or push, publish, deploy, release, sign, purchase, or claim owner visual
+approval without explicit owner permission.

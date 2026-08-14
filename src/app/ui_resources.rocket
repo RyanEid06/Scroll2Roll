@@ -7,10 +7,33 @@ pub struct UiResources:
     atlas_a_ready: Bool
     atlas_b: rocket_raylib.Texture
     atlas_b_ready: Bool
+    midnight_city: rocket_raylib.Texture
+    midnight_city_ready: Bool
+    midnight_car_coral: rocket_raylib.Texture
+    midnight_car_coral_ready: Bool
+    midnight_car_cyan: rocket_raylib.Texture
+    midnight_car_cyan_ready: Bool
+    midnight_tram: rocket_raylib.Texture
+    midnight_tram_ready: Bool
+    midnight_raft: rocket_raylib.Texture
+    midnight_raft_ready: Bool
+    chicken_explorer: rocket_raylib.Texture
+    chicken_explorer_ready: Bool
+    crash_flight: rocket_raylib.Texture
+    crash_flight_ready: Bool
+    crash_rocket: rocket_raylib.Texture
+    crash_rocket_ready: Bool
+    crash_burst: rocket_raylib.Texture
+    crash_burst_ready: Bool
+    coop_observatory: rocket_raylib.Texture
+    coop_observatory_ready: Bool
+    coop_platform: rocket_raylib.Texture
+    coop_platform_ready: Bool
     message: String
 
 pub fn empty() -> UiResources:
-    return UiResources(rocket_raylib.Font(0), false, rocket_raylib.Texture(0, 0, 0), false, rocket_raylib.Texture(0, 0, 0), false, "Procedural visual fallback active")
+    let missing = rocket_raylib.Texture(0, 0, 0)
+    return UiResources(rocket_raylib.Font(0), false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, "Procedural visual fallback active")
 
 pub fn load_from_paths(window: rocket_raylib.Window, font_path: String, atlas_a_path: String, atlas_b_path: String) -> UiResources:
     var font = rocket_raylib.Font(0)
@@ -40,16 +63,109 @@ pub fn load_from_paths(window: rocket_raylib.Window, font_path: String, atlas_a_
     var message = "Some visual resources unavailable; procedural fallback active"
     if font_ready and atlas_a_ready and atlas_b_ready:
         message = "Original artwork and bundled typography loaded"
-    return UiResources(font, font_ready, atlas_a, atlas_a_ready, atlas_b, atlas_b_ready, message)
+    let missing = rocket_raylib.Texture(0, 0, 0)
+    return UiResources(font, font_ready, atlas_a, atlas_a_ready, atlas_b, atlas_b_ready, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, message)
+
+fn try_texture(window: rocket_raylib.Window, path: String) -> rocket_raylib.Texture:
+    match rocket_raylib.load_texture(window, path):
+        case Ok(texture):
+            return texture
+        case Err(error):
+            let expected = error
+            return rocket_raylib.Texture(0, 0, 0)
+
+fn texture_ready(texture: rocket_raylib.Texture) -> Bool:
+    return texture.id > 0 and texture.width > 0 and texture.height > 0
 
 pub fn load(window: rocket_raylib.Window) -> UiResources:
-    return load_from_paths(window, "assets/fonts/manrope/Manrope-Medium.ttf", "assets/ui/scroll2roll-cover-atlas-a.png", "assets/ui/scroll2roll-cover-atlas-b.png")
+    let shared = load_from_paths(window, "assets/fonts/manrope/Manrope-Medium.ttf", "assets/ui/scroll2roll-cover-atlas-a.png", "assets/ui/scroll2roll-cover-atlas-b.png")
+    let midnight_city = try_texture(window, "assets/games/group1-v1/midnight-city-base.png")
+    let midnight_car_coral = try_texture(window, "assets/games/group1-v1/midnight-car-coral.png")
+    let midnight_car_cyan = try_texture(window, "assets/games/group1-v1/midnight-car-cyan.png")
+    let midnight_tram = try_texture(window, "assets/games/group1-v1/midnight-tram.png")
+    let midnight_raft = try_texture(window, "assets/games/group1-v1/midnight-log-raft.png")
+    let chicken_explorer = try_texture(window, "assets/games/group1-v1/chicken-explorer-topdown.png")
+    let crash_flight = try_texture(window, "assets/games/group1-v1/crash-flight-background.png")
+    let crash_rocket = try_texture(window, "assets/games/group1-v1/crash-rocket.png")
+    let crash_burst = try_texture(window, "assets/games/group1-v1/crash-vfx-burst.png")
+    let coop_observatory = try_texture(window, "assets/games/group1-v1/coop-observatory-background.png")
+    let coop_platform = try_texture(window, "assets/games/group1-v1/coop-climb-platform.png")
+    var message = shared.message
+    if texture_ready(midnight_city) and texture_ready(midnight_car_coral) and texture_ready(midnight_car_cyan) and texture_ready(midnight_tram) and texture_ready(midnight_raft) and texture_ready(chicken_explorer) and texture_ready(crash_flight) and texture_ready(crash_rocket) and texture_ready(crash_burst) and texture_ready(coop_observatory) and texture_ready(coop_platform):
+        message = "Group 1 artwork and shared resources loaded"
+    return UiResources(shared.font, shared.font_ready, shared.atlas_a, shared.atlas_a_ready, shared.atlas_b, shared.atlas_b_ready, midnight_city, texture_ready(midnight_city), midnight_car_coral, texture_ready(midnight_car_coral), midnight_car_cyan, texture_ready(midnight_car_cyan), midnight_tram, texture_ready(midnight_tram), midnight_raft, texture_ready(midnight_raft), chicken_explorer, texture_ready(chicken_explorer), crash_flight, texture_ready(crash_flight), crash_rocket, texture_ready(crash_rocket), crash_burst, texture_ready(crash_burst), coop_observatory, texture_ready(coop_observatory), coop_platform, texture_ready(coop_platform), message)
 
 pub fn ready(value: UiResources) -> Bool:
     return value.font_ready and value.atlas_a_ready and value.atlas_b_ready
 
 pub fn unload(value: UiResources) -> Result[Bool, String]:
     var clean = true
+    if value.coop_platform_ready:
+        match rocket_raylib.unload_texture(value.coop_platform):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.coop_observatory_ready:
+        match rocket_raylib.unload_texture(value.coop_observatory):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.crash_burst_ready:
+        match rocket_raylib.unload_texture(value.crash_burst):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.crash_rocket_ready:
+        match rocket_raylib.unload_texture(value.crash_rocket):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.crash_flight_ready:
+        match rocket_raylib.unload_texture(value.crash_flight):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.chicken_explorer_ready:
+        match rocket_raylib.unload_texture(value.chicken_explorer):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.midnight_raft_ready:
+        match rocket_raylib.unload_texture(value.midnight_raft):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.midnight_tram_ready:
+        match rocket_raylib.unload_texture(value.midnight_tram):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.midnight_car_cyan_ready:
+        match rocket_raylib.unload_texture(value.midnight_car_cyan):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.midnight_car_coral_ready:
+        match rocket_raylib.unload_texture(value.midnight_car_coral):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.midnight_city_ready:
+        match rocket_raylib.unload_texture(value.midnight_city):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
     if value.atlas_a_ready:
         match rocket_raylib.unload_texture(value.atlas_a):
             case Ok(unloaded):

@@ -73,13 +73,44 @@ fn draw_states(window: rocket_raylib.Window, light_mode: Bool) -> Result[Bool, S
     plinko_view.draw(window, frame, resources, plinko_ready.game, 0, false, light_mode, false, 0.0, 0.0, -100, -100)?
     plinko_view.draw(window, frame, resources, plinko_active.game, 4, false, light_mode, false, 0.4, 0.8, -100, -100)?
     plinko_view.draw(window, frame, resources, plinko_settled.game, 12, light_mode, light_mode, true, 1.0, 0.0, -100, -100)?
-    chicken_view.draw(window, frame, resources, chicken_ready.game, false, light_mode, false, 0.0, -100, -100)?
-    chicken_view.draw(window, frame, resources, chicken_active.game, false, light_mode, false, 0.4, -100, -100)?
-    chicken_view.draw(window, frame, resources, chicken_settled.game, light_mode, light_mode, true, 1.0, -100, -100)?
+    chicken_view.draw(window, frame, resources, chicken_ready.game, false, light_mode, false, 0.0, 0.0, -100, -100)?
+    chicken_view.draw(window, frame, resources, chicken_active.game, false, light_mode, false, 0.4, 0.72, -100, -100)?
+    chicken_view.draw(window, frame, resources, chicken_settled.game, light_mode, light_mode, true, 1.0, 1.32, -100, -100)?
     crossing_view.draw(window, frame, resources, crossing_ready.game, false, light_mode, false, 0.0, -100, -100)?
     crossing_view.draw(window, frame, resources, crossing_active.game, false, light_mode, false, 0.4, -100, -100)?
     crossing_view.draw(window, frame, resources, crossing_settled, light_mode, light_mode, true, 1.0, -100, -100)?
     if rocket_raylib_testing.scissor_active() or rocket_raylib_testing.draw_count() < 350:
+        return Ok(false)
+    rocket_raylib.end_frame(frame)?
+    return Ok(true)
+
+fn draw_resource_group_one(window: rocket_raylib.Window, resources: ui_resources.UiResources) -> Result[Bool, String]:
+    if not resources.coop_observatory_ready or not resources.coop_platform_ready or not resources.chicken_explorer_ready:
+        return Err("Coop Climb resource-backed view fixture could not load promoted art")
+    var chicken_seed = 20260952
+    var chicken_ready = chicken_api.new_session(1000, chicken_seed)?
+    var chicken_active = chicken_api.with_start(chicken_ready)?
+    var chicken_advanced = chicken_api.with_advance(chicken_active)?
+    while chicken_api.phase_code(chicken_advanced) == 2 and chicken_seed < 20261052:
+        chicken_seed = chicken_seed + 1
+        chicken_ready = chicken_api.new_session(1000, chicken_seed)?
+        chicken_active = chicken_api.with_start(chicken_ready)?
+        chicken_advanced = chicken_api.with_advance(chicken_active)?
+    if chicken_api.phase_code(chicken_advanced) != 1:
+        return Err("Coop Climb resource-backed view fixture could not find a safe first step")
+    let chicken_settled = chicken_api.with_cash_out(chicken_advanced)?
+    let crossing_ready = crossing_api.new_session(1000, 20260853)?
+    let crossing_active = crossing_api.with_start(crossing_ready)?
+    let crossing_settled = settled_crossing(crossing_active.game)
+    let frame = rocket_raylib.begin_frame(window)?
+    rocket_raylib.clear(frame, rocket_raylib.black())?
+    chicken_view.draw(window, frame, resources, chicken_ready.game, false, false, false, 0.0, 0.0, -100, -100)?
+    chicken_view.draw(window, frame, resources, chicken_advanced.game, false, false, false, 0.4, 0.72, -100, -100)?
+    chicken_view.draw(window, frame, resources, chicken_settled.game, false, true, true, 1.0, 1.32, -100, -100)?
+    crossing_view.draw(window, frame, resources, crossing_ready.game, false, false, false, 0.0, -100, -100)?
+    crossing_view.draw(window, frame, resources, crossing_active.game, false, false, false, 0.4, -100, -100)?
+    crossing_view.draw(window, frame, resources, crossing_settled, false, true, true, 1.0, -100, -100)?
+    if rocket_raylib_testing.scissor_active():
         return Ok(false)
     rocket_raylib.end_frame(frame)?
     return Ok(true)
@@ -98,8 +129,16 @@ fn run() -> Result[Int, String]:
             return Ok(10 + index)
         rocket_raylib.close_window(window)?
         index = index + 1
+    let resource_window = rocket_raylib.open_window(1280, 720, "Resource-backed Group 1 arcade games")?
+    let resources = ui_resources.load(resource_window)
+    if not draw_resource_group_one(resource_window, resources)?:
+        return Ok(21)
+    ui_resources.unload(resources)?
+    rocket_raylib.close_window(resource_window)?
+    if rocket_raylib_testing.texture_live_count() != 0 or rocket_raylib_testing.font_live_count() != 0:
+        return Ok(22)
     if rocket_raylib_testing.buffer_live_count() != 0:
-        return Ok(20)
+        return Ok(23)
     return Ok(0)
 
 fn main() -> Int:

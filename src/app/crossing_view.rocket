@@ -124,7 +124,61 @@ fn lane_name(lane: Int) -> String:
         return "CHECKPOINT"
     return "SAFE"
 
-fn draw_hazard(frame: rocket_raylib.Frame, kind: Int, x: Int, y: Int, width: Int, height: Int, light_mode: Bool) -> Result[Bool, String]:
+fn draw_cover_texture(frame: rocket_raylib.Frame, texture: rocket_raylib.Texture, value: components.Rect, alpha: Int) -> Result[Bool, String]:
+    var source_x = 0
+    var source_y = 0
+    var source_width = texture.width
+    var source_height = texture.height
+    if value.width * texture.height > value.height * texture.width:
+        source_height = texture.width * value.height / value.width
+        source_y =(texture.height - source_height) / 2
+    else:
+        source_width = texture.height * value.width / value.height
+        source_x =(texture.width - source_width) / 2
+    return rocket_raylib.draw_texture_region(frame, texture, source_x, source_y, source_width, source_height, value.x, value.y, value.width, value.height, rocket_raylib.color(255, 255, 255, alpha))
+
+fn draw_asset(frame: rocket_raylib.Frame, texture: rocket_raylib.Texture, source_x: Int, source_y: Int, source_width: Int, source_height: Int, value: components.Rect, alpha: Int) -> Result[Bool, String]:
+    return rocket_raylib.draw_texture_region(frame, texture, source_x, source_y, source_width, source_height, value.x, value.y, value.width, value.height, rocket_raylib.color(255, 255, 255, alpha))
+
+fn draw_lane_detail(frame: rocket_raylib.Frame, board: components.Rect, lane: Int, y: Int, lane_height: Int, tick: Int, reduced_motion: Bool, light_mode: Bool) -> Result[Bool, String]:
+    let kind = crossing_rules.lane_kind(lane)
+    if kind == 1:
+        let dash_width = board.width / 12
+        var dash_offset = 0
+        if not reduced_motion:
+            dash_offset =(tick * 3) -((tick * 3) /(dash_width * 2)) *(dash_width * 2)
+        var dash_x = board.x - dash_width * 2 + dash_offset
+        while dash_x < board.x + board.width:
+            rocket_raylib.draw_rounded_rectangle(frame, dash_x, y + lane_height / 2 - 1, dash_width, 3, 0.5, 4, rocket_raylib.color(236, 224, 184, 125))?
+            dash_x = dash_x + dash_width * 2
+    if kind == 2:
+        rocket_raylib.draw_line(frame, board.x, y + lane_height / 3, board.x + board.width, y + lane_height / 3, 2.0, rocket_raylib.color(214, 158, 62, 205))?
+        rocket_raylib.draw_line(frame, board.x, y + lane_height * 2 / 3, board.x + board.width, y + lane_height * 2 / 3, 2.0, rocket_raylib.color(214, 158, 62, 205))?
+        var tie_x = board.x
+        while tie_x < board.x + board.width:
+            rocket_raylib.draw_rectangle(frame, tie_x, y + lane_height / 3 - 3, 3, lane_height / 3 + 6, rocket_raylib.color(89, 62, 45, 210))?
+            tie_x = tie_x + 18
+    if kind == 3:
+        var wake = 0
+        var wake_offset = 0
+        if not reduced_motion:
+            wake_offset = tick - tick / 16 * 16
+        while wake < 7:
+            let wake_x = board.x + wake * board.width / 6 + wake_offset
+            rocket_raylib.draw_line(frame, wake_x, y + lane_height / 3, wake_x + lane_height / 2, y + lane_height / 3, 1.0, rocket_raylib.color(111, 218, 241, 105))?
+            rocket_raylib.draw_line(frame, wake_x - 8, y + lane_height * 2 / 3, wake_x + lane_height / 3, y + lane_height * 2 / 3, 1.0, rocket_raylib.color(111, 218, 241, 75))?
+            wake = wake + 1
+    if kind == 0:
+        rocket_raylib.draw_rectangle(frame, board.x, y, board.width, 3, rocket_raylib.color(180, 198, 184, 120))?
+        rocket_raylib.draw_rectangle(frame, board.x, y + lane_height - 4, board.width, 3, rocket_raylib.color(180, 198, 184, 120))?
+    if kind == 4:
+        var lamp = board.x + 20
+        while lamp < board.x + board.width:
+            rocket_raylib.draw_circle_pixels(frame, lamp, y + lane_height / 2, 3, theme.highlight(light_mode))?
+            lamp = lamp + 42
+    return Ok(true)
+
+fn draw_hazard_fallback(frame: rocket_raylib.Frame, kind: Int, x: Int, y: Int, width: Int, height: Int, light_mode: Bool) -> Result[Bool, String]:
     if kind == 2:
         rocket_raylib.draw_rounded_rectangle(frame, x, y, width, height, 0.5, 8, rocket_raylib.color(111, 71, 37, 255))?
         rocket_raylib.draw_circle_pixels(frame, x + width / 4, y + height / 2, height / 3, rocket_raylib.color(161, 104, 54, 255))?
@@ -140,18 +194,87 @@ fn draw_hazard(frame: rocket_raylib.Frame, kind: Int, x: Int, y: Int, width: Int
         rocket_raylib.draw_circle_pixels(frame, x + width * 3 / 4, y + height, 3, rocket_raylib.color(10, 13, 24, 255))?
     return Ok(true)
 
-fn draw_world(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: crossing_model.Game, value: game_layout.Interior, light_mode: Bool) -> Result[Bool, String]:
+fn draw_hazard_asset(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, kind: Int, hazard_index: Int, speed: Int, x: Int, y: Int, width: Int, height: Int, tick: Int, reduced_motion: Bool, light_mode: Bool) -> Result[Bool, String]:
+    if kind == 2 and resources.midnight_raft_ready:
+        let raft = components.rect(x - height / 2, y - height / 3, width + height, height + height * 2 / 3)
+        draw_asset(frame, resources.midnight_raft, 82, 180, 1237, 777, raft, 255)?
+        if not reduced_motion:
+            let wake_x = x - 12
+            rocket_raylib.draw_line(frame, wake_x, y + height + 3, wake_x + width + 24, y + height + 3, 2.0, rocket_raylib.color(83, 214, 239, 125))?
+        return Ok(true)
+    if kind == 1 and resources.midnight_tram_ready:
+        let tram = components.rect(x - height / 2, y - height / 3, width + height, height + height * 2 / 3)
+        draw_asset(frame, resources.midnight_tram, 128, 272, 1563, 307, tram, 255)?
+        return Ok(true)
+    if kind == 0:
+        var texture = resources.midnight_car_coral
+        var ready = resources.midnight_car_coral_ready
+        var source_x = 236
+        var source_y = 162
+        var source_width = 1137
+        var source_height = 597
+        if hazard_index - hazard_index / 2 * 2 == 1:
+            texture = resources.midnight_car_cyan
+            ready = resources.midnight_car_cyan_ready
+            source_x = 180
+            source_y = 186
+            source_width = 1257
+            source_height = 593
+        if ready:
+            var light_extension = 0
+            if not reduced_motion and tick - tick / 2 * 2 == 0:
+                light_extension = height / 3
+            if speed > 0:
+                rocket_raylib.draw_line(frame, x - light_extension, y + height / 2, x, y + height / 2, 2.0, rocket_raylib.color(255, 102, 107, 100))?
+            else:
+                rocket_raylib.draw_line(frame, x + width, y + height / 2, x + width + light_extension, y + height / 2, 2.0, rocket_raylib.color(255, 102, 107, 100))?
+            draw_asset(frame, texture, source_x, source_y, source_width, source_height, components.rect(x, y - height / 4, width, height + height / 2), 255)?
+            return Ok(true)
+    return draw_hazard_fallback(frame, kind, x, y, width, height, light_mode)
+
+fn draw_player(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: crossing_model.Game, player_x: Int, player_y: Int, lane_height: Int, reduced_motion: Bool, light_mode: Bool) -> Result[Bool, String]:
+    if resources.chicken_explorer_ready:
+        var bob = 0
+        if not reduced_motion and crossing_engine.phase_code(game.phase) == 1:
+            bob =(game.tick_count - game.tick_count / 4 * 4) / 2
+        var size = lane_height * 9 / 10
+        if size < 28:
+            size = 28
+        if size > 68:
+            size = 68
+        rocket_raylib.draw_rounded_rectangle(frame, player_x - size / 3, player_y + size / 4, size * 2 / 3, size / 5, 0.5, 10, rocket_raylib.color(1, 6, 16, 115))?
+        draw_asset(frame, resources.chicken_explorer, 316, 186, 605, 851, components.rect(player_x - size / 2, player_y - size * 2 / 3 - bob, size, size), 255)?
+    else:
+        rocket_raylib.draw_circle_pixels(frame, player_x, player_y - 3, 7, rocket_raylib.color(245, 217, 163, 255))?
+        rocket_raylib.draw_triangle(frame, player_x - 8, player_y + 10, player_x + 8, player_y + 10, player_x, player_y - 2, theme.cyan(light_mode))?
+    var ring = theme.highlight(light_mode)
+    if game.failed:
+        ring = theme.destructive(light_mode)
+    return rocket_raylib.draw_ring_pixels(frame, player_x, player_y, 12, 15, 0.0, 360.0, 24, ring)
+
+fn draw_world(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: crossing_model.Game, value: game_layout.Interior, light_mode: Bool, reduced_motion: Bool) -> Result[Bool, String]:
     let board = game_layout.inset(value.stage, 16)
     rocket_raylib.draw_rounded_rectangle(frame, board.x, board.y, board.width, board.height, 0.04, 8, rocket_raylib.color(5, 13, 30, 245))?
+    rocket_raylib.begin_scissor(frame, board.x, board.y, board.width, board.height)?
+    if resources.midnight_city_ready:
+        draw_cover_texture(frame, resources.midnight_city, board, 255)?
+        var art_veil = rocket_raylib.color(5, 12, 25, 42)
+        if light_mode:
+            art_veil = rocket_raylib.color(232, 240, 248, 58)
+        rocket_raylib.draw_rectangle(frame, board.x, board.y, board.width, board.height, art_veil)?
     let lane_height = board.height / crossing_rules.lane_count()
     var lane = 0
     while lane < crossing_rules.lane_count():
         let y = board.y +(crossing_rules.lane_count() - 1 - lane) * lane_height
-        rocket_raylib.draw_rectangle(frame, board.x, y, board.width, lane_height - 1, lane_fill(lane, light_mode))?
+        var lane_alpha = 185
+        if resources.midnight_city_ready:
+            lane_alpha = 72
+        let fill = lane_fill(lane, light_mode)
+        rocket_raylib.draw_rectangle(frame, board.x, y, board.width, lane_height - 1, rocket_raylib.color(fill.red, fill.green, fill.blue, lane_alpha))?
+        draw_lane_detail(frame, board, lane, y, lane_height, game.tick_count, reduced_motion, light_mode)?
         if lane_height >= 18:
             components.type_text(window, frame, resources, lane_name(lane), board.x + 5, y + 2, components.type_caption(), rocket_raylib.color(255, 255, 255, 105))?
         lane = lane + 1
-    rocket_raylib.begin_scissor(frame, board.x, board.y, board.width, board.height)?
     var index = 0
     while index < collections.length(game.hazards):
         let hazard = game.hazards[index]
@@ -163,14 +286,17 @@ fn draw_world(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resource
         var hazard_height = lane_height - 7
         if hazard_height < 5:
             hazard_height = 5
-        draw_hazard(frame, crossing_rules.hazard_code(hazard.kind), x, y, hazard_width, hazard_height, light_mode)?
+        draw_hazard_asset(frame, resources, crossing_rules.hazard_code(hazard.kind), index, hazard.speed, x, y, hazard_width, hazard_height, game.tick_count, reduced_motion, light_mode)?
         index = index + 1
-    rocket_raylib.end_scissor(frame)?
     let player_x = board.x + game.player_x * board.width / crossing_rules.world_width()
     let player_y = board.y +(crossing_rules.lane_count() - 1 - game.player_lane) * lane_height + lane_height / 2
-    rocket_raylib.draw_circle_pixels(frame, player_x, player_y - 3, 7, rocket_raylib.color(245, 217, 163, 255))?
-    rocket_raylib.draw_triangle(frame, player_x - 8, player_y + 10, player_x + 8, player_y + 10, player_x, player_y - 2, theme.cyan(light_mode))?
-    rocket_raylib.draw_ring_pixels(frame, player_x, player_y, 12, 14, 0.0, 360.0, 20, theme.highlight(light_mode))?
+    draw_player(frame, resources, game, player_x, player_y, lane_height, reduced_motion, light_mode)?
+    if game.checkpoints > 0:
+        var flare = 20
+        if not reduced_motion:
+            flare = 20 +(game.tick_count - game.tick_count / 8 * 8)
+        rocket_raylib.draw_ring_pixels(frame, board.x + board.width / 2, board.y + lane_height / 2, flare, flare + 4, 0.0, 360.0, 32, theme.highlight(light_mode))?
+    rocket_raylib.end_scissor(frame)?
     return rocket_raylib.draw_rounded_rectangle_lines(frame, board.x, board.y, board.width, board.height, 0.04, 8, 2.0, theme.subtle_border(light_mode))
 
 fn draw_controls(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: crossing_model.Game, value: game_layout.Interior, mouse_x: Int, mouse_y: Int, light_mode: Bool) -> Result[Bool, String]:
@@ -222,9 +348,8 @@ pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources:
     let height = rocket_raylib.window_height(window)
     let value = interior(width, height)
     let expected_now = now
-    let expected_motion = reduced_motion
     game_components.ambient_stage(frame, resources, value.stage, 4, light_mode)?
-    draw_world(window, frame, resources, game, value, light_mode)?
+    draw_world(window, frame, resources, game, value, light_mode, reduced_motion)?
     draw_controls(window, frame, resources, game, value, mouse_x, mouse_y, light_mode)?
     let rules = help_rect(width, height)
     components.modern_button(window, frame, resources, rules, "RULES", components.button_quiet(), true, components.contains(rules, mouse_x, mouse_y), false, light_mode)?

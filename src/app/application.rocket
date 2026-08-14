@@ -208,7 +208,7 @@ fn enter_plinko(state: State, seed: Int) -> State:
 fn enter_chicken(state: State, seed: Int) -> State:
     match chicken_api.new_session(state.settings.play_balance, seed):
         case Ok(session):
-            let entered = rebuild(state, 6, state.game, state.selected_bet, state.settings, "Coop Climb observatory ready", "", false, true, state.next_step, state.saved_round)
+            let entered = rebuild(state, 6, state.game, state.selected_bet, state.settings, "Coop Climb observatory ready", "", false, true, 0.0, state.saved_round)
             return with_chicken(entered, session)
         case Err(error):
             return with_error(state, error)
@@ -795,30 +795,30 @@ fn chicken_configure_bet(state: State, delta: Int) -> State:
         case Err(error):
             return with_error(state, error)
 
-fn chicken_save_settlement(state: State, session: chicken_api.Session) -> State:
+fn chicken_save_settlement(state: State, session: chicken_api.Session, animation_end: Float) -> State:
     let settings = persistence.with_balance(state.settings, session.game.balance)
-    return save_settings(with_chicken(rebuild(state, state.screen, state.game, state.selected_bet, settings, "Coop Climb result saved", "", false, true, state.next_step, state.saved_round), session), settings)
+    return save_settings(with_chicken(rebuild(state, state.screen, state.game, state.selected_bet, settings, "Coop Climb result saved", "", false, true, animation_end, state.saved_round), session), settings)
 
-fn chicken_start(state: State) -> State:
+fn chicken_start(state: State, animation_end: Float) -> State:
     match chicken_api.with_start(state.chicken):
         case Ok(session):
-            return with_chicken(state, session)
+            return with_chicken(rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, "", state.exit_prompt, state.running, animation_end, state.saved_round), session)
         case Err(error):
             return with_error(state, error)
 
-fn chicken_advance(state: State) -> State:
+fn chicken_advance(state: State, animation_end: Float) -> State:
     match chicken_api.with_advance(state.chicken):
         case Ok(session):
             if chicken_api.phase_code(session) == 2:
-                return chicken_save_settlement(state, session)
-            return with_chicken(state, session)
+                return chicken_save_settlement(state, session, animation_end)
+            return with_chicken(rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, "", state.exit_prompt, state.running, animation_end, state.saved_round), session)
         case Err(error):
             return with_error(state, error)
 
-fn chicken_cash_out(state: State) -> State:
+fn chicken_cash_out(state: State, animation_end: Float) -> State:
     match chicken_api.with_cash_out(state.chicken):
         case Ok(session):
-            return chicken_save_settlement(state, session)
+            return chicken_save_settlement(state, session, animation_end)
         case Err(error):
             return with_error(state, error)
 
@@ -831,6 +831,7 @@ fn chicken_return_to_lobby(state: State) -> State:
 fn update_chicken(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_x: Int, mouse_y: Int) -> State:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
+    let animation_end = rocket_raylib.elapsed_time(window) + 0.32
     if rocket_raylib.is_key_pressed(window, rocket_raylib.key_p()) or clicked and components.contains(chicken_view.help_rect(width, height), mouse_x, mouse_y):
         return chicken_help(state, not state.chicken_help)
     if state.chicken_help:
@@ -844,19 +845,19 @@ fn update_chicken(state: State, window: rocket_raylib.Window, clicked: Bool, mou
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(chicken_view.bet_plus_rect(width, height), mouse_x, mouse_y):
             return chicken_configure_bet(state, 5)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(chicken_view.start_rect(width, height), mouse_x, mouse_y):
-            return chicken_start(state)
+            return chicken_start(state, animation_end)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(chicken_view.lobby_rect(width, height), mouse_x, mouse_y):
             return chicken_return_to_lobby(state)
     if phase == 1:
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(chicken_view.advance_rect(width, height), mouse_x, mouse_y):
-            return chicken_advance(state)
+            return chicken_advance(state, animation_end)
         if state.chicken.game.survived_depth > 0 and(rocket_raylib.is_key_pressed(window, rocket_raylib.key_s()) or clicked and components.contains(chicken_view.cash_out_rect(width, height), mouse_x, mouse_y)):
-            return chicken_cash_out(state)
+            return chicken_cash_out(state, animation_end)
     if phase == 2:
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(chicken_view.next_rect(width, height), mouse_x, mouse_y):
             match chicken_api.with_next_round(state.chicken):
                 case Ok(session):
-                    return with_chicken(state, session)
+                    return with_chicken(rebuild(state, state.screen, state.game, state.selected_bet, state.settings, state.notice, "", state.exit_prompt, state.running, 0.0, state.saved_round), session)
                 case Err(error):
                     return with_error(state, error)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or clicked and components.contains(chicken_view.lobby_rect(width, height), mouse_x, mouse_y):
@@ -1889,7 +1890,7 @@ fn draw(window: rocket_raylib.Window, state: State, resources: ui_resources.UiRe
     if state.screen == 5:
         plinko_view.draw(window, frame, resources, state.plinko.game, state.plinko_stage, state.plinko_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.plinko_next_step, mouse_x, mouse_y)?
     if state.screen == 6:
-        chicken_view.draw(window, frame, resources, state.chicken.game, state.chicken_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), mouse_x, mouse_y)?
+        chicken_view.draw(window, frame, resources, state.chicken.game, state.chicken_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.next_step, mouse_x, mouse_y)?
     if state.screen == 7:
         crossing_view.draw(window, frame, resources, state.crossing.game, state.crossing_help, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), mouse_x, mouse_y)?
     if state.screen == 8:

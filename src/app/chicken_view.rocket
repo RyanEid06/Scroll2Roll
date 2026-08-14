@@ -84,21 +84,92 @@ fn phase_name(code: Int) -> String:
         return "CLIMBING"
     return "RUN SETTLED"
 
-fn draw_telescope(frame: rocket_raylib.Frame, x: Int, y: Int, light_mode: Bool) -> Result[Bool, String]:
+fn draw_cover_texture(frame: rocket_raylib.Frame, texture: rocket_raylib.Texture, value: components.Rect, alpha: Int) -> Result[Bool, String]:
+    var source_x = 0
+    var source_y = 0
+    var source_width = texture.width
+    var source_height = texture.height
+    if value.width * texture.height > value.height * texture.width:
+        source_height = texture.width * value.height / value.width
+        source_y =(texture.height - source_height) / 2
+    else:
+        source_width = texture.height * value.width / value.height
+        source_x =(texture.width - source_width) / 2
+    return rocket_raylib.draw_texture_region(frame, texture, source_x, source_y, source_width, source_height, value.x, value.y, value.width, value.height, rocket_raylib.color(255, 255, 255, alpha))
+
+fn draw_asset(frame: rocket_raylib.Frame, texture: rocket_raylib.Texture, source_x: Int, source_y: Int, source_width: Int, source_height: Int, value: components.Rect, alpha: Int) -> Result[Bool, String]:
+    return rocket_raylib.draw_texture_region(frame, texture, source_x, source_y, source_width, source_height, value.x, value.y, value.width, value.height, rocket_raylib.color(255, 255, 255, alpha))
+
+fn draw_telescope(frame: rocket_raylib.Frame, x: Int, y: Int, art_ready: Bool, completed: Bool, motion: Int, light_mode: Bool) -> Result[Bool, String]:
+    if art_ready:
+        if completed:
+            rocket_raylib.draw_ring_pixels(frame, x + 34, y + 4, 28 + motion, 33 + motion, 0.0, 360.0, 40, theme.success(light_mode))?
+            rocket_raylib.draw_line(frame, x + 8, y + 30, x - 14 - motion, y + 52, 3.0, theme.highlight(light_mode))?
+            rocket_raylib.draw_line(frame, x + 54, y - 18, x + 76 + motion, y - 40, 3.0, theme.highlight(light_mode))?
+        return Ok(true)
     rocket_raylib.draw_ring_pixels(frame, x, y, 14, 24, 12.0, 330.0, 28, theme.highlight(light_mode))?
     rocket_raylib.draw_rounded_rectangle(frame, x - 9, y + 17, 18, 32, 0.2, 6, rocket_raylib.color(108, 71, 34, 255))?
     rocket_raylib.draw_line(frame, x, y + 40, x - 20, y + 63, 4.0, theme.highlight(light_mode))?
-    return rocket_raylib.draw_line(frame, x, y + 40, x + 20, y + 63, 4.0, theme.highlight(light_mode))
+    rocket_raylib.draw_line(frame, x, y + 40, x + 20, y + 63, 4.0, theme.highlight(light_mode))?
+    if completed:
+        rocket_raylib.draw_ring_pixels(frame, x, y, 28 + motion, 33 + motion, 0.0, 360.0, 40, theme.success(light_mode))?
+    return Ok(true)
+
+fn rung_box(board: components.Rect, depth: Int, rung_gap: Int, rung_height: Int) -> components.Rect:
+    let ladder_x = board.x + board.width / 2
+    let y = board.y + board.height - 20 -(depth + 1) * rung_gap
+    var width = board.width * 56 / 100
+    if depth - depth / 2 * 2 == 0:
+        width = board.width * 60 / 100
+    var shift = board.width / 22
+    if depth - depth / 2 * 2 == 0:
+        shift = -shift
+    return components.rect(ladder_x - width / 2 + shift, y, width, rung_height)
 
 fn draw_coop(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, label: String, status: String, fill: rocket_raylib.Color, ink: rocket_raylib.Color, light_mode: Bool) -> Result[Bool, String]:
     rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y + 3, value.width, value.height, 0.18, 8, rocket_raylib.color(2, 6, 23, 90))?
-    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.18, 8, fill)?
-    rocket_raylib.draw_triangle(frame, value.x + 12, value.y + 11, value.x + 26, value.y + 2, value.x + 40, value.y + 11, theme.highlight(light_mode))?
-    rocket_raylib.draw_circle_pixels(frame, value.x + 26, value.y + value.height / 2 + 4, 6, theme.highlight(light_mode))?
-    components.type_text(window, frame, resources, label, value.x + 48, value.y + 7, components.type_caption(), ink)?
-    return components.type_text(window, frame, resources, status, value.x + value.width - 106, value.y + 7, components.type_caption(), ink)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.18, 8, rocket_raylib.color(fill.red, fill.green, fill.blue, 220))?
+    if resources.coop_platform_ready:
+        draw_asset(frame, resources.coop_platform, 144, 196, 965, 819, components.rect(value.x + 5, value.y - 4, 48, value.height + 8), 245)?
+    else:
+        rocket_raylib.draw_triangle(frame, value.x + 12, value.y + 11, value.x + 26, value.y + 2, value.x + 40, value.y + 11, theme.highlight(light_mode))?
+        rocket_raylib.draw_circle_pixels(frame, value.x + 26, value.y + value.height / 2 + 4, 6, theme.highlight(light_mode))?
+    components.type_text(window, frame, resources, label, value.x + 58, value.y + 7, components.type_caption(), ink)?
+    return components.type_text(window, frame, resources, status, value.x + value.width - 92, value.y + 7, components.type_caption(), ink)
 
-fn draw_ladder(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: chicken_model.Game, value: game_layout.Interior, light_mode: Bool) -> Result[Bool, String]:
+fn draw_chicken_marker(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: chicken_model.Game, board: components.Rect, rung_gap: Int, rung_height: Int, motion: Int, reduced_motion: Bool, light_mode: Bool) -> Result[Bool, String]:
+    let phase = chicken_engine.phase_code(game.phase)
+    var marker_depth = game.survived_depth - 1
+    if phase == 0 or game.survived_depth < 1:
+        marker_depth = 0
+    if phase == 2 and game.failed:
+        marker_depth = game.survived_depth
+    if marker_depth >= chicken_rules.maximum_depth():
+        marker_depth = chicken_rules.maximum_depth() - 1
+    let platform = rung_box(board, marker_depth, rung_gap, rung_height)
+    var marker_x = platform.x - 26
+    if marker_depth - marker_depth / 2 * 2 == 1:
+        marker_x = platform.x + platform.width + 26
+    var marker_y = platform.y + platform.height / 2 + motion
+    if phase == 0 or phase == 1 and game.survived_depth < 1:
+        marker_y = board.y + board.height - 24
+    var ring = theme.highlight(light_mode)
+    if phase == 2 and game.failed:
+        ring = theme.destructive(light_mode)
+    if phase == 2 and not game.failed:
+        ring = theme.success(light_mode)
+    if motion > 0 and not reduced_motion:
+        rocket_raylib.draw_line(frame, marker_x, marker_y - motion, marker_x, marker_y + 16, 3.0, rocket_raylib.color(ring.red, ring.green, ring.blue, 125))?
+        rocket_raylib.draw_ring_pixels(frame, marker_x, marker_y, 23 + motion / 3, 27 + motion / 3, 0.0, 360.0, 32, rocket_raylib.color(ring.red, ring.green, ring.blue, 150))?
+    rocket_raylib.draw_rounded_rectangle(frame, marker_x - 18, marker_y + 12, 36, 8, 0.5, 8, rocket_raylib.color(2, 6, 20, 120))?
+    if resources.chicken_explorer_ready:
+        draw_asset(frame, resources.chicken_explorer, 316, 186, 605, 851, components.rect(marker_x - 26, marker_y - 31, 52, 52), 255)?
+    else:
+        rocket_raylib.draw_circle_pixels(frame, marker_x, marker_y - 4, 8, rocket_raylib.color(245, 217, 163, 255))?
+        rocket_raylib.draw_triangle(frame, marker_x - 9, marker_y + 12, marker_x + 9, marker_y + 12, marker_x, marker_y - 2, theme.cyan(light_mode))?
+    return rocket_raylib.draw_ring_pixels(frame, marker_x, marker_y, 25, 28, 0.0, 360.0, 32, ring)
+
+fn draw_ladder(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: chicken_model.Game, value: game_layout.Interior, light_mode: Bool, reduced_motion: Bool, now: Float, animation_end: Float) -> Result[Bool, String]:
     let board = game_layout.inset(value.stage, 18)
     let values = chicken_rules.multipliers(game.risk)
     let rung_gap =(board.height - 66) / chicken_rules.maximum_depth()
@@ -106,11 +177,20 @@ fn draw_ladder(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resourc
     if rung_height < 22:
         rung_height = 22
     let ladder_x = board.x + board.width / 2
+    let motion = game_components.motion_offset(now, animation_end, reduced_motion, rung_gap)
+    rocket_raylib.begin_scissor(frame, board.x, board.y, board.width, board.height)?
+    rocket_raylib.draw_rounded_rectangle(frame, board.x, board.y, board.width, board.height, 0.04, 8, rocket_raylib.color(4, 10, 28, 245))?
+    if resources.coop_observatory_ready:
+        draw_cover_texture(frame, resources.coop_observatory, board, 255)?
+        var veil = rocket_raylib.color(4, 10, 28, 82)
+        if light_mode:
+            veil = rocket_raylib.color(236, 241, 250, 42)
+        rocket_raylib.draw_rectangle(frame, board.x, board.y, board.width, board.height, veil)?
     rocket_raylib.draw_rounded_rectangle(frame, ladder_x - 10, board.y + 50, 20, board.height - 72, 0.4, 8, rocket_raylib.color(104, 68, 31, 255))?
-    draw_telescope(frame, ladder_x, board.y + 22, light_mode)?
+    let completed = chicken_engine.phase_code(game.phase) == 2 and not game.failed and game.survived_depth == chicken_rules.maximum_depth()
+    draw_telescope(frame, ladder_x, board.y + 22, resources.coop_observatory_ready, completed, motion / 2, light_mode)?
     var depth = 0
     while depth < chicken_rules.maximum_depth():
-        let y = board.y + board.height - 20 -(depth + 1) * rung_gap
         var fill = rocket_raylib.color(18, 35, 48, 235)
         var ink = rocket_raylib.color(245, 248, 255, 255)
         var status = "HIDDEN"
@@ -124,15 +204,14 @@ fn draw_ladder(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resourc
         if chicken_engine.phase_code(game.phase) == 2 and game.failed and depth == game.survived_depth:
             fill = theme.destructive(light_mode)
             status = "FAILED"
-        var width = board.width * 52 / 100
-        if depth - depth / 2 * 2 == 0:
-            width = board.width * 58 / 100
-        let box = components.rect(ladder_x - width / 2, y, width, rung_height)
+        let box = rung_box(board, depth, rung_gap, rung_height)
         let label = string.concat(string.concat("COOP ", string.from_int(depth + 1)), string.concat("   ", multiplier_label(values[depth])))
         draw_coop(window, frame, resources, box, label, status, fill, ink, light_mode)?
         depth = depth + 1
+    draw_chicken_marker(frame, resources, game, board, rung_gap, rung_height, motion, reduced_motion, light_mode)?
     components.type_text(window, frame, resources, "OBSERVATORY ASCENT", board.x + 12, board.y + 12, components.type_caption(), rocket_raylib.color(255, 255, 255, 132))?
-    return Ok(true)
+    rocket_raylib.end_scissor(frame)?
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, board.x, board.y, board.width, board.height, 0.04, 8, 2.0, theme.subtle_border(light_mode))
 
 fn draw_controls(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: chicken_model.Game, value: game_layout.Interior, mouse_x: Int, mouse_y: Int, light_mode: Bool) -> Result[Bool, String]:
     components.modern_panel(frame, value.rail, light_mode, true)?
@@ -175,14 +254,12 @@ fn draw_help(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources
     let lines = ["Lock one wager, then reveal one hidden rung at a time.", "After every safe rung choose Advance or Cash Out.", "A failed advance loses the prepaid wager; future safety stays hidden.", "Low survives 4/5, Medium 2/3, and High 1/2 on each rung.", "Ten fixed multiplier tables target 96% return at every cash-out depth.", "Settlement floors stake x basis-point multiplier / 10000.", "Tab changes risk, Up/Down changes wager, and Enter advances.", "S cashes out only after at least one secured rung.", "Rendering never receives or exposes future safe/fail values."]
     return game_components.help_overlay(window, frame, resources, "COOP CLIMB  /  OBSERVATORY GUIDE", lines, -1, light_mode)
 
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: chicken_model.Game, help: Bool, light_mode: Bool, reduced_motion: Bool, now: Float, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: chicken_model.Game, help: Bool, light_mode: Bool, reduced_motion: Bool, now: Float, animation_end: Float, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     let value = interior(width, height)
-    let expected_now = now
-    let expected_motion = reduced_motion
     game_components.ambient_stage(frame, resources, value.stage, 3, light_mode)?
-    draw_ladder(window, frame, resources, game, value, light_mode)?
+    draw_ladder(window, frame, resources, game, value, light_mode, reduced_motion, now, animation_end)?
     draw_controls(window, frame, resources, game, value, mouse_x, mouse_y, light_mode)?
     let rules = help_rect(width, height)
     components.modern_button(window, frame, resources, rules, "RULES", components.button_quiet(), true, components.contains(rules, mouse_x, mouse_y), false, light_mode)?

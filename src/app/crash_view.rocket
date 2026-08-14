@@ -99,6 +99,22 @@ fn graph_color(table: crash_api.PublicTable, light_mode: Bool) -> rocket_raylib.
         return theme.violet(light_mode)
     return theme.success(light_mode)
 
+fn draw_cover_texture(frame: rocket_raylib.Frame, texture: rocket_raylib.Texture, value: components.Rect, alpha: Int) -> Result[Bool, String]:
+    var source_x = 0
+    var source_y = 0
+    var source_width = texture.width
+    var source_height = texture.height
+    if value.width * texture.height > value.height * texture.width:
+        source_height = texture.width * value.height / value.width
+        source_y =(texture.height - source_height) / 2
+    else:
+        source_width = texture.height * value.width / value.height
+        source_x =(texture.width - source_width) / 2
+    return rocket_raylib.draw_texture_region(frame, texture, source_x, source_y, source_width, source_height, value.x, value.y, value.width, value.height, rocket_raylib.color(255, 255, 255, alpha))
+
+fn draw_asset(frame: rocket_raylib.Frame, texture: rocket_raylib.Texture, source_x: Int, source_y: Int, source_width: Int, source_height: Int, value: components.Rect, alpha: Int) -> Result[Bool, String]:
+    return rocket_raylib.draw_texture_region(frame, texture, source_x, source_y, source_width, source_height, value.x, value.y, value.width, value.height, rocket_raylib.color(255, 255, 255, alpha))
+
 fn draw_grid(frame: rocket_raylib.Frame, box: components.Rect, light_mode: Bool) -> Result[Bool, String]:
     var column = 1
     while column < 6:
@@ -120,19 +136,12 @@ fn curve_point(table: crash_api.PublicTable, graph: components.Rect, point: Int,
     var range = table.multiplier_basis_points - 10000
     if range < 2000:
         range = 2000
-    var vertical =(value - 10000) *(graph.height - 54) / range
-    if vertical > graph.height - 54:
-        vertical = graph.height - 54
-    return Ok(components.rect(graph.x + 26 + point *(graph.width - 52) / count, graph.y + graph.height - 26 - vertical, 1, 1))
+    var vertical =(value - 10000) *(graph.height - 156) / range
+    if vertical > graph.height - 156:
+        vertical = graph.height - 156
+    return Ok(components.rect(graph.x + 104 + point *(graph.width - 208) / count, graph.y + graph.height - 78 - vertical, 1, 1))
 
-fn draw_rocket(frame: rocket_raylib.Frame, x: Int, y: Int, crashed: Bool, tick: Int, reduced_motion: Bool, light_mode: Bool) -> Result[Bool, String]:
-    if crashed:
-        let danger = theme.destructive(light_mode)
-        rocket_raylib.draw_ring_pixels(frame, x, y, 10, 32, 0.0, 360.0, 28, danger)?
-        rocket_raylib.draw_line(frame, x - 34, y, x + 34, y, 4.0, danger)?
-        rocket_raylib.draw_line(frame, x, y - 34, x, y + 34, 4.0, danger)?
-        rocket_raylib.draw_line(frame, x - 24, y - 24, x + 24, y + 24, 4.0, danger)?
-        return rocket_raylib.draw_line(frame, x + 24, y - 24, x - 24, y + 24, 4.0, danger)
+fn draw_fallback_rocket(frame: rocket_raylib.Frame, x: Int, y: Int, tick: Int, reduced_motion: Bool, light_mode: Bool) -> Result[Bool, String]:
     var flame = 20
     if not reduced_motion and tick - tick / 2 * 2 == 0:
         flame = 30
@@ -142,9 +151,65 @@ fn draw_rocket(frame: rocket_raylib.Frame, x: Int, y: Int, crashed: Bool, tick: 
     rocket_raylib.draw_triangle(frame, x - 8, y + 18, x - 24, y + 32, x - 20, y + 8, theme.violet(light_mode))?
     return rocket_raylib.draw_circle_pixels(frame, x - 2, y, 6, rocket_raylib.color(235, 249, 255, 255))
 
+fn draw_flight_trail(frame: rocket_raylib.Frame, x: Int, y: Int, tick: Int, reduced_motion: Bool, light_mode: Bool) -> Result[Bool, String]:
+    var flame = 18
+    if not reduced_motion and tick - tick / 2 * 2 == 0:
+        flame = 28
+    rocket_raylib.draw_triangle(frame, x - 46 - flame, y + 24 + flame / 2, x - 44, y + 12, x - 28, y + 30, theme.highlight(light_mode))?
+    rocket_raylib.draw_triangle(frame, x - 38 - flame / 2, y + 28 + flame / 2, x - 32, y + 17, x - 18, y + 34, theme.cyan(light_mode))?
+    if not reduced_motion:
+        var mote = 0
+        while mote < 4:
+            let drift = 26 + mote * 18 +(tick + mote * 3) -((tick + mote * 3) / 8) * 8
+            rocket_raylib.draw_circle_pixels(frame, x - drift, y + 28 + mote * 5, 2 + mote / 2, rocket_raylib.color(255, 180, 66, 150 - mote * 24))?
+            mote = mote + 1
+    return Ok(true)
+
+fn draw_crash_marker(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, x: Int, y: Int, light_mode: Bool) -> Result[Bool, String]:
+    let danger = theme.destructive(light_mode)
+    if resources.crash_burst_ready:
+        draw_asset(frame, resources.crash_burst, 0, 56, 1233, 1127, components.rect(x - 54, y - 49, 108, 98), 245)?
+    else:
+        rocket_raylib.draw_line(frame, x - 34, y, x + 34, y, 4.0, danger)?
+        rocket_raylib.draw_line(frame, x, y - 34, x, y + 34, 4.0, danger)?
+        rocket_raylib.draw_line(frame, x - 24, y - 24, x + 24, y + 24, 4.0, danger)?
+        rocket_raylib.draw_line(frame, x + 24, y - 24, x - 24, y + 24, 4.0, danger)?
+    return rocket_raylib.draw_ring_pixels(frame, x, y, 34, 39, 0.0, 360.0, 36, danger)
+
+fn draw_flight_vehicle(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: crash_api.PublicTable, x: Int, y: Int, reduced_motion: Bool, light_mode: Bool) -> Result[Bool, String]:
+    let vehicle_y = y - 36
+    if table.crashed:
+        return draw_crash_marker(frame, resources, x, y, light_mode)
+    if table.phase == 1:
+        draw_flight_trail(frame, x, vehicle_y, table.tick_count, reduced_motion, light_mode)?
+    if table.cashed_out:
+        rocket_raylib.draw_ring_pixels(frame, x, vehicle_y, 42, 47, 0.0, 360.0, 36, theme.success(light_mode))?
+    if resources.crash_rocket_ready:
+        return draw_asset(frame, resources.crash_rocket, 172, 186, 1055, 823, components.rect(x - 58, vehicle_y - 47, 116, 90), 255)
+    return draw_fallback_rocket(frame, x, vehicle_y, table.tick_count, reduced_motion, light_mode)
+
+fn draw_flight_background(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, graph: components.Rect, table: crash_api.PublicTable, light_mode: Bool, reduced_motion: Bool) -> Result[Bool, String]:
+    rocket_raylib.draw_rounded_rectangle(frame, graph.x, graph.y, graph.width, graph.height, 0.04, 10, rocket_raylib.color(4, 13, 35, 245))?
+    if resources.crash_flight_ready:
+        draw_cover_texture(frame, resources.crash_flight, graph, 255)?
+        var veil = rocket_raylib.color(3, 9, 28, 92)
+        if light_mode:
+            veil = rocket_raylib.color(232, 240, 250, 48)
+        rocket_raylib.draw_rectangle(frame, graph.x, graph.y, graph.width, graph.height, veil)?
+    if table.phase == 1 and not reduced_motion:
+        var streak = 0
+        while streak < 7:
+            let offset =(table.tick_count * 11 + streak * 83) -((table.tick_count * 11 + streak * 83) /(graph.width + 120)) *(graph.width + 120)
+            let streak_x = graph.x + graph.width - offset
+            let streak_y = graph.y + 38 + streak *(graph.height - 76) / 7
+            rocket_raylib.draw_line(frame, streak_x, streak_y, streak_x + 36, streak_y - 12, 2.0, rocket_raylib.color(173, 226, 255, 105))?
+            streak = streak + 1
+    return Ok(true)
+
 fn draw_graph(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: crash_api.PublicTable, value: game_layout.Interior, light_mode: Bool, reduced_motion: Bool) -> Result[Bool, String]:
     let graph = game_layout.inset(value.stage, 20)
-    rocket_raylib.draw_rounded_rectangle(frame, graph.x, graph.y, graph.width, graph.height, 0.04, 10, rocket_raylib.color(4, 13, 35, 230))?
+    rocket_raylib.begin_scissor(frame, graph.x, graph.y, graph.width, graph.height)?
+    draw_flight_background(frame, resources, graph, table, light_mode, reduced_motion)?
     draw_grid(frame, graph, light_mode)?
     let ink = graph_color(table, light_mode)
     var count = table.tick_count
@@ -162,18 +227,19 @@ fn draw_graph(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resource
     var rocket_x = previous.x
     var rocket_y = previous.y
     if table.phase == 0:
-        rocket_x = graph.x + 64
-        rocket_y = graph.y + graph.height - 44
-    draw_rocket(frame, rocket_x, rocket_y, table.crashed, table.tick_count, reduced_motion, light_mode)?
-    let readout = components.rect(graph.x + graph.width / 2 - 140, graph.y + graph.height / 2 - 62, 280, 124)
-    rocket_raylib.draw_rounded_rectangle(frame, readout.x, readout.y, readout.width, readout.height, 0.16, 10, rocket_raylib.color(4, 9, 28, 205))?
-    components.type_centered(window, frame, resources, multiplier_label(table.multiplier_basis_points), components.rect(readout.x, readout.y + 14, readout.width, 58), components.type_display(), ink)?
+        rocket_x = graph.x + 104
+        rocket_y = graph.y + graph.height - 42
+    draw_flight_vehicle(frame, resources, table, rocket_x, rocket_y, reduced_motion, light_mode)?
+    let readout = components.rect(graph.x + 22, graph.y + 22, 256, 108)
+    rocket_raylib.draw_rounded_rectangle(frame, readout.x, readout.y, readout.width, readout.height, 0.16, 10, rocket_raylib.color(4, 9, 28, 218))?
+    components.type_centered(window, frame, resources, multiplier_label(table.multiplier_basis_points), components.rect(readout.x, readout.y + 9, readout.width, 58), components.type_display(), ink)?
     var subtitle = "PRECOMMITTED POINT HIDDEN"
     if table.phase == 2:
         subtitle = string.concat("REVEALED  ", multiplier_label(table.revealed_crash_basis_points))
-    components.type_centered(window, frame, resources, subtitle, components.rect(readout.x, readout.y + 78, readout.width, 28), components.type_caption(), theme.secondary_text(light_mode))?
-    components.type_text(window, frame, resources, "LOCAL FLIGHT CURVE  /  20 HZ", value.stage.x + 16, value.stage.y + 14, components.type_caption(), rocket_raylib.color(255, 255, 255, 140))?
-    return Ok(true)
+    components.type_centered(window, frame, resources, subtitle, components.rect(readout.x, readout.y + 70, readout.width, 24), components.type_caption(), rocket_raylib.color(235, 243, 255, 180))?
+    components.type_text(window, frame, resources, "LOCAL FLIGHT CURVE  /  20 HZ", graph.x + 16, graph.y + graph.height - 24, components.type_caption(), rocket_raylib.color(255, 255, 255, 160))?
+    rocket_raylib.end_scissor(frame)?
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, graph.x, graph.y, graph.width, graph.height, 0.04, 8, 2.0, theme.subtle_border(light_mode))
 
 fn draw_history(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: crash_api.PublicTable, value: game_layout.Interior, light_mode: Bool) -> Result[Bool, String]:
     if value.compact:

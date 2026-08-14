@@ -47,6 +47,57 @@ and no copied interface. Playing-card ranks and slot/dice faces are intentional
 game-object markings. Runtime sampling uses six 512x512 source regions per
 atlas, including the narrow dark gutters inside the generated composition.
 
+## Group 1 versioned game artwork
+
+These files are byte-identical promotions from the visually reviewed
+`owner-art-20260812/accepted/` staging set. They were staged on 2026-08-12 and
+audited on 2026-08-13 as original Scroll2Roll artwork with no external image,
+provider art, copied interface, logo, watermark, odds, or outcome baked in.
+The owner directed this local Group 1 integration on 2026-08-14. That direction
+is the use basis for this repository work; it is not a claim of final visual
+approval, public release approval, or a third-party/public-domain license.
+
+The staging records identify these as generated originals and preserve the
+owner briefs in `docs/OWNER_ASSET_GENERATION_PROMPTS.md`, but do not contain
+exact generator, model, generation-run, or per-file prompt identifiers. Those
+details are therefore recorded as unavailable rather than inferred. Full-frame
+backgrounds are their own reviewed source. Transparent runtime PNGs are the
+reviewed alpha conversions of the retained flat-chroma source counterparts
+listed below; the runtime files themselves are unmodified after acceptance.
+
+| Runtime path | Game / purpose | Dimensions | Reviewed source decision | SHA-256 |
+| --- | --- | --- | --- | --- |
+| `assets/games/group1-v1/midnight-city-base.png` | Midnight Crossing environment under code-owned eight-lane geometry | 1672x941 | Accepted full-frame source; promoted unchanged | `EAC30CC1E57FDEC41F6089016918455081D74E9F1C7020E146C483ADA03B1AFB` |
+| `assets/games/group1-v1/midnight-car-coral.png` | Midnight Crossing top-down road hazard | 1619x971 | Accepted alpha conversion; promoted unchanged | `51FD49B13DF802AD9D46CD34E1016BEC080CF1630A3B327B13CDEE9DD4727369` |
+| `assets/games/group1-v1/midnight-car-cyan.png` | Midnight Crossing top-down road-hazard variant | 1619x971 | Accepted alpha conversion; promoted unchanged | `2119640D8D2DD1201325092AC0C3FB53070851DCBA904898067FB6E0055B4919` |
+| `assets/games/group1-v1/midnight-tram.png` | Midnight Crossing rail hazard | 1810x869 | Accepted alpha conversion; promoted unchanged | `E130C11623ACB76717CE8BB32331F912F797F21BF0D433441D85BC1039D93F86` |
+| `assets/games/group1-v1/midnight-log-raft.png` | Midnight Crossing moving canal support | 1402x1122 | Accepted alpha conversion; promoted unchanged | `F85C1A759ED35AE2BB3AC4B010BB8C6D749704D34CC07E45C6FDD67D08FA3792` |
+| `assets/games/group1-v1/chicken-explorer-topdown.png` | Shared Midnight Crossing / Coop Climb explorer | 1254x1254 | Accepted alpha conversion; promoted unchanged | `59FA498AE754B1568B9B16B14FD3F373540CC98ED2AB8868C5C46ED9BC0FC7F6` |
+| `assets/games/group1-v1/crash-flight-background.png` | Crash flight environment behind the public multiplier curve | 1672x941 | Accepted full-frame source; promoted unchanged | `208295182A7954AC3F3DC53F980BC70AEB35EA39D89B16360A2419DAD500B9A4` |
+| `assets/games/group1-v1/crash-rocket.png` | Crash public launch / flight / cash-out craft | 1369x1149 | Accepted alpha conversion; promoted unchanged | `60B3B7EA5BABD0E34B75F02DD22296882A553D109E9C3915FFB386590C587AAD` |
+| `assets/games/group1-v1/crash-vfx-burst.png` | Crash settled crash marker | 1329x1183 | Accepted alpha conversion; promoted unchanged | `EABE7CB3F84AC602B0D702567FE460CC7BFE64C2ACC56FDE9E6604E8F2780305` |
+| `assets/games/group1-v1/coop-observatory-background.png` | Coop Climb physical ten-step observatory | 1672x941 | Accepted full-frame source; promoted unchanged | `59EB14B375D714D8D85248E7F479712626A9A43D5B8BE12BAAA654F272A71991` |
+| `assets/games/group1-v1/coop-climb-platform.png` | Coop Climb repeated code-owned step prop | 1254x1254 | Accepted alpha conversion; promoted unchanged | `0F5305CB1653C6B86019641F4A3CCB82A3FCA811CEB21E2C552341EF5CBB73F7` |
+
+Retained alpha-source counterparts in the ignored owner-art staging package:
+
+| Source counterpart | Dimensions | SHA-256 |
+| --- | --- | --- |
+| `midnight-car-coral-source.png` | 1619x971 | `7E37F774B391FF78FAAFE094D3EB9B831431665A966B59C7C03C8930E34D9D6F` |
+| `midnight-car-cyan-source.png` | 1619x971 | `F4C9959F4CEA034AEDF3B127820DF323C41C18F9BB1064241F73C3BEC25BF3E7` |
+| `midnight-tram-source.png` | 1810x869 | `3B3FBFCD315C67CD5D418DA24BA640F9B2938492BED2D43AA6DFF793A4C83AB1` |
+| `midnight-log-raft-source.png` | 1402x1122 | `4AF0A96DD94D86A3C522F0CD9DDFCDC1BE1947EB980A707D1309CE3B265D8A0C` |
+| `chicken-explorer-topdown-source.png` | 1254x1254 | `0842FA4DE133387A09E94470284ABF482807CAEF253F8D4CE54DD9534E93F497` |
+| `crash-rocket-source.png` | 1369x1149 | `64CCDC7178EAE2CE3E55D59225FA472891F5D6D08797D680D4E6CFBD5A6C1264` |
+| `crash-vfx-burst-source.png` | 1329x1183 | `6E00095E01B569EBC2081D272153C09F0074E93D25CBF2DB5960A154DAE77858` |
+| `coop-climb-platform-source.png` | 1254x1254 | `A2FA493D92E88DA68B97CB5FFA6DE3D34E4E44026C50FA3655FE6878411F724E` |
+
+`src/app/ui_resources.rocket` is the sole runtime owner. It loads these eleven
+textures once, exposes explicit readiness flags, keeps procedural degraded
+rendering for every game, and unloads every successful texture exactly once.
+The focused adapter test verifies all promoted loads and returns the texture
+and font live counts to zero.
+
 ## Legacy test assets
 
 `assets/orbit.ppm` and `assets/about.txt` predate the overhaul and remain test or

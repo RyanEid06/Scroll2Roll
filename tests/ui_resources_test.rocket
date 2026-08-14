@@ -25,10 +25,20 @@ fn run() -> Result[Int, String]:
             ui_resources.unload(degraded)?
             if rocket_raylib_testing.font_live_count() != 0 or rocket_raylib_testing.texture_live_count() != 0:
                 return Ok(8)
+            let production = ui_resources.load(window)
+            if not ui_resources.ready(production) or not production.midnight_city_ready or not production.midnight_car_coral_ready or not production.midnight_car_cyan_ready or not production.midnight_tram_ready or not production.midnight_raft_ready or not production.chicken_explorer_ready:
+                return Ok(9)
+            if not production.crash_flight_ready or not production.crash_rocket_ready or not production.crash_burst_ready or not production.coop_observatory_ready or not production.coop_platform_ready:
+                return Ok(10)
+            if rocket_raylib_testing.font_live_count() != 1 or rocket_raylib_testing.texture_live_count() != 13:
+                return Ok(11)
+            ui_resources.unload(production)?
+            if rocket_raylib_testing.font_live_count() != 0 or rocket_raylib_testing.texture_live_count() != 0:
+                return Ok(12)
             rocket_raylib.close_window(window)?
             return Ok(0)
         case Err(error):
-            return Ok(9)
+            return Ok(13)
 
 fn main() -> Int:
     match run():

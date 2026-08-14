@@ -266,6 +266,70 @@ This file records the complete local acceptance pass performed on Windows x64 on
   unchanged. Nothing was pushed, deployed, published, released, signed, or
   purchased.
 
+## Post-art implementation Group 1 - Midnight Crossing, Crash, and Coop Climb
+
+- On 2026-08-14, the actual native Release executable was inspected for all
+  three Group 1 games in dark and light themes at 800x600, 1024x768, 1280x720,
+  and 1600x900. Both themes were also reviewed at the current display's true
+  maximized 1920x991 client; Windows Graphics Capture reports the 125%-scaled
+  outer window as 1536x816. A requested 1920x1080 decorated window extends
+  beyond this display's capturable work area, so the maximized native pass is
+  the honest display-bound evidence while deterministic view tests continue to
+  exercise the exact 1920x1080 client contract. The 46 ignored PNGs and
+  isolated save profiles are under `out/visual-audit/group1/`.
+- Ready art-backed composition was reviewed for every game, theme, and native
+  size. Compact active and settled states verify the bottom action dock,
+  visible disabled cash-out, reachable direction/advance/launch controls, all
+  eight Midnight lanes, all ten Coop multipliers, and unclipped Crash curve and
+  burst. Standard and wide states verify the action rail, scalable stage crop,
+  readable hierarchy, bounded scissoring, and no overlap or dead-space defect.
+  Representative active Crash states were also captured at 1024x768 light and
+  1280x720 dark.
+- The 800x600 dark reduced-motion profile was visibly verified in Settings and
+  captured in active states for Midnight Crossing, Crash, and Coop Climb, plus
+  representative Midnight collision and Coop failure settlement. A separate
+  1024x768 light reduced-motion active Crash pass cross-checks the standard
+  action-rail layout. Reduced motion keeps every committed/public state and
+  removes the tick streak, bob, flare, and transition offsets instead of
+  changing engine time, outcomes, controls, or geometry.
+- Only reviewed material from `owner-art-20260812/accepted` was promoted to the
+  versioned `assets/games/group1-v1/` runtime set: Midnight city, two top-down
+  cars, tram, raft, and shared chicken; Crash flight environment, rocket, and
+  burst; and Coop observatory and platform. The accepted oblique vehicle atlas
+  was deliberately excluded because its camera angle and embedded markings do
+  not fit the exact top-down lane composition. `assets/MANIFEST.md` records
+  accepted/runtime/source counterpart SHA-256 values and the known provenance
+  boundary without claiming unavailable generator identifiers or owner visual
+  approval.
+- `ui_resources.rocket` is the sole owner of the eleven new textures. It loads
+  them once, exposes explicit ready flags and procedural fallbacks, and unloads
+  each live handle exactly once. `ui_resources_test.rocket` verifies the full
+  production set at 13 textures including the two existing atlases and returns
+  texture/font counts to zero. The resource-backed arcade/final view fixtures
+  also verify ready/active/settled drawing, balanced scissor cleanup, and zero
+  live resources after close.
+- Midnight retains the public 900-unit fixed-tick hazard projection and exact
+  lane/collision/support geometry while its city, vehicles, tram, rafts,
+  wakes, streaks, carried feedback, collision response, and checkpoint flare
+  remain presentation-only. Crash still consumes only
+  `crash_api.PublicTable`; the hidden crash point is never passed to rendering,
+  and launch/trail/flame/cash-out/burst effects derive only from public phase
+  and multiplier state. Coop keeps the hidden path private, renders all future
+  rungs identically, and uses a 0.32-second presentation deadline only for the
+  committed current/safe/failed/secured marker and summit response; input and
+  rule transitions are never delayed.
+- Focused tests passed one game at a time: Crossing rules, fixed-tick
+  simulation/replay, GUI flow, resources, and arcade views; Crash rules,
+  session, GUI flow, resources, and final-game views; and Chicken rules,
+  session, GUI flow, resources, and arcade views. Final sequential
+  `scripts/validate.ps1 -Configuration Release -RocketRoot "<frozen-rocket>"`
+  and Debug passes each completed native generation/build, `rocketc check`, all
+  48 tests, and both source/test formatting checks.
+- This group changes no casino rule, private-state boundary, persistence
+  format, fixed-tick geometry, frozen Rocket contract, raylib ABI, website, or
+  package. Groups 2-4 were not started. Nothing was pushed, published,
+  deployed, packaged, signed, or described as owner-approved.
+
 ## 0.2.0 expansion baseline
 
 Before expansion implementation, both Debug and Release

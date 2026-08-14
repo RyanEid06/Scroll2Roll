@@ -138,6 +138,30 @@ fn draw_states(window: rocket_raylib.Window, light_mode: Bool) -> Result[Bool, S
     rocket_raylib.end_frame(frame)?
     return Ok(true)
 
+fn draw_resource_crash(window: rocket_raylib.Window) -> Result[Bool, String]:
+    let resources = ui_resources.load(window)
+    if not resources.crash_flight_ready or not resources.crash_rocket_ready or not resources.crash_burst_ready:
+        return Err("Crash resource-backed view fixture could not load promoted art")
+    var crash_seed = 20260963
+    var crash_ready = crash_api.new_session(1000, crash_seed)?
+    var crash_active = crash_api.with_start(crash_ready)?
+    while crash_api.phase_code(crash_active) != 1 and crash_seed < 20261063:
+        crash_seed = crash_seed + 1
+        crash_ready = crash_api.new_session(1000, crash_seed)?
+        crash_active = crash_api.with_start(crash_ready)?
+    if crash_api.phase_code(crash_active) != 1:
+        return Err("Crash resource-backed view fixture could not find a live committed flight")
+    let crash_settled = crash_api.with_cash_out(crash_active)?
+    let frame = rocket_raylib.begin_frame(window)?
+    rocket_raylib.clear(frame, rocket_raylib.black())?
+    crash_view.draw(window, frame, resources, crash_api.public_table(crash_ready), false, false, false, 0.0, -100, -100)?
+    crash_view.draw(window, frame, resources, crash_api.public_table(crash_active), false, false, false, 0.3, -100, -100)?
+    crash_view.draw(window, frame, resources, crash_api.public_table(crash_settled), false, true, true, 1.0, -100, -100)?
+    if rocket_raylib_testing.scissor_active():
+        return Err("Crash resource-backed view left a scissor active")
+    rocket_raylib.end_frame(frame)?
+    return ui_resources.unload(resources)
+
 fn run() -> Result[Int, String]:
     if not rocket_raylib_testing.enable() or not rocket_raylib_testing.reset():
         return Ok(1)
@@ -152,8 +176,13 @@ fn run() -> Result[Int, String]:
             return Ok(10 + index)
         rocket_raylib.close_window(window)?
         index = index + 1
+    let resource_window = rocket_raylib.open_window(1280, 720, "Crash resource-backed states")?
+    draw_resource_crash(resource_window)?
+    rocket_raylib.close_window(resource_window)?
     if rocket_raylib_testing.buffer_live_count() != 0:
         return Ok(20)
+    if rocket_raylib_testing.texture_live_count() != 0 or rocket_raylib_testing.font_live_count() != 0:
+        return Ok(21)
     return Ok(0)
 
 fn main() -> Int:
