@@ -77,6 +77,19 @@ fn phase_name(code: Int) -> String:
         return "REELS TURNING"
     return "SPIN SETTLED"
 
+fn draw_stage_background(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    if not resources.group_three.slots_arcade_ready:
+        return game_components.ambient_stage(frame, resources, value, 10, light_mode)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.04, 12, theme.surface(light_mode))?
+    rocket_raylib.begin_scissor(frame, value.x, value.y, value.width, value.height)?
+    game_components.texture_cover(frame, resources.group_three.slots_arcade, value, 220)?
+    var veil = rocket_raylib.color(3, 6, 20, 116)
+    if light_mode:
+        veil = rocket_raylib.color(238, 242, 250, 142)
+    rocket_raylib.draw_rectangle(frame, value.x, value.y, value.width, value.height, veil)?
+    rocket_raylib.end_scissor(frame)?
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.04, 12, 1.0, theme.subtle_border(light_mode))
+
 fn winning_cell(result: slots_model.SpinResult, row: Int, reel: Int) -> Result[Bool, String]:
     var index = 0
     while index < collections.length(result.line_wins):
@@ -146,6 +159,15 @@ fn draw_gear(frame: rocket_raylib.Frame, x: Int, y: Int, size: Int, ink: rocket_
     rocket_raylib.draw_line(frame, x + size / 3, y - size / 3, x - size / 3, y + size / 3, 5.0, ink)?
     return rocket_raylib.draw_circle_pixels(frame, x, y, size / 7, rocket_raylib.color(8, 20, 35, 255))
 
+fn symbol_art_box(box: components.Rect, y_offset: Int) -> components.Rect:
+    let available_height = box.height - 10
+    var height = available_height
+    var width = height * 3 / 4
+    if width > box.width - 10:
+        width = box.width - 10
+        height = width * 4 / 3
+    return components.rect(box.x +(box.width - width) / 2, box.y +(box.height - height) / 2 + y_offset, width, height)
+
 fn draw_symbol(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, box: components.Rect, symbol: Int, winning: Bool, light_mode: Bool) -> Result[Bool, String]:
     var border = theme.subtle_border(light_mode)
     if winning:
@@ -154,6 +176,13 @@ fn draw_symbol(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resourc
     rocket_raylib.draw_rounded_rectangle(frame, box.x, box.y + 4, box.width, box.height, 0.12, 8, rocket_raylib.color(1, 5, 18, 120))?
     rocket_raylib.draw_rounded_rectangle(frame, box.x, box.y, box.width, box.height, 0.12, 8, fill)?
     rocket_raylib.draw_rounded_rectangle_lines(frame, box.x, box.y, box.width, box.height, 0.12, 8, 2.0, border)?
+    if resources.group_three.slots_symbols_ready:
+        rocket_raylib.begin_scissor(frame, box.x, box.y, box.width, box.height)?
+        game_components.texture_cell(frame, resources.group_three.slots_symbols, 4, 2, symbol, symbol_art_box(box, 0), 255)?
+        rocket_raylib.end_scissor(frame)?
+        if winning:
+            rocket_raylib.draw_rounded_rectangle_lines(frame, box.x + 3, box.y + 3, box.width - 6, box.height - 6, 0.12, 8, 2.0, theme.cyan(light_mode))?
+        return Ok(true)
     let x = box.x + box.width / 2
     let y = box.y + box.height / 2
     var size = box.height * 55 / 100
@@ -187,9 +216,18 @@ fn cell_rect(value: game_layout.Interior, row: Int, reel: Int) -> components.Rec
     let height =(area.height - gap * 2) / 3
     return components.rect(area.x + reel *(width + gap), area.y + row *(height + gap), width, height)
 
-fn draw_hidden_reel(frame: rocket_raylib.Frame, box: components.Rect, reel: Int, motion: Int, light_mode: Bool) -> Result[Bool, String]:
+fn draw_hidden_reel(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, box: components.Rect, symbol: Int, reel: Int, motion: Int, light_mode: Bool, reduced_motion: Bool) -> Result[Bool, String]:
     rocket_raylib.draw_rounded_rectangle(frame, box.x, box.y, box.width, box.height, 0.12, 8, rocket_raylib.color(11, 23, 43, 250))?
     rocket_raylib.begin_scissor(frame, box.x, box.y, box.width, box.height)?
+    if resources.group_three.slots_symbols_ready:
+        var art_motion = motion + reel * 3
+        if reduced_motion:
+            art_motion = 0
+        game_components.texture_cell(frame, resources.group_three.slots_symbols, 4, 2, symbol, symbol_art_box(box, art_motion), 118)?
+        if not reduced_motion:
+            game_components.texture_cell(frame, resources.group_three.slots_symbols, 4, 2, symbol, symbol_art_box(box, art_motion - box.height), 66)?
+            game_components.texture_cell(frame, resources.group_three.slots_symbols, 4, 2, symbol, symbol_art_box(box, art_motion + box.height), 66)?
+        rocket_raylib.draw_rectangle(frame, box.x, box.y, box.width, box.height, rocket_raylib.color(6, 13, 34, 138))?
     var stripe = -2
     while stripe < 5:
         let y = box.y + stripe * 24 + motion + reel * 5
@@ -218,11 +256,18 @@ fn draw_cabinet(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resour
     let phase = slots_api.phase_code(session)
     let cabinet = game_layout.inset(value.stage, 18)
     rocket_raylib.draw_rounded_rectangle(frame, cabinet.x, cabinet.y, cabinet.width, cabinet.height, 0.04, 12, rocket_raylib.color(31, 18, 54, 235))?
+    if resources.group_three.slots_cabinet_ready:
+        rocket_raylib.begin_scissor(frame, cabinet.x, cabinet.y, cabinet.width, cabinet.height)?
+        game_components.texture_cover(frame, resources.group_three.slots_cabinet, cabinet, 245)?
+        rocket_raylib.end_scissor(frame)?
     rocket_raylib.draw_rounded_rectangle_lines(frame, cabinet.x, cabinet.y, cabinet.width, cabinet.height, 0.04, 12, 3.0, theme.highlight(light_mode))?
     let header = components.rect(cabinet.x + 24, cabinet.y + 12, cabinet.width - 48, 36)
     rocket_raylib.draw_rounded_rectangle(frame, header.x, header.y, header.width, header.height, 0.3, 10, theme.violet(light_mode))?
     components.type_centered(window, frame, resources, "SCROLLWORKS  /  FIVE LINES", header, components.type_label(), rocket_raylib.color(255, 255, 255, 255))?
     let motion = game_components.motion_offset(now, animation_end, reduced_motion, 20)
+    let glass = reel_area(value)
+    rocket_raylib.draw_rounded_rectangle(frame, glass.x - 8, glass.y - 8, glass.width + 16, glass.height + 16, 0.04, 8, rocket_raylib.color(1, 6, 21, 222))?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, glass.x - 8, glass.y - 8, glass.width + 16, glass.height + 16, 0.04, 8, 2.0, rocket_raylib.color(246, 190, 74, 205))?
     var row = 0
     while row < slots_rules.row_count():
         var reel = 0
@@ -235,7 +280,10 @@ fn draw_cabinet(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resour
                 let symbol = game.spin.grid[row * 5 + reel]
                 draw_symbol(window, frame, resources, box, symbol, winning_cell(game.spin, row, reel)?, light_mode)?
             else:
-                draw_hidden_reel(frame, box, reel, motion, light_mode)?
+                var committed_symbol = 0
+                if collections.length(game.spin.grid) == 15:
+                    committed_symbol = game.spin.grid[row * 5 + reel]
+                draw_hidden_reel(frame, resources, box, committed_symbol, reel, motion, light_mode, reduced_motion)?
             reel = reel + 1
         row = row + 1
     if phase == 2:
@@ -245,6 +293,10 @@ fn draw_cabinet(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resour
     var message = string.concat("CURRENT WIN  ", string.from_int(game.round_win))
     if game.free_spins_remaining > 0:
         message = string.concat(message, string.concat("   FREE SPINS  ", string.from_int(game.free_spins_remaining)))
+    if phase == 2 and game.spin.scatter_count >= 3:
+        message = string.concat(message, string.concat("   MOONS  ", string.from_int(game.spin.scatter_count)))
+    if phase == 2 and game.spin.bonus_count >= 3:
+        message = string.concat(message, string.concat("   GEARS  ", string.from_int(game.spin.bonus_count)))
     components.type_centered(window, frame, resources, message, marquee, components.type_caption(), theme.highlight(light_mode))?
     return Ok(true)
 
@@ -321,7 +373,7 @@ pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     let value = interior(width, height)
-    game_components.ambient_stage(frame, resources, value.stage, 10, light_mode)?
+    draw_stage_background(frame, resources, value.stage, light_mode)?
     draw_cabinet(window, frame, resources, session, value, reel_stage, light_mode, reduced_motion, now, animation_end)?
     draw_controls(window, frame, resources, session, value, mouse_x, mouse_y, light_mode)?
     let rules = help_rect(width, height)

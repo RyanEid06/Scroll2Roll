@@ -83,6 +83,19 @@ fn phase_name(code: Int) -> String:
         return "BALLS IN PLAY"
     return "BATCH SETTLED"
 
+fn draw_stage_background(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    if not resources.group_three.plinko_chamber_ready:
+        return game_components.ambient_stage(frame, resources, value, 2, light_mode)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.04, 12, theme.surface(light_mode))?
+    rocket_raylib.begin_scissor(frame, value.x, value.y, value.width, value.height)?
+    game_components.texture_cover(frame, resources.group_three.plinko_chamber, value, 224)?
+    var veil = rocket_raylib.color(3, 9, 25, 112)
+    if light_mode:
+        veil = rocket_raylib.color(236, 243, 250, 142)
+    rocket_raylib.draw_rectangle(frame, value.x, value.y, value.width, value.height, veil)?
+    rocket_raylib.end_scissor(frame)?
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.04, 12, 1.0, theme.subtle_border(light_mode))
+
 fn board_rect(value: game_layout.Interior) -> components.Rect:
     return game_layout.inset(value.stage, 18)
 
@@ -124,10 +137,27 @@ fn path_progress(now: Float, animation_end: Float, reduced_motion: Bool) -> Int:
         return 6
     return 7
 
+fn landed_in_bucket(game: plinko_model.Game, stage: Int, bucket: Int) -> Int:
+    var count = 0
+    var ball = 0
+    while ball < collections.length(game.pending):
+        var landed = plinko_engine.phase_code(game.phase) == 2
+        if stage - ball * 2 >= game.rows:
+            landed = true
+        if landed and game.pending[ball].bucket == bucket:
+            count = count + 1
+        ball = ball + 1
+    return count
+
 fn draw_board(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: plinko_model.Game, value: game_layout.Interior, stage: Int, light_mode: Bool, reduced_motion: Bool, now: Float, animation_end: Float) -> Result[Bool, String]:
     let board = board_rect(value)
     rocket_raylib.draw_rounded_rectangle(frame, board.x, board.y, board.width, board.height, 0.06, 12, rocket_raylib.color(6, 19, 45, 224))?
-    rocket_raylib.draw_rounded_rectangle_lines(frame, board.x, board.y, board.width, board.height, 0.06, 12, 2.0, theme.cyan(light_mode))?
+    rocket_raylib.begin_scissor(frame, board.x, board.y, board.width, board.height)?
+    if resources.group_three.plinko_enclosure_ready:
+        game_components.texture_cover(frame, resources.group_three.plinko_enclosure, board, 238)?
+    let field = components.rect(board.x + 24, board.y + 20, board.width - 48, board.height - 38)
+    rocket_raylib.draw_rounded_rectangle(frame, field.x, field.y, field.width, field.height, 0.05, 10, rocket_raylib.color(3, 15, 38, 226))?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, field.x, field.y, field.width, field.height, 0.05, 10, 1.0, rocket_raylib.color(106, 206, 255, 108))?
     let center = board.x + board.width / 2
     let horizontal = peg_gap(game, board)
     let vertical = row_gap(game, board)
@@ -155,6 +185,11 @@ fn draw_board(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resource
             fill = theme.success(light_mode)
         let bucket_box = components.rect(x - horizontal / 2 + 2, bucket_y, horizontal - 4, 34)
         rocket_raylib.draw_rounded_rectangle(frame, bucket_box.x, bucket_box.y, bucket_box.width, bucket_box.height, 0.18, 6, fill)?
+        let landed = landed_in_bucket(game, stage, bucket)
+        if landed > 0:
+            rocket_raylib.draw_rounded_rectangle_lines(frame, bucket_box.x - 2, bucket_box.y - 2, bucket_box.width + 4, bucket_box.height + 4, 0.18, 6, 3.0, theme.highlight(light_mode))?
+            if not reduced_motion:
+                rocket_raylib.draw_ring_pixels(frame, x, bucket_y + 17, horizontal / 4, horizontal / 2, 0.0, 360.0, 20, rocket_raylib.color(255, 220, 112, 96))?
         components.type_centered(window, frame, resources, string.concat(string.from_int(multipliers[bucket] / 100), "%"), bucket_box, components.type_caption(), rocket_raylib.color(255, 255, 255, 255))?
         bucket = bucket + 1
     if plinko_engine.phase_code(game.phase) == 1:
@@ -183,9 +218,18 @@ fn draw_board(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resource
                 let next_y = top - 16 + next_stage * vertical
                 displayed_x =(ball_x *(8 - progress) + next_x * progress) / 8
                 displayed_y =(ball_y *(8 - progress) + next_y * progress) / 8
+                if not reduced_motion and progress > 1:
+                    let trail_progress = progress - 2
+                    let trail_x =(ball_x *(8 - trail_progress) + next_x * trail_progress) / 8
+                    let trail_y =(ball_y *(8 - trail_progress) + next_y * trail_progress) / 8
+                    rocket_raylib.draw_circle_pixels(frame, trail_x, trail_y, 6, rocket_raylib.color(249, 197, 81, 72))?
+                if not reduced_motion and progress >= 6:
+                    rocket_raylib.draw_ring_pixels(frame, displayed_x, displayed_y, 9, 13, 0.0, 360.0, 18, rocket_raylib.color(118, 220, 255, 138))?
             rocket_raylib.draw_circle_pixels(frame, displayed_x + 3, displayed_y + 4, 9, rocket_raylib.color(2, 6, 23, 110))?
             rocket_raylib.draw_circle_pixels(frame, displayed_x, displayed_y, 8, theme.highlight(light_mode))?
             ball = ball + 1
+    rocket_raylib.end_scissor(frame)?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, board.x, board.y, board.width, board.height, 0.06, 12, 2.0, theme.cyan(light_mode))?
     components.type_text(window, frame, resources, "AUDITED PEG CHAMBER", board.x + 16, board.y + 12, components.type_caption(), rocket_raylib.color(255, 255, 255, 125))?
     return Ok(true)
 
@@ -241,7 +285,7 @@ pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     let value = interior(width, height)
-    game_components.ambient_stage(frame, resources, value.stage, 2, light_mode)?
+    draw_stage_background(frame, resources, value.stage, light_mode)?
     draw_board(window, frame, resources, game, value, stage, light_mode, reduced_motion, now, animation_end)?
     draw_controls(window, frame, resources, game, value, mouse_x, mouse_y, light_mode)?
     let rules = help_rect(width, height)

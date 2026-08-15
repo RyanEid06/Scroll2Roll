@@ -515,6 +515,24 @@ separate decisions.
   reduced-motion states. This is verified local evidence for owner review,
   not owner visual approval; Groups 3-4, website/package refresh, push,
   publication, deployment, release, and signing were not performed.
+- Completed locally: post-art implementation Group 3 for Slots, Plinko, and
+  Mines. Groups 1-2 were verified and preserved first. Eight reviewed assets
+  were promoted byte-identically to `assets/games/group3-v1/`; the manifest
+  records dimensions, accepted/runtime/source hashes, exact atlas slicing,
+  provenance limits, and two geometry/meaning-driven exclusions. Slots uses
+  the exact eight-symbol engine order with strict per-cell clipping and reveals
+  only committed reel results. Plinko keeps every peg, bin, multiplier, and
+  committed engine path procedural. Mines renders only `tile_state` public
+  projections, keeps all closed tiles identical, and never reads a private
+  layout in the view. Central resource ownership, degraded fallbacks, balanced
+  scissors, and zero live handles are test-covered. Focused tests and final
+  sequential Debug/Release validation pass 48/48. Actual native dark/light
+  review covers all three games at 800x600, 1024x768, 1280x720, 1600x900, and
+  the current display's maximum 1920x991 client; deterministic fixtures cover
+  exact 1920x1080. Compact active/settled, focus, disabled, win/cash-out/failure,
+  and dark reduced-motion states were reviewed. This is verified local evidence
+  for owner review, not owner visual approval; Group 4, website/package refresh,
+  push, publication, deployment, release, and signing were not performed.
 
 ## Major decisions
 
@@ -582,16 +600,22 @@ archive is 6,963,264 bytes with SHA-256
 package/relocation and 19-file source/20-file staged-site checks pass. All eleven
 interiors, both themes, every responsive target, and representative active
 states passed local visual review; tracked website captures present that work
-for owner approval. Post-art implementation Groups 1 and 2 are now complete
+for owner approval. Post-art implementation Groups 1-3 are now complete
 locally. Group 1's game views and runtime assets remain unchanged and verified.
 Group 2 adds the seven-file
 `assets/games/group2-v1/` runtime set and resource-backed, committed/reduced-
 motion Blackjack, No-Limit Hold'em, and European Roulette compositions while
 preserving exact rules, private cards, legal controls, and Roulette hit regions.
-Its fallback and production-resource fixtures, native dark/light responsive review, and
-sequential 48/48 Debug/Release gates pass. Group 3 is the next sequential plan
-boundary, but this Group 2 goal does not authorize it; do not start Groups 3-4
-without a new owner direction. Keep
+Its fallback and production-resource fixtures, native dark/light responsive
+review, and sequential 48/48 Debug/Release gates pass. Group 3 adds the
+eight-file `assets/games/group3-v1/` runtime set and resource-backed,
+committed/reduced-motion Slots, Plinko, and Mines compositions while preserving
+reel results/clipping, procedural peg/path geometry, private mine layouts,
+identical closed tiles, exact controls, and shared resource lifetimes. Its
+focused and full 48/48 gates and native dark/light compact-through-maximum
+review pass. Group 4 is the next sequential plan boundary, but this Group 3
+goal does not authorize it; do not start Group 4 without a new owner direction.
+Keep
 using frozen Rocket 2.0 and the pinned raylib integration with custom frame
 control forced off. Preserve the untracked owner files and audit artifacts.
 Do not refresh the website/package before the plan's final Group 4 acceptance,

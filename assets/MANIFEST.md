@@ -151,6 +151,63 @@ and unloads every successful handle exactly once. The adapter-backed resource
 test verifies one font plus twenty production textures and returns all live
 counts to zero.
 
+## Owner-provided Group 3 runtime artwork
+
+These eight files are byte-identical promotions from the visually reviewed
+`owner-art-20260812/accepted/` staging set. The owner directed this local Group
+3 implementation on 2026-08-14. That direction is the use basis for this
+repository work; it is not a claim of final visual approval, publication
+approval, or a third-party/public-domain license. The staging package retains
+the same provenance limits documented above: exact generator, model,
+generation-run, and per-file prompt identifiers are unavailable and are not
+inferred.
+
+| Runtime path | Game / purpose | Dimensions | Reviewed source decision | SHA-256 |
+| --- | --- | --- | --- | --- |
+| `assets/games/group3-v1/slots-arcade-background.png` | Slots midnight arcade framing behind the code-owned five-reel cabinet | 1672x941 | Accepted full-frame source; promoted unchanged | `3585327806689834A0731D119543A8D8DD260F6A4FAFA543E941F1AFFA869802` |
+| `assets/games/group3-v1/slots-cabinet.png` | Slots art-deco cabinet shell around exact code-owned reel cells | 1024x1536 | Accepted alpha conversion; promoted unchanged | `5A9AF713B1D779F07E75C04A68280B9A66A20FFD14F87921D510825264383F24` |
+| `assets/games/group3-v1/slots-symbols-exact.png` | Exact Pebble, Quill, Lantern, Compass, Scroll, Wild, Moon, and Gear symbol atlas | 1536x1024 | Accepted alpha conversion; promoted unchanged | `5B595FB2ED3C6ABD6CD4B55DE86A78340D862A562EC4EE8C24329104527621FA` |
+| `assets/games/group3-v1/plinko-chamber-background.png` | Plinko chamber framing behind the procedural board | 1672x941 | Accepted full-frame source; promoted unchanged | `88B0ABC3F2BEA1EE6983A0D5D408E81CAFE5A7DC31DB0B88965D7389FC4262CD` |
+| `assets/games/group3-v1/plinko-enclosure.png` | Plinko enclosure and glass rails around code-owned pegs, bins, and paths | 1122x1402 | Accepted alpha conversion; promoted unchanged | `C02D115E71CB5B33EB74BA1EC84AA0E50411A9570B57D7389007B7BA920DF73E` |
+| `assets/games/group3-v1/mines-cavern-background.png` | Mines treasure cavern around the private 5-by-5 board projection | 1672x941 | Accepted full-frame source; promoted unchanged | `01E38A658CEB02FCC0761C76C8B4A588F7B5C956FF8EE8FC52F739D3AD2F369D` |
+| `assets/games/group3-v1/mines-mechanical-mine.png` | Mines revealed-failure object shown only after the public API exposes a mine | 1254x1254 | Accepted alpha conversion; promoted unchanged | `95E2C926C8BA8AB77626C859ED93A08F0E79A6B3208A4DF2C7C09234A94F01D2` |
+| `assets/games/group3-v1/mines-tile-state-atlas.png` | Mines identical closed tile, safe crystal recess, and neutral open recess | 1536x1024 | Accepted alpha conversion; promoted unchanged | `EDA3BBBE4B5C8E85D2D7FEB6C60798BA89C35B0B222342C8F41446D92D10F9FD` |
+
+The Slots symbol atlas is sliced as a 4x2 grid of 384x512 source regions in
+the exact engine-symbol order: Pebble, Quill, Lantern, Compass, Scroll, Wild,
+Moon, and Gear. The Mines atlas is partitioned into three 512x1024 horizontal
+regions: closed, safe crystal, and neutral open. Each tile image occupies the
+centered 512x512 square inside its region, so the runtime crops source Y
+256-768 to preserve the square object without stretching it. Both reviewed
+atlases remain intact and the runtime selects source regions only while
+drawing.
+
+Retained alpha-source counterparts in the ignored owner-art staging package:
+
+| Source counterpart | Dimensions | SHA-256 |
+| --- | --- | --- |
+| `slots-cabinet-source.png` | 1024x1536 | `784960216E4A2FB778BEA9AF2B628955925292E6090ED511D741FABF37A3ADAD` |
+| `slots-symbols-exact-source.png` | 1536x1024 | `9A5FFD1B7358F4450779B8D42705AEBB68832C98960D50A8D2FA0B4403FB62B5` |
+| `plinko-enclosure-source.png` | 1122x1402 | `F7C0BF228E3C0FC59D7E7709C8FE4C7EB54F71DE96B37A33E06132F947BCE9D7` |
+| `mines-mechanical-mine-source.png` | 1254x1254 | `FFB0A3D9BB5F25F2E9754C9D8740548D7E2B5729F01D6CB180EE579010EB566C` |
+| `mines-tile-state-atlas-source.png` | 1536x1024 | `CEB6D23CD65C97760245507A901A5D9230085E9C1C296D1C0267E7FD06996F9A` |
+
+Two reviewed Group 3 candidates remain in ignored staging and were not
+promoted. `slots-symbol-atlas.png`
+(`FC690BC14E3FD7794A66079CCE02EC4F0AD7CCECA53D055394F8A177C7B360DA`)
+contains only six unrelated casino symbols rather than the engine's exact
+eight named symbols. `plinko-peg-ball-module.png`
+(`5202E9759EA945B4F2220B54E7F66C8DF05543C7A6075F5F6ED59F60A7104393`)
+is a fixed three-peg hardware cluster that cannot align with the exact
+procedural 8-16-row peg geometry or stored engine paths. Their exclusion keeps
+symbol meaning, peg positions, paths, and bucket geometry source-owned.
+
+`src/app/ui_resources.rocket` is the sole runtime owner. It loads the eight
+Group 3 textures once, exposes explicit readiness flags and procedural
+fallbacks, and unloads each successful handle exactly once. Resource and view
+fixtures verify both art-backed and degraded drawing, nested reel/board
+scissoring, and zero live texture/font handles after close.
+
 ## Legacy test assets
 
 `assets/orbit.ppm` and `assets/about.txt` predate the overhaul and remain test or

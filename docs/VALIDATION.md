@@ -392,6 +392,66 @@ This file records the complete local acceptance pass performed on Windows x64 on
   started. Nothing was pushed, published, deployed, packaged, signed, or
   described as owner-approved.
 
+## Post-art implementation Group 3 - Slots, Plinko, and Mines
+
+- On 2026-08-15, Groups 1-2 were verified before Group 3 changes. Their
+  committed runtime assets still match the manifest hashes, their game-specific
+  views remain unchanged, and fresh baseline Debug and Release validation each
+  completed the native build, `rocketc check`, all 48 tests, and both formatting
+  checks. Group 3 only extends the shared resource owner and its tests.
+- Eight reviewed files were promoted byte-identically from
+  `owner-art-20260812/accepted` to `assets/games/group3-v1/`: the Slots arcade,
+  cabinet, and exact symbol atlas; Plinko chamber and enclosure; and Mines
+  cavern, mechanical mine, and tile-state atlas. `assets/MANIFEST.md` records
+  exact dimensions, accepted/runtime/source hashes, provenance limits, the
+  exact 4x2 Slots engine-symbol order, and the centered square Mines atlas
+  crops. A six-symbol unrelated Slots atlas and fixed three-peg Plinko module
+  remain excluded because they conflict with engine meaning and geometry.
+- Slots retains its source-owned five-reel result and every exported control
+  rectangle. Each 4x2 atlas cell maps directly to Pebble, Quill, Lantern,
+  Compass, Scroll, Wild, Moon, or Gear and is independently scissored. Staged
+  stops reveal only committed grid cells; concealed reels reuse their committed
+  symbol under a veil and never choose a result. Paylines and feature counts
+  read the settled spin projection. Reduced motion removes reel ghost offsets
+  while retaining the same ordered stops and result clarity.
+- Plinko retains procedural 8-16-row pegs, bins, multipliers, and code-owned
+  board geometry. Artwork frames the field without supplying collision points.
+  Every ball and landing pulse uses only its stored engine path and committed
+  bucket. Reduced motion shows discrete committed stages with no trail or
+  interpolation and rendering never selects or changes a path.
+- Mines retains its exact 5x5 board and controls. The view branches only on
+  `mines_api.tile_state`; it does not read `mine_layout`. All public state-zero
+  tiles use the same atlas cell and tint, with interaction focus/hover overlays
+  independent of hidden content. Safe crystal, failure mine, success/failure
+  border, and reduced-motion reveal treatment appear only after public state
+  exposes them.
+- `ui_resources.rocket` remains the sole texture owner. It loads the eight new
+  textures once, exposes explicit readiness flags and procedural fallbacks, and
+  unloads each successful handle exactly once. The resource fixture verifies
+  one font plus 28 production textures and both live counts returning to zero.
+  Arcade/final-game fixtures cover fallback and art-backed ready/active/settled
+  states, both themes, normal/reduced motion, balanced scissoring, exact control
+  bounds, and all five deterministic client dimensions.
+- Focused Slots rules/session/GUI/final-view, Plinko rules/session/GUI/arcade-
+  view, Mines rules/session/GUI/final-view, and resource tests pass. Final
+  sequential Debug and Release `scripts/validate.ps1` passes each completed
+  native generation/build, `rocketc check`, all 48 tests, and both source/test
+  formatting checks.
+- Actual native inspection used isolated ignored settings profiles and Windows
+  Graphics Capture. All three games passed dark/light ready review at 800x600,
+  1024x768, 1280x720, 1600x900, and the current display's maximum 1920x991
+  client (1536x805 captured at 125% scaling). A decorated 1920x1080 request
+  extends outside the capturable work area; exact 1920x1080 remains verified by
+  deterministic rendering tests. Compact native review covered staged/settled
+  Slots, active/settled Plinko, Mines safe/cash-out/failure states, selected
+  focus, and disabled controls. The dark reduced-motion profile confirmed
+  static concealed Slots cells, discrete Plinko ball stages without trails, and
+  immediate Mines reveals without offsets or particles.
+- This group changes no game rule, outcome, private-state boundary, input or
+  hitbox contract, persistence format, frozen Rocket contract, raylib ABI,
+  website, or package. Group 4 was not started. Nothing was pushed, published,
+  deployed, packaged, signed, or described as owner-approved.
+
 ## 0.2.0 expansion baseline
 
 Before expansion implementation, both Debug and Release

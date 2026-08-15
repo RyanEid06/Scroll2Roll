@@ -101,6 +101,33 @@ fn phase_name(code: Int) -> String:
         return "EXPLORING"
     return "GRID SETTLED"
 
+fn draw_stage_background(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    if not resources.group_three.mines_cavern_ready:
+        return game_components.ambient_stage(frame, resources, value, 6, light_mode)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.04, 12, theme.surface(light_mode))?
+    rocket_raylib.begin_scissor(frame, value.x, value.y, value.width, value.height)?
+    game_components.texture_cover(frame, resources.group_three.mines_cavern, value, 224)?
+    var veil = rocket_raylib.color(3, 10, 18, 118)
+    if light_mode:
+        veil = rocket_raylib.color(238, 244, 247, 146)
+    rocket_raylib.draw_rectangle(frame, value.x, value.y, value.width, value.height, veil)?
+    rocket_raylib.end_scissor(frame)?
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.04, 12, 1.0, theme.subtle_border(light_mode))
+
+fn draw_tile_art(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, box: components.Rect, state: Int, offset: Int) -> Result[Bool, String]:
+    rocket_raylib.begin_scissor(frame, box.x, box.y, box.width, box.height)?
+    rocket_raylib.draw_texture_region(frame, resources.group_three.mines_tiles, state * 512, 256, 512, 512, box.x, box.y - offset, box.width, box.height, rocket_raylib.color(255, 255, 255, 255))?
+    rocket_raylib.end_scissor(frame)?
+    return Ok(true)
+
+fn draw_mine_art(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, box: components.Rect, offset: Int) -> Result[Bool, String]:
+    let inset = box.width / 9
+    let art = components.rect(box.x + inset, box.y + inset - offset, box.width - inset * 2, box.height - inset * 2)
+    rocket_raylib.begin_scissor(frame, box.x, box.y, box.width, box.height)?
+    game_components.texture_full(frame, resources.group_three.mines_mine, art, 255)?
+    rocket_raylib.end_scissor(frame)?
+    return Ok(true)
+
 fn draw_gem(frame: rocket_raylib.Frame, box: components.Rect, offset: Int, light_mode: Bool) -> Result[Bool, String]:
     let center_x = box.x + box.width / 2
     let center_y = box.y + box.height / 2 - offset
@@ -135,6 +162,12 @@ fn draw_board(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resource
     let phase = mines_api.phase_code(session)
     let reveal_offset = game_components.motion_offset(now, animation_end, reduced_motion, 12)
     rocket_raylib.draw_rounded_rectangle(frame, board.x - 14, board.y - 14, board.width + 28, board.height + 28, 0.04, 10, rocket_raylib.color(4, 18, 32, 225))?
+    var board_border = theme.cyan(light_mode)
+    if phase == 2 and session.game.hit_mine:
+        board_border = theme.destructive(light_mode)
+    if phase == 2 and not session.game.hit_mine:
+        board_border = theme.success(light_mode)
+    rocket_raylib.draw_rounded_rectangle_lines(frame, board.x - 14, board.y - 14, board.width + 28, board.height + 28, 0.04, 10, 2.0, board_border)?
     var tile = 0
     while tile < mines_rules.tile_count():
         let box = tile_rect(tile, width, height)
@@ -153,17 +186,35 @@ fn draw_board(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resource
             fill = rocket_raylib.color(33, 54, 78, 250)
             border = theme.cyan(light_mode)
         rocket_raylib.draw_rounded_rectangle(frame, box.x, box.y + 4, box.width, box.height, 0.16, 8, rocket_raylib.color(1, 5, 20, 110))?
-        rocket_raylib.draw_rounded_rectangle(frame, box.x, box.y, box.width, box.height, 0.16, 8, fill)?
+        if resources.group_three.mines_tiles_ready:
+            var art_offset = 0
+            if state != 0 and tile == selected_tile:
+                art_offset = reveal_offset
+            draw_tile_art(frame, resources, box, state, art_offset)?
+            if state == 2:
+                if resources.group_three.mines_mine_ready:
+                    draw_mine_art(frame, resources, box, reveal_offset)?
+                else:
+                    draw_mine(frame, box, light_mode)?
+        else:
+            rocket_raylib.draw_rounded_rectangle(frame, box.x, box.y, box.width, box.height, 0.16, 8, fill)?
+            if state == 0:
+                rocket_raylib.draw_ring_pixels(frame, box.x + box.width / 2, box.y + box.height / 2, 4, 7, 0.0, 360.0, 16, rocket_raylib.color(160, 188, 213, 82))?
+            if state == 1:
+                var offset = 0
+                if tile == selected_tile:
+                    offset = reveal_offset
+                draw_gem(frame, box, offset, light_mode)?
+            if state == 2:
+                draw_mine(frame, box, light_mode)?
+        if state == 1 and tile == selected_tile and reveal_offset > 0:
+            rocket_raylib.draw_circle_pixels(frame, box.x + box.width / 4, box.y + box.height * 3 / 4, 3, rocket_raylib.color(100, 231, 255, 124))?
+            rocket_raylib.draw_circle_pixels(frame, box.x + box.width * 3 / 4, box.y + box.height / 3, 2, rocket_raylib.color(255, 255, 255, 142))?
+        if state == 2 and tile == selected_tile and reveal_offset > 0:
+            rocket_raylib.draw_ring_pixels(frame, box.x + box.width / 2, box.y + box.height / 2, box.width / 4, box.width / 2, 0.0, 360.0, 20, rocket_raylib.color(255, 75, 104, 118))?
+        if state == 0 and phase == 1 and components.contains(box, mouse_x, mouse_y):
+            rocket_raylib.draw_rectangle(frame, box.x + 3, box.y + 3, box.width - 6, box.height - 6, rocket_raylib.color(90, 207, 255, 34))?
         rocket_raylib.draw_rounded_rectangle_lines(frame, box.x, box.y, box.width, box.height, 0.16, 8, 2.0, border)?
-        if state == 0:
-            rocket_raylib.draw_ring_pixels(frame, box.x + box.width / 2, box.y + box.height / 2, 4, 7, 0.0, 360.0, 16, rocket_raylib.color(160, 188, 213, 82))?
-        if state == 1:
-            var offset = 0
-            if tile == selected_tile:
-                offset = reveal_offset
-            draw_gem(frame, box, offset, light_mode)?
-        if state == 2:
-            draw_mine(frame, box, light_mode)?
         tile = tile + 1
     components.type_text(window, frame, resources, "COMMITTED 5 x 5 CAVERN", value.stage.x + 16, value.stage.y + 14, components.type_caption(), rocket_raylib.color(255, 255, 255, 140))?
     return Ok(true)
@@ -240,7 +291,7 @@ pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     let value = interior(width, height)
-    game_components.ambient_stage(frame, resources, value.stage, 6, light_mode)?
+    draw_stage_background(frame, resources, value.stage, light_mode)?
     draw_board(window, frame, resources, session, selected_tile, mouse_x, mouse_y, light_mode, reduced_motion, now, animation_end)?
     draw_controls(window, frame, resources, session, value, mouse_x, mouse_y, light_mode)?
     let rules = help_rect(width, height)

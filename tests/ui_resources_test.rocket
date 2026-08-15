@@ -32,15 +32,19 @@ fn run() -> Result[Int, String]:
                 return Ok(10)
             if not production.tables.blackjack_room_ready or not production.tables.blackjack_shoe_ready or not production.tables.casino_chips_ready or not production.tables.holdem_lounge_ready or not production.tables.holdem_props_ready or not production.tables.roulette_room_ready or not production.tables.roulette_wheel_ready:
                 return Ok(11)
-            if rocket_raylib_testing.font_live_count() != 1 or rocket_raylib_testing.texture_live_count() != 20:
+            if not production.group_three.slots_arcade_ready or not production.group_three.slots_cabinet_ready or not production.group_three.slots_symbols_ready or not production.group_three.plinko_chamber_ready or not production.group_three.plinko_enclosure_ready:
                 return Ok(12)
+            if not production.group_three.mines_cavern_ready or not production.group_three.mines_mine_ready or not production.group_three.mines_tiles_ready:
+                return Ok(13)
+            if rocket_raylib_testing.font_live_count() != 1 or rocket_raylib_testing.texture_live_count() != 28:
+                return Ok(14)
             ui_resources.unload(production)?
             if rocket_raylib_testing.font_live_count() != 0 or rocket_raylib_testing.texture_live_count() != 0:
-                return Ok(13)
+                return Ok(15)
             rocket_raylib.close_window(window)?
             return Ok(0)
         case Err(error):
-            return Ok(14)
+            return Ok(16)
 
 fn main() -> Int:
     match run():
