@@ -127,6 +127,19 @@ fn phase_name(code: Int) -> String:
         return "AUTO RUNNING"
     return "BATCH SETTLED"
 
+fn draw_stage_background(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    if not resources.group_four.dice_vault_ready:
+        return game_components.ambient_stage(frame, resources, value, 7, light_mode)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.04, 12, theme.surface(light_mode))?
+    rocket_raylib.begin_scissor(frame, value.x, value.y, value.width, value.height)?
+    game_components.texture_cover(frame, resources.group_four.dice_vault, value, 244)?
+    var veil = rocket_raylib.color(2, 6, 22, 104)
+    if light_mode:
+        veil = rocket_raylib.color(236, 241, 250, 136)
+    rocket_raylib.draw_rectangle(frame, value.x, value.y, value.width, value.height, veil)?
+    rocket_raylib.end_scissor(frame)?
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.04, 12, 1.0, theme.subtle_border(light_mode))
+
 fn draw_probability_band(frame: rocket_raylib.Frame, box: components.Rect, target: Int, under: Bool, light_mode: Bool) -> Result[Bool, String]:
     rocket_raylib.draw_rounded_rectangle(frame, box.x, box.y, box.width, box.height, 0.2, 8, rocket_raylib.color(9, 21, 48, 230))?
     var split = box.x + box.width * target / 10000
@@ -143,13 +156,32 @@ fn draw_probability_band(frame: rocket_raylib.Frame, box: components.Rect, targe
     rocket_raylib.draw_line(frame, split, box.y - 7, split, box.y + box.height + 7, 3.0, theme.highlight(light_mode))?
     return rocket_raylib.draw_rounded_rectangle_lines(frame, box.x, box.y, box.width, box.height, 0.2, 8, 1.0, theme.subtle_border(light_mode))
 
-fn draw_signal_die(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, box: components.Rect, label: String, accent: rocket_raylib.Color, light_mode: Bool) -> Result[Bool, String]:
-    rocket_raylib.draw_rounded_rectangle(frame, box.x + 6, box.y + 8, box.width, box.height, 0.18, 10, rocket_raylib.color(2, 5, 20, 100))?
-    rocket_raylib.draw_rounded_rectangle(frame, box.x, box.y, box.width, box.height, 0.18, 10, theme.elevated(light_mode))?
-    rocket_raylib.draw_rounded_rectangle_lines(frame, box.x, box.y, box.width, box.height, 0.18, 10, 3.0, accent)?
-    rocket_raylib.draw_circle_pixels(frame, box.x + 18, box.y + 18, 5, accent)?
-    rocket_raylib.draw_circle_pixels(frame, box.x + box.width - 18, box.y + box.height - 18, 5, accent)?
-    return components.type_centered(window, frame, resources, label, box, components.type_display(), theme.primary_text(light_mode))
+fn draw_display_frame(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, box: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    if resources.group_four.dice_signal_display_ready:
+        return rocket_raylib.draw_texture_region(frame, resources.group_four.dice_signal_display, 32, 160, 1472, 704, box.x, box.y, box.width, box.height, rocket_raylib.color(255, 255, 255, 255))
+    rocket_raylib.draw_rounded_rectangle(frame, box.x + 6, box.y + 8, box.width, box.height, 0.12, 10, rocket_raylib.color(2, 5, 20, 120))?
+    rocket_raylib.draw_rounded_rectangle(frame, box.x, box.y, box.width, box.height, 0.12, 10, theme.elevated(light_mode))?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, box.x, box.y, box.width, box.height, 0.12, 10, 3.0, theme.highlight(light_mode))?
+    var index = 0
+    while index < 4:
+        let cell_width = box.width * 17 / 100
+        let cell = components.rect(box.x + box.width * 14 / 100 + index * box.width * 19 / 100, box.y + box.height * 25 / 100, cell_width, box.height * 52 / 100)
+        rocket_raylib.draw_rounded_rectangle(frame, cell.x, cell.y, cell.width, cell.height, 0.12, 8, rocket_raylib.color(4, 20, 36, 235))?
+        rocket_raylib.draw_rounded_rectangle_lines(frame, cell.x, cell.y, cell.width, cell.height, 0.12, 8, 2.0, theme.cyan(light_mode))?
+        index = index + 1
+    return Ok(true)
+
+fn draw_committed_digits(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, box: components.Rect, digits: String, streak: Int, light_mode: Bool) -> Result[Bool, String]:
+    var index = 0
+    while index < 4:
+        let cell = components.rect(box.x + box.width * 14 / 100 + index * box.width * 19 / 100, box.y + box.height * 24 / 100, box.width * 17 / 100, box.height * 54 / 100)
+        let digit = string.slice(digits, index, index + 1)
+        if streak > 0:
+            components.type_centered(window, frame, resources, digit, components.rect(cell.x, cell.y - streak, cell.width, cell.height), components.type_display(), rocket_raylib.color(74, 228, 255, 70))?
+            components.type_centered(window, frame, resources, digit, components.rect(cell.x, cell.y + streak, cell.width, cell.height), components.type_display(), rocket_raylib.color(180, 120, 255, 52))?
+        components.type_centered(window, frame, resources, digit, cell, components.type_display(), theme.primary_text(light_mode))?
+        index = index + 1
+    return Ok(true)
 
 fn draw_history(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, session: dice_api.Session, box: components.Rect, light_mode: Bool) -> Result[Bool, String]:
     components.type_text(window, frame, resources, "RECENT EXACT SIGNALS", box.x, box.y, components.type_caption(), theme.secondary_text(light_mode))?
@@ -168,30 +200,40 @@ fn draw_history(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resour
 
 fn draw_chamber(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, session: dice_api.Session, value: game_layout.Interior, light_mode: Bool, reduced_motion: Bool, now: Float, animation_end: Float) -> Result[Bool, String]:
     let game = session.game
-    let stage = game_layout.inset(value.stage, 20)
+    let stage = game_layout.inset(value.stage, 16)
     let offset = game_components.motion_offset(now, animation_end, reduced_motion, 22)
-    var die_size = stage.height / 3
-    if die_size > 200:
-        die_size = 200
-    if die_size < 112:
-        die_size = 112
-    let gap = 20
-    let dice_width = die_size * 2 + gap
-    let dice_y = stage.y + 68 + offset
+    var display_width = stage.width * 70 / 100
+    if display_width > 700:
+        display_width = 700
+    if display_width < 420:
+        display_width = 420
+    var display_height = display_width * 704 / 1472
+    if display_height > stage.height * 54 / 100:
+        display_height = stage.height * 54 / 100
+        display_width = display_height * 1472 / 704
+    let display_y = stage.y + 46 + offset / 4
+    let display = components.rect(stage.x +(stage.width - display_width) / 2, display_y, display_width, display_height)
     let digits = four_digits(game.last_roll)
-    var left = "--"
-    var right = "--"
-    if game.last_roll >= 0:
-        left = string.concat(string.from_int(game.last_roll / 1000), string.from_int(game.last_roll / 100 - game.last_roll / 1000 * 10))
-        right = string.concat(string.from_int(game.last_roll / 10 - game.last_roll / 100 * 10), string.from_int(game.last_roll - game.last_roll / 10 * 10))
-    draw_signal_die(window, frame, resources, components.rect(stage.x +(stage.width - dice_width) / 2, dice_y, die_size, die_size), left, theme.cyan(light_mode), light_mode)?
-    draw_signal_die(window, frame, resources, components.rect(stage.x +(stage.width - dice_width) / 2 + die_size + gap, dice_y, die_size, die_size), right, theme.violet(light_mode), light_mode)?
-    components.type_centered(window, frame, resources, string.concat("RESULT  ", digits), components.rect(stage.x, dice_y - 44, stage.width, 32), components.type_heading(), theme.highlight(light_mode))?
-    let band = components.rect(stage.x + 24, dice_y + die_size + 38, stage.width - 48, 24)
+    draw_display_frame(frame, resources, display, light_mode)?
+    draw_committed_digits(window, frame, resources, display, digits, offset, light_mode)?
+    components.type_centered(window, frame, resources, string.concat("COMMITTED SIGNAL  ", digits), components.rect(stage.x, display_y - 38, stage.width, 30), components.type_heading(), theme.highlight(light_mode))?
+    if game.last_roll >= 0 and collections.length(game.history) > 0:
+        var outcome = "LOSS"
+        var outcome_ink = theme.destructive(light_mode)
+        if game.history[0].won:
+            outcome = "WIN"
+            outcome_ink = theme.success(light_mode)
+        let outcome_box = components.rect(display.x + display.width - 124, display.y + 8, 116, 32)
+        rocket_raylib.draw_rounded_rectangle(frame, outcome_box.x, outcome_box.y, outcome_box.width, outcome_box.height, 0.35, 8, rocket_raylib.color(3, 7, 20, 224))?
+        components.type_centered(window, frame, resources, outcome, outcome_box, components.type_caption(), outcome_ink)?
+        rocket_raylib.draw_rounded_rectangle_lines(frame, outcome_box.x, outcome_box.y, outcome_box.width, outcome_box.height, 0.35, 8, 2.0, outcome_ink)?
+    let band = components.rect(stage.x + 24, display.y + display.height + 22, stage.width - 48, 24)
     draw_probability_band(frame, band, game.target, dice_rules.direction_name(game.direction) == "Under", light_mode)?
     components.type_text(window, frame, resources, "0000", band.x, band.y + 34, components.type_caption(), theme.secondary_text(light_mode))?
     components.type_text(window, frame, resources, "9999", band.x + band.width - 34, band.y + 34, components.type_caption(), theme.secondary_text(light_mode))?
-    components.type_text(window, frame, resources, string.concat(dice_rules.direction_name(game.direction), string.concat("  ", percent_label(game.target))), band.x + band.width / 2 - 48, band.y + 34, components.type_caption(), theme.primary_text(light_mode))?
+    let outcomes = dice_rules.win_outcomes(game.target, game.direction)?
+    let boundary = string.concat(dice_rules.direction_name(game.direction), string.concat("  ", four_digits(game.target)))
+    components.type_centered(window, frame, resources, string.concat(boundary, string.concat("  /  WIN ", percent_label(outcomes))), components.rect(band.x + 48, band.y + 30, band.width - 96, 24), components.type_caption(), theme.primary_text(light_mode))?
     let history_y = band.y + 76
     if history_y + 130 < stage.y + stage.height:
         draw_history(window, frame, resources, session, components.rect(stage.x + 24, history_y, stage.width - 48, 130), light_mode)?
@@ -261,7 +303,7 @@ pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     let value = interior(width, height)
-    game_components.ambient_stage(frame, resources, value.stage, 7, light_mode)?
+    draw_stage_background(frame, resources, value.stage, light_mode)?
     draw_chamber(window, frame, resources, session, value, light_mode, reduced_motion, now, animation_end)?
     draw_controls(window, frame, resources, session, value, mouse_x, mouse_y, light_mode)?
     let rules = help_rect(width, height)

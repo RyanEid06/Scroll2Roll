@@ -533,6 +533,44 @@ separate decisions.
   and dark reduced-motion states were reviewed. This is verified local evidence
   for owner review, not owner visual approval; Group 4, website/package refresh,
   push, publication, deployment, release, and signing were not performed.
+- Completed locally on 2026-08-20: owner-authorized post-art implementation
+  Group 4 for Dice and HiLo. Groups 1-3 were hash-verified and preserved before
+  promotion.
+  Five reviewed files were promoted byte-identically to
+  `assets/games/group4-v1/`; the ordinary-six-sided-dice pedestal remains in
+  ignored staging because it conflicts with the exact `0000`-`9999` signal
+  model. The manifest records runtime/source hashes, atlas/display sampling,
+  provenance limits, and this exclusion. Central ownership now loads thirty-
+  three production textures and unloads every successful handle once. Dice
+  uses the reviewed vault and blank four-window frame while all visible digits
+  and motion afterimages remain the committed result. HiLo uses the prediction
+  room, backs-only future-card tray, and public-state effects without exposing
+  a future card; equal-rank settlement has a dedicated non-color-only loss
+  banner. Repository check, focused resource ownership, focused final-games
+  view, and focused core-games view tests pass. An isolated actual-native dark
+  1280x720 review covered Dice ready/settled and HiLo ready/active/settled both
+  before and after the final caption/badge polish. Representative final captures
+  show committed Dice signal `8929` with an explicit loss and active HiLo with
+  one public card, a backs-only future tray, public legal/count fields, and the
+  equal-rank-loss banner. The prior Groups 1-3 native acceptance evidence was
+  reused and a static all-eleven ownership/privacy/no-per-frame-load audit was
+  completed. At the owner's explicit direction, no additional all-eleven test
+  run and no further game build were performed; fresh post-Group-4 Debug/Release
+  acceptance is therefore not claimed.
+- The post-native evidence refresh replaces only the tracked Dice and HiLo
+  website captures and preserves the other eleven accepted lobby/Groups 1-3
+  images. The package allowlist now contains all 31 reviewed game textures and
+  17 executable/documentation/shared-resource files. A no-build local review
+  archive made from executable SHA-256
+  `56351380AC66FD98703B6750AD289E2966610E3010A93D1922F9F8BE83B4F9C9`
+  passes exact 48-file hash/allowlist validation and relocated
+  `--headless-smoke`; it is 51,516,832 bytes with SHA-256
+  `00DED10DA4C66879B461FCCF26C9E1CF97F505C7E899F4E7F5EF52716010C3C9`.
+  It is explicitly a local review candidate, not fresh Release evidence. At
+  49.13 MiB it exceeds the static site's 25 MiB per-file ceiling, so the site
+  shows exact integrity metadata with distribution disabled pending owner
+  approval of a suitable host. Nothing was pushed, published, deployed,
+  released, or signed, and no owner visual approval is claimed.
 
 ## Major decisions
 
@@ -580,6 +618,13 @@ separate decisions.
   `assets/MANIFEST.md`, and preserve procedural fallbacks. The owner-art staging
   directory remains ignored source evidence; local integration direction is not
   owner visual approval or release approval.
+- Never overlap Scroll2Roll builds, tests, or validation commands. Before each
+  command, verify that no prior `rocketc.exe`, `clang.exe`, test executable, or
+  `Scroll2Roll.exe` from the task remains. Run gates sequentially, do not
+  automatically retry an interrupted/timed-out command, and monitor task
+  process working sets. If any task process exceeds 4 GiB or grows rapidly,
+  terminate only that command's process tree, verify exit, and report before
+  continuing.
 
 ## Files that must remain out of Git
 
@@ -600,8 +645,8 @@ archive is 6,963,264 bytes with SHA-256
 package/relocation and 19-file source/20-file staged-site checks pass. All eleven
 interiors, both themes, every responsive target, and representative active
 states passed local visual review; tracked website captures present that work
-for owner approval. Post-art implementation Groups 1-3 are now complete
-locally. Group 1's game views and runtime assets remain unchanged and verified.
+for owner approval. Post-art implementation Groups 1-4 are complete locally.
+Group 1's game views and runtime assets remain unchanged and verified.
 Group 2 adds the seven-file
 `assets/games/group2-v1/` runtime set and resource-backed, committed/reduced-
 motion Blackjack, No-Limit Hold'em, and European Roulette compositions while
@@ -613,11 +658,17 @@ committed/reduced-motion Slots, Plinko, and Mines compositions while preserving
 reel results/clipping, procedural peg/path geometry, private mine layouts,
 identical closed tiles, exact controls, and shared resource lifetimes. Its
 focused and full 48/48 gates and native dark/light compact-through-maximum
-review pass. Group 4 is the next sequential plan boundary, but this Group 3
-goal does not authorize it; do not start Group 4 without a new owner direction.
-Keep
-using frozen Rocket 2.0 and the pinned raylib integration with custom frame
-control forced off. Preserve the untracked owner files and audit artifacts.
-Do not refresh the website/package before the plan's final Group 4 acceptance,
-or push, publish, deploy, release, sign, purchase, or claim owner visual
-approval without explicit owner permission.
+review pass. Group 4 adds the five-file `assets/games/group4-v1/` runtime set,
+central ownership, and final committed/reduced-motion Dice/HiLo compositions.
+Focused repository/resource/view checks and representative post-polish native
+capture review pass; exact Dice signals, HiLo future-card privacy, equal-rank
+loss clarity, legal actions, lifetimes, and no per-frame loading are preserved.
+The owner explicitly waived another all-eleven retest and requested no further
+game builds, so do not claim a fresh post-Group-4 Debug/Release pass. The
+48-file 51,516,832-byte local review package and refreshed source website
+evidence are described above; distribution remains disabled because the ZIP
+exceeds the static host's per-file ceiling. Keep using frozen Rocket 2.0 and the
+pinned raylib integration with custom frame control forced off. Preserve the
+untracked owner files and audit artifacts. Do not push, publish, deploy,
+release, sign, purchase, or claim owner visual approval without explicit owner
+permission.

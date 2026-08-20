@@ -15,8 +15,8 @@ $captureHashes = [ordered]@{
     'native-blackjack.png' = 'c320e8f8ed075120061fc6c41907489f7db29b019b6da6e05aaf7f4b3e9e79e3'
     'native-coop-climb.png' = 'f2945df03adf2cfbc90c140b0725d9f18e8e24d379f56fbcc30dd0297445d469'
     'native-crash.png' = '7b7af2c5e00f1cc344fe94d279174b71fb05b0dbafc395e79fb9891b942f6c5c'
-    'native-dice.png' = 'ee52a02765feac1b8618a41aac67b063dd106bff031bec467e838b81b47fd81b'
-    'native-hilo.png' = '5d0d1ccce2271ba9d0031e53141e28d8487ebdf9dd4c1f0fd567aeaebb039701'
+    'native-dice.png' = '3a4c69e39aa8ee067df2104535f83b808da7e81eac92b49daa99904a98d6c1b1'
+    'native-hilo.png' = '4184bbd368656deab074c5cfc0963f2fd1893f7f98d6d1c6cf4d8a18a99d540f'
     'native-holdem.png' = 'd42cc91652275d0a02dc8440e8d4bfcf07fc960771f8989e9c8fa614daf3abdc'
     'native-lobby-dark.png' = 'dc8fc7c2be6cf8206bcd776ae1cd8b19ff752e4b8237432a27db792eb70e27e4'
     'native-lobby-light.png' = '28bbff734df9889f86f800ca1f02cbe977629ef4f6a72ee31fab63402c582169'
@@ -64,11 +64,12 @@ foreach ($required in @('games do not run in the browser', 'Download or launch o
     if ($playHtml -notmatch [regex]::Escape($required)) { throw "Play page is missing required launcher language: $required" }
 }
 
-$expectedBytes = 6963264
-$expectedHash = '83b4e94c24c196782cb04f209193303a6bd602a8a3e7b2b3a8e99548ec02d597'
-foreach ($required in @('Scroll2Roll-0.3.0-windows-x64.zip', '6,963,264 bytes', '6.64 MiB', $expectedHash, 'Windows x64', 'Installation', 'System requirements', 'Unsigned-build disclosure', 'unknown-publisher', 'Troubleshooting', 'SHA256SUMS.txt')) {
+$expectedBytes = 51516832
+$expectedHash = '00ded10da4c66879b461fccf26c9e1cf97f505c7e899f4e7f5ef52716010c3c9'
+foreach ($required in @('Scroll2Roll-0.3.0-windows-x64.zip', '51,516,832 bytes', '49.13 MiB', $expectedHash, 'Distribution pending owner approval', '25 MiB per-file ceiling', 'Windows x64', 'Installation', 'System requirements', 'Unsigned-build disclosure', 'unknown-publisher', 'Troubleshooting', 'SHA256SUMS.txt')) {
     if ($downloadHtml -notmatch [regex]::Escape($required)) { throw "Download page is missing verified package content: $required" }
 }
+if ($downloadHtml -match 'href="downloads/Scroll2Roll-0\.3\.0-windows-x64\.zip"') { throw 'The oversized local review package must not be linked as a Pages asset.' }
 
 foreach ($required in @('localStorage', 'scroll2roll.localProfile.v1', 'MAX_AVATAR_BYTES', '1572864', 'image/png', 'image/jpeg', 'image/webp', 'fileSignatureMatches', 'decodeImage', 'removeItem', 'textContent')) {
     if ($script -notmatch [regex]::Escape($required)) { throw "Profile script is missing a required local-safety control: $required" }
@@ -77,7 +78,7 @@ if ($script -match '\b(fetch|XMLHttpRequest|WebSocket|sendBeacon)\b') { throw 'W
 if ($allHtml -match '(?i)<script[^>]+src=["'']https?://' -or $allHtml -match '(?i)<img[^>]+src=["'']https?://') { throw 'Website must not load external scripts or images.' }
 if ($allHtml -match '(?i)deposit now|withdraw winnings|real-money wagering available|play in your browser|browser-playable casino') { throw 'Website contains a prohibited product claim.' }
 
-foreach ($required in @(':focus-visible', 'prefers-reduced-motion', '@media (max-width:', '--blue:', '--violet:', '--gold:', '--focus:', '.game-capture', '.hero-preview')) {
+foreach ($required in @(':focus-visible', 'prefers-reduced-motion', '@media (max-width:', '--blue:', '--violet:', '--gold:', '--focus:', '.game-capture', '.hero-preview', '.button-disabled')) {
     if ($css -notmatch [regex]::Escape($required)) { throw "Stylesheet is missing an accessibility or design requirement: $required" }
 }
 foreach ($required in @("script-src 'self'", "connect-src 'none'", "object-src 'none'", "frame-ancestors 'none'", "payment=()")) {

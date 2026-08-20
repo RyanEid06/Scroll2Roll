@@ -452,6 +452,59 @@ This file records the complete local acceptance pass performed on Windows x64 on
   website, or package. Group 4 was not started. Nothing was pushed, published,
   deployed, packaged, signed, or described as owner-approved.
 
+## Post-art implementation Group 4 - Dice, HiLo, and final evidence
+
+- On 2026-08-20, Groups 1-3 were verified before Group 4 changes: all 26
+  committed runtime textures matched their manifest and ignored accepted-source
+  hashes, and their game-specific views had no tracked diff. The final static
+  all-eleven audit found texture loading only in `ui_resources.rocket`, reverse
+  one-owner unloading, no per-frame view loads, and no private HiLo deck/draw
+  field access.
+- Five reviewed files were promoted byte-identically to
+  `assets/games/group4-v1/`: the Dice vault and blank signal display, plus the
+  HiLo prediction room, back-only tray, and outcome-effects atlas. The ordinary
+  six-sided Dice pedestal was excluded because it conflicts with the engine's
+  exact `0000`-`9999` signal. `assets/MANIFEST.md` records runtime/source hashes,
+  display/atlas sampling, provenance limits, and the exclusion.
+- Dice owns no outcome in rendering: its four code-drawn digits, probability
+  band, badge, history, and optional afterimages all use the committed signal.
+  HiLo renders only `hilo_api.PublicTable`; future cards remain backs, public
+  legal/count fields drive the actions and direction bands, and equal-rank
+  settlement has an explicit non-color-only loss banner. Reduced motion removes
+  interpolation/afterimage offsets without changing outcomes or timing.
+- Repository `rocketc check`, the focused resource fixture, final-games view
+  fixture, and core-games view fixture passed. The resource fixture verifies one
+  font plus all 33 production textures and both live-handle counts returning to
+  zero. The deterministic HiLo fixture includes an equal-rank loss. A successful
+  post-polish Debug executable was used for final native review.
+- Actual isolated native review at requested 1280x720 covered Dice ready and
+  committed loss signal `8929`, plus HiLo ready, active, and settled states.
+  The representative active HiLo capture shows one public card, a back-only
+  future tray, public lower/equal/higher counts, legal actions, and the
+  equal-rank-loss rule. Only the final Dice and HiLo captures were promoted to
+  the tracked website; the previously accepted Groups 1-3/lobby captures were
+  preserved.
+- During attempted full validation, the portable self-hosted compiler process
+  grew beyond the owner-set 4 GiB ceiling. Only its verified validation process
+  tree was stopped and exit was confirmed; the timed-out/over-limit command was
+  not retried. The owner then explicitly directed that no further game builds
+  and no additional all-eleven retest be run. Consequently, the earlier
+  Groups 1-3 Debug/Release acceptance plus the focused Group 4 evidence above
+  are recorded, but a fresh post-Group-4 full Debug/Release pass is not claimed.
+- Packaging metadata now pins all 31 game textures and the complete 48-file
+  package allowlist. `package-windows.ps1 -UseExistingExecutable` produced a
+  no-build local review candidate from executable SHA-256
+  `56351380ac66fd98703b6750ad289e2966610e3010a93d1922f9f8be83b4f9c9`.
+  The 51,516,832-byte archive has SHA-256
+  `00ded10da4c66879b461fccf26c9e1cf97f505c7e899f4e7f5ef52716010c3c9`;
+  exact hashes/allowlist, recursive checksums, forbidden-content scan, full
+  raylib license, and relocated `--headless-smoke` pass. This is not fresh
+  Release-build evidence.
+- The refreshed source website pins the new Dice/HiLo captures and exact local
+  package metadata. The 49.13 MiB archive exceeds the static host's 25 MiB
+  per-file ceiling, so no staged download, browser re-acceptance, publication,
+  deployment, release, signing, or owner visual approval is claimed.
+
 ## 0.2.0 expansion baseline
 
 Before expansion implementation, both Debug and Release

@@ -126,6 +126,8 @@ h3 { margin-bottom: 8px; line-height: 1.2; }
 .button-quiet { color: var(--muted-light); border-color: var(--border); background: transparent; }
 .button-full { width: 100%; }
 .button-full + .button-full { margin-top: 10px; }
+.button-disabled { cursor: not-allowed; filter: saturate(.55); opacity: .72; }
+.button-disabled:hover { transform: none; }
 .text-button { padding: 3px 0; border: 0; color: var(--gold-soft); background: transparent; cursor: pointer; font-weight: 750; }
 .danger-text { color: #fca5a5; }
 .reset-profile { display: block; margin: 15px auto 0; color: var(--muted); font-size: .78rem; }

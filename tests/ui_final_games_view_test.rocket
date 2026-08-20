@@ -156,6 +156,8 @@ fn draw_resource_crash_and_slots(window: rocket_raylib.Window) -> Result[Bool, S
         return Err("Slots resource-backed view fixture could not load promoted art")
     if not resources.group_three.mines_cavern_ready or not resources.group_three.mines_mine_ready or not resources.group_three.mines_tiles_ready:
         return Err("Mines resource-backed view fixture could not load promoted art")
+    if not resources.group_four.dice_vault_ready or not resources.group_four.dice_signal_display_ready:
+        return Err("Dice resource-backed view fixture could not load promoted art")
     var crash_seed = 20260963
     var crash_ready = crash_api.new_session(1000, crash_seed)?
     var crash_active = crash_api.with_start(crash_ready)?
@@ -176,6 +178,10 @@ fn draw_resource_crash_and_slots(window: rocket_raylib.Window) -> Result[Bool, S
     let mines_revealed = mines_api.with_reveal(mines_active, safe_tile)?
     let mines_settled = mines_api.with_cash_out(mines_revealed)?
     let mines_failed = mines_api.with_reveal(mines_active, failed_tile)?
+    let dice_ready = dice_api.new_session(1000, 20260862)?
+    let dice_configured = dice_api.with_auto(dice_ready, 6, 0, 0)?
+    let dice_active = dice_api.with_start_auto(dice_configured)?
+    let dice_settled = dice_api.with_stop_auto(dice_active)?
     let frame = rocket_raylib.begin_frame(window)?
     rocket_raylib.clear(frame, rocket_raylib.black())?
     crash_view.draw(window, frame, resources, crash_api.public_table(crash_ready), false, false, false, 0.0, -100, -100)?
@@ -188,8 +194,11 @@ fn draw_resource_crash_and_slots(window: rocket_raylib.Window) -> Result[Bool, S
     mines_view.draw(window, frame, resources, mines_revealed, safe_tile, false, true, false, 0.3, 0.7, -100, -100)?
     mines_view.draw(window, frame, resources, mines_settled, safe_tile, false, false, true, 1.0, 0.0, -100, -100)?
     mines_view.draw(window, frame, resources, mines_failed, failed_tile, false, false, false, 0.3, 0.7, -100, -100)?
+    dice_view.draw(window, frame, resources, dice_ready, false, false, false, 0.0, 0.0, -100, -100)?
+    dice_view.draw(window, frame, resources, dice_active, false, true, false, 0.3, 0.7, -100, -100)?
+    dice_view.draw(window, frame, resources, dice_settled, false, false, true, 1.0, 0.0, -100, -100)?
     if rocket_raylib_testing.scissor_active():
-        return Err("Crash, Slots, or Mines resource-backed view left a scissor active")
+        return Err("Crash, Slots, Mines, or Dice resource-backed view left a scissor active")
     rocket_raylib.end_frame(frame)?
     return ui_resources.unload(resources)
 

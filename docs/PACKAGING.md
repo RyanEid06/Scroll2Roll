@@ -8,15 +8,28 @@ From the repository root, use the frozen Rocket checkout explicitly:
 .\scripts\test-package.ps1
 ```
 
-The packaging script performs a Release native build and creates ignored
-`out/package/Scroll2Roll-0.3.0-windows-x64.zip`. The accepted local UI-overhaul
-archive built on 2026-08-11 is exactly 6,963,264 bytes (6.64 MiB) with SHA-256:
+The default packaging path performs a Release native build and creates ignored
+`out/package/Scroll2Roll-0.3.0-windows-x64.zip`. For the owner-directed 2026-08-20
+no-build handoff only, the already-built post-Group-4 executable was packaged
+explicitly with:
 
-```text
-83b4e94c24c196782cb04f209193303a6bd602a8a3e7b2b3a8e99548ec02d597
+```powershell
+.\scripts\package-windows.ps1 -RocketRoot "<frozen-rocket>" -UseExistingExecutable
+.\scripts\test-package.ps1
 ```
 
-The package has an exact 17-file allowlist:
+That local review archive is exactly 51,516,832 bytes (49.13 MiB) with SHA-256:
+
+```text
+00ded10da4c66879b461fccf26c9e1cf97f505c7e899f4e7f5ef52716010c3c9
+```
+
+It reuses executable SHA-256
+`56351380ac66fd98703b6750ad289e2966610e3010a93d1922f9f8be83b4f9c9`.
+`-UseExistingExecutable` emits a warning and is not fresh Release-build or
+Debug/Release-suite evidence.
+
+The current package has an exact 48-file allowlist:
 
 - `Scroll2Roll.exe`, `README.md`, `NOTICE.md`, `THIRD_PARTY_NOTICES.md`,
   `VERSION.txt`, `CONTROLS.md`, and `TROUBLESHOOTING.md`;
@@ -24,6 +37,8 @@ The package has an exact 17-file allowlist:
 - `SHA256SUMS.txt`, which recursively covers every other packaged file;
 - `assets/MANIFEST.md` and `assets/ui/IMAGEGEN_PROMPTS.md`;
 - both reviewed ImageGen cover atlases;
+- all 31 reviewed runtime textures from `assets/games/group1-v1/` through
+  `assets/games/group4-v1/`;
 - Manrope variable and static Medium fonts, `OFL.txt`, and `METADATA.pb`.
 
 The package script verifies the reviewed asset hashes before staging. The test
@@ -35,12 +50,18 @@ development artifacts. It then runs `Scroll2Roll.exe --headless-smoke` with the
 relocated package as the working directory, outside the source layout. All of
 those gates pass for the archive above.
 
-The application resolves its fonts and atlases relative to the package root.
+The application resolves its fonts and all UI/game textures relative to the package root.
 Moving only `Scroll2Roll.exe` intentionally activates its explicit degraded
 resource fallback and is not a valid installation. Extract and keep the complete
 archive together.
 
+The post-art archive is larger than Cloudflare Pages' 25 MiB single-file
+ceiling. It is intentionally not staged under `website/downloads/`; publishing
+requires a separately owner-approved distribution location. The tracked site
+shows its exact local integrity metadata but does not expose a broken download.
+
 Builds, staging folders, archives, hashes, relocation trees, executables, PDBs,
 maps, objects, caches, dependencies, and user saves remain out of Git. This is a
 local acceptance artifact: no upload, public release, trusted signature, or
-deployment is performed or claimed.
+deployment is performed or claimed. Owner visual approval and a fresh Release
+validation pass are also not claimed.

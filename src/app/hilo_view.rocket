@@ -88,6 +88,41 @@ fn multiplier_label(basis_points: Int) -> String:
         fraction = string.concat("0", fraction)
     return string.concat(string.from_int(whole), string.concat(".", string.concat(fraction, "x")))
 
+fn draw_stage_background(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, value: components.Rect, light_mode: Bool) -> Result[Bool, String]:
+    if not resources.group_four.hilo_room_ready:
+        return game_components.ambient_stage(frame, resources, value, 8, light_mode)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.04, 12, theme.surface(light_mode))?
+    rocket_raylib.begin_scissor(frame, value.x, value.y, value.width, value.height)?
+    game_components.texture_cover(frame, resources.group_four.hilo_room, value, 246)?
+    var veil = rocket_raylib.color(3, 4, 18, 118)
+    if light_mode:
+        veil = rocket_raylib.color(239, 240, 250, 146)
+    rocket_raylib.draw_rectangle(frame, value.x, value.y, value.width, value.height, veil)?
+    rocket_raylib.end_scissor(frame)?
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.04, 12, 1.0, theme.subtle_border(light_mode))
+
+fn draw_effect_cell(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, cell: Int, value: components.Rect, alpha: Int) -> Result[Bool, String]:
+    if not resources.group_four.hilo_effects_ready:
+        return Ok(true)
+    return rocket_raylib.draw_texture_region(frame, resources.group_four.hilo_effects, cell * 307, 256, 307, 512, value.x, value.y, value.width, value.height, rocket_raylib.color(255, 255, 255, alpha))
+
+fn draw_direction_effects(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: hilo_api.PublicTable, stage: components.Rect) -> Result[Bool, String]:
+    if table.phase != 1:
+        return Ok(true)
+    var size = stage.height * 42 / 100
+    if size > 250:
+        size = 250
+    if size < 126:
+        size = 126
+    var lower_alpha = 112
+    var higher_alpha = 112
+    if not table.can_lower:
+        lower_alpha = 38
+    if not table.can_higher:
+        higher_alpha = 38
+    draw_effect_cell(frame, resources, 0, components.rect(stage.x + stage.width * 22 / 100 - size / 2, stage.y + stage.height / 2 - size / 2, size, size), lower_alpha)?
+    return draw_effect_cell(frame, resources, 1, components.rect(stage.x + stage.width * 55 / 100 - size / 2, stage.y + stage.height / 2 - size / 2, size, size), higher_alpha)
+
 fn draw_deck(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, stage: components.Rect, light_mode: Bool) -> Result[Bool, String]:
     var width = stage.width / 9
     if width < 58:
@@ -97,12 +132,52 @@ fn draw_deck(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources
     let height = width * 7 / 5
     let x = stage.x + stage.width / 8 - width / 2
     let y = stage.y + stage.height / 2 - height / 2 - 8
-    var index = 3
-    while index >= 0:
-        game_components.playing_card(window, frame, resources, components.rect(x + index * 4, y - index * 4, width, height), "A", 0, true, false, light_mode)?
-        index = index - 1
-    components.type_centered(window, frame, resources, "PRIVATE DECK", components.rect(x - 22, y + height + 14, width + 52, 24), components.type_caption(), theme.secondary_text(light_mode))?
+    if resources.group_four.hilo_card_tray_ready:
+        let tray_width = width * 2
+        let tray = components.rect(x + width / 2 - tray_width / 2, y + height / 2 - tray_width / 2, tray_width, tray_width)
+        game_components.texture_full(frame, resources.group_four.hilo_card_tray, tray, 250)?
+    else:
+        var index = 3
+        while index >= 0:
+            game_components.playing_card(window, frame, resources, components.rect(x + index * 4, y - index * 4, width, height), "A", 0, true, false, light_mode)?
+            index = index - 1
+    components.type_centered(window, frame, resources, "FUTURE CARDS PRIVATE", components.rect(x - 58, y + height + 18, width + 124, 24), components.type_caption(), theme.secondary_text(light_mode))?
     return Ok(true)
+
+fn draw_outcome_effect(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: hilo_api.PublicTable, stage: components.Rect, pulse: Int, light_mode: Bool) -> Result[Bool, String]:
+    var cell = -1
+    var label = ""
+    var ink = theme.highlight(light_mode)
+    if table.phase == 1 and table.correct_predictions > 0:
+        cell = 3
+        label = string.concat("CORRECT  x", string.from_int(table.correct_predictions))
+        ink = theme.highlight(light_mode)
+    if table.phase == 2:
+        if table.last_tie:
+            cell = 0
+            label = "EQUAL RANK  /  LOSS"
+            ink = theme.destructive(light_mode)
+        else:
+            if table.payout > 0:
+                cell = 4
+                label = string.concat("CASH OUT  /  RETURN ", string.from_int(table.payout))
+                ink = theme.success(light_mode)
+            else:
+                cell = 2
+                label = "PREDICTION MISSED  /  LOSS"
+                ink = theme.destructive(light_mode)
+    if cell < 0:
+        return Ok(true)
+    var size = stage.height * 38 / 100 + pulse
+    if size > 240:
+        size = 240
+    let center_x = stage.x + stage.width * 46 / 100
+    let center_y = stage.y + stage.height / 2
+    draw_effect_cell(frame, resources, cell, components.rect(center_x - size / 2, center_y - size / 2, size, size), 176)?
+    let label_box = components.rect(center_x - 126, stage.y + 54, 252, 34)
+    rocket_raylib.draw_rounded_rectangle(frame, label_box.x, label_box.y, label_box.width, label_box.height, 0.4, 10, rocket_raylib.color(3, 7, 20, 218))?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, label_box.x, label_box.y, label_box.width, label_box.height, 0.4, 10, 2.0, ink)?
+    return components.type_centered(window, frame, resources, label, label_box, components.type_caption(), ink)
 
 fn draw_current(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: hilo_api.PublicTable, stage: components.Rect, offset: Int, light_mode: Bool) -> Result[Bool, String]:
     var width = stage.width / 7
@@ -234,9 +309,11 @@ pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     let value = interior(width, height)
-    game_components.ambient_stage(frame, resources, value.stage, 8, light_mode)?
+    draw_stage_background(frame, resources, value.stage, light_mode)?
     let offset = game_components.motion_offset(now, animation_end, reduced_motion, 34)
+    draw_direction_effects(frame, resources, table, value.stage)?
     draw_deck(window, frame, resources, value.stage, light_mode)?
+    draw_outcome_effect(window, frame, resources, table, value.stage, offset, light_mode)?
     draw_current(window, frame, resources, table, value.stage, offset, light_mode)?
     draw_odds(window, frame, resources, table, value.stage, light_mode)?
     draw_sequence(window, frame, resources, table, value.stage, light_mode)?

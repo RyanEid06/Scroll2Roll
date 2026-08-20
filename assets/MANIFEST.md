@@ -208,6 +208,60 @@ fallbacks, and unloads each successful handle exactly once. Resource and view
 fixtures verify both art-backed and degraded drawing, nested reel/board
 scissoring, and zero live texture/font handles after close.
 
+## Owner-provided Group 4 runtime artwork
+
+These five files are byte-identical promotions from the visually reviewed
+`owner-art-20260812/accepted/` staging set. The owner directed this local Group
+4 implementation on 2026-08-20. That direction is the use basis for this
+repository work; it is not a claim of final visual approval, publication
+approval, or a third-party/public-domain license. The staging package retains
+the same provenance limits documented above: exact generator, model,
+generation-run, and per-file prompt identifiers are unavailable and are not
+inferred.
+
+| Runtime path | Game / purpose | Dimensions | Reviewed source decision | SHA-256 |
+| --- | --- | --- | --- | --- |
+| `assets/games/group4-v1/dice-vault-background.png` | Dice signal-vault environment behind exact code-owned results and probability geometry | 1672x941 | Accepted full-frame source; promoted unchanged | `D50BC2BABBD1D90789E6876110DFEA4818EC1A8944D0FDCD408BC77DD1CCC3F8` |
+| `assets/games/group4-v1/dice-signal-display.png` | Blank four-window hardware frame for exact code-owned `0000`-`9999` digits | 1536x1024 | Accepted alpha conversion; promoted unchanged | `9530712FC8B61FB8A144D6AF8D9EAD23A9E3AF20C21CA250C3EB1F84E57D6FF2` |
+| `assets/games/group4-v1/hilo-prediction-room.png` | HiLo prediction-room framing behind the public current card and private future deck | 1672x941 | Accepted full-frame source; promoted unchanged | `52155E8BDB90468884A7AB41BCCFECABDF69F9119E199D4DDCBBFC44FEAF5EF9` |
+| `assets/games/group4-v1/hilo-card-tray.png` | HiLo physical tray whose visible cards remain backs-only | 1254x1254 | Accepted alpha conversion; promoted unchanged | `299556A9590FBE180869B5E535771B7DEE92B5095D73BC50537F6DB53B73FA8C` |
+| `assets/games/group4-v1/hilo-effects-atlas.png` | Lower, Higher, neutral, correct, and cash-out public-state effects | 1536x1024 | Accepted alpha conversion; promoted unchanged | `40B51A210378B265F0D73E91921091EEE8BD45C853EB3915CB7B71C9D6D36399` |
+
+The Dice display retains its original transparent canvas. Runtime composition
+samples source X 32-1504 and Y 160-864 so the frame fits responsive stage
+geometry without changing the reviewed file; four exact digits are then drawn
+by code into the blank windows. The HiLo effects atlas contains five horizontal
+conceptual cells. Runtime samples the first five 307-pixel columns and centered
+source Y 256-768, leaving the atlas intact and its final transparent pixel
+unused. Cells are, in order: coral Lower, cyan Higher, neutral, gold correct,
+and green cash-out.
+
+Retained alpha-source counterparts in the ignored owner-art staging package:
+
+| Source counterpart | Dimensions | SHA-256 |
+| --- | --- | --- |
+| `dice-signal-display-source.png` | 1536x1024 | `F6798C9D737B72EF7862983A17BE2E9072F2CDD5208784CF7403F837D5CD9C2A` |
+| `hilo-card-tray-source.png` | 1254x1254 | `D9A67264E93AB1520090C9592FF741E1861D215354DF9260E5F34AEC698C0C9D` |
+| `hilo-effects-atlas-source.png` | 1536x1024 | `BE15E904AA199384AE28B5E5086C6C822297AE351CDA3EA61EF1438A54FFD36E` |
+
+One reviewed Group 4 candidate remains in ignored staging and was not
+promoted. `dice-pedestal.png`
+(`A137AB2836ED9E51EBD63C0B85A23A99319ECD8B8540DA365F9E240A00B9B3F4`)
+shows ordinary six-sided dice, which would misrepresent the engine's exact
+integer signal space. Its retained chroma-source counterpart is
+`dice-pedestal-source.png`
+(`2BEFE59916BB0A0F8E1D9EA356CC2836C12CB5A8F8949AA8BA3BA5324AAA29CC`).
+Exclusion keeps the `0000`-`9999` result, boundary, probability, and payout
+meaning code-owned and unambiguous.
+
+`src/app/ui_resources.rocket` is the sole runtime owner. It loads the five
+Group 4 textures once alongside Groups 1-3, exposes explicit readiness flags
+and polished procedural fallbacks, and unloads each successful handle exactly
+once. Resource and view fixtures exercise art-backed and degraded Dice/HiLo
+states, both motion modes, the equal-rank settlement, balanced scissoring, and
+zero live texture/font handles after close. The production adapter total is
+one font and thirty-three textures.
+
 ## Legacy test assets
 
 `assets/orbit.ppm` and `assets/about.txt` predate the overhaul and remain test or

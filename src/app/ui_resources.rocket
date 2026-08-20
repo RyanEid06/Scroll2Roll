@@ -34,6 +34,18 @@ pub struct GroupThreeResources:
     mines_tiles: rocket_raylib.Texture
     mines_tiles_ready: Bool
 
+pub struct GroupFourResources:
+    dice_vault: rocket_raylib.Texture
+    dice_vault_ready: Bool
+    dice_signal_display: rocket_raylib.Texture
+    dice_signal_display_ready: Bool
+    hilo_room: rocket_raylib.Texture
+    hilo_room_ready: Bool
+    hilo_card_tray: rocket_raylib.Texture
+    hilo_card_tray_ready: Bool
+    hilo_effects: rocket_raylib.Texture
+    hilo_effects_ready: Bool
+
 pub struct UiResources:
     font: rocket_raylib.Font
     font_ready: Bool
@@ -65,6 +77,7 @@ pub struct UiResources:
     coop_platform_ready: Bool
     tables: TableResources
     group_three: GroupThreeResources
+    group_four: GroupFourResources
     message: String
 
 fn empty_tables() -> TableResources:
@@ -75,9 +88,13 @@ fn empty_group_three() -> GroupThreeResources:
     let missing = rocket_raylib.Texture(0, 0, 0)
     return GroupThreeResources(missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false)
 
+fn empty_group_four() -> GroupFourResources:
+    let missing = rocket_raylib.Texture(0, 0, 0)
+    return GroupFourResources(missing, false, missing, false, missing, false, missing, false, missing, false)
+
 pub fn empty() -> UiResources:
     let missing = rocket_raylib.Texture(0, 0, 0)
-    return UiResources(rocket_raylib.Font(0), false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, empty_tables(), empty_group_three(), "Procedural visual fallback active")
+    return UiResources(rocket_raylib.Font(0), false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, empty_tables(), empty_group_three(), empty_group_four(), "Procedural visual fallback active")
 
 pub fn load_from_paths(window: rocket_raylib.Window, font_path: String, atlas_a_path: String, atlas_b_path: String) -> UiResources:
     var font = rocket_raylib.Font(0)
@@ -108,7 +125,7 @@ pub fn load_from_paths(window: rocket_raylib.Window, font_path: String, atlas_a_
     if font_ready and atlas_a_ready and atlas_b_ready:
         message = "Original artwork and bundled typography loaded"
     let missing = rocket_raylib.Texture(0, 0, 0)
-    return UiResources(font, font_ready, atlas_a, atlas_a_ready, atlas_b, atlas_b_ready, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, empty_tables(), empty_group_three(), message)
+    return UiResources(font, font_ready, atlas_a, atlas_a_ready, atlas_b, atlas_b_ready, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, empty_tables(), empty_group_three(), empty_group_four(), message)
 
 fn try_texture(window: rocket_raylib.Window, path: String) -> rocket_raylib.Texture:
     match rocket_raylib.load_texture(window, path):
@@ -151,6 +168,12 @@ pub fn load(window: rocket_raylib.Window) -> UiResources:
     let mines_mine = try_texture(window, "assets/games/group3-v1/mines-mechanical-mine.png")
     let mines_tiles = try_texture(window, "assets/games/group3-v1/mines-tile-state-atlas.png")
     let group_three = GroupThreeResources(slots_arcade, texture_ready(slots_arcade), slots_cabinet, texture_ready(slots_cabinet), slots_symbols, texture_ready(slots_symbols), plinko_chamber, texture_ready(plinko_chamber), plinko_enclosure, texture_ready(plinko_enclosure), mines_cavern, texture_ready(mines_cavern), mines_mine, texture_ready(mines_mine), mines_tiles, texture_ready(mines_tiles))
+    let dice_vault = try_texture(window, "assets/games/group4-v1/dice-vault-background.png")
+    let dice_signal_display = try_texture(window, "assets/games/group4-v1/dice-signal-display.png")
+    let hilo_room = try_texture(window, "assets/games/group4-v1/hilo-prediction-room.png")
+    let hilo_card_tray = try_texture(window, "assets/games/group4-v1/hilo-card-tray.png")
+    let hilo_effects = try_texture(window, "assets/games/group4-v1/hilo-effects-atlas.png")
+    let group_four = GroupFourResources(dice_vault, texture_ready(dice_vault), dice_signal_display, texture_ready(dice_signal_display), hilo_room, texture_ready(hilo_room), hilo_card_tray, texture_ready(hilo_card_tray), hilo_effects, texture_ready(hilo_effects))
     var message = shared.message
     if texture_ready(midnight_city) and texture_ready(midnight_car_coral) and texture_ready(midnight_car_cyan) and texture_ready(midnight_tram) and texture_ready(midnight_raft) and texture_ready(chicken_explorer) and texture_ready(crash_flight) and texture_ready(crash_rocket) and texture_ready(crash_burst) and texture_ready(coop_observatory) and texture_ready(coop_platform):
         message = "Group 1 artwork and shared resources loaded"
@@ -158,13 +181,45 @@ pub fn load(window: rocket_raylib.Window) -> UiResources:
         message = "Group 1 and Group 2 artwork with shared resources loaded"
     if group_three.slots_arcade_ready and group_three.slots_cabinet_ready and group_three.slots_symbols_ready and group_three.plinko_chamber_ready and group_three.plinko_enclosure_ready and group_three.mines_cavern_ready and group_three.mines_mine_ready and group_three.mines_tiles_ready:
         message = "Groups 1-3 artwork with shared resources loaded"
-    return UiResources(shared.font, shared.font_ready, shared.atlas_a, shared.atlas_a_ready, shared.atlas_b, shared.atlas_b_ready, midnight_city, texture_ready(midnight_city), midnight_car_coral, texture_ready(midnight_car_coral), midnight_car_cyan, texture_ready(midnight_car_cyan), midnight_tram, texture_ready(midnight_tram), midnight_raft, texture_ready(midnight_raft), chicken_explorer, texture_ready(chicken_explorer), crash_flight, texture_ready(crash_flight), crash_rocket, texture_ready(crash_rocket), crash_burst, texture_ready(crash_burst), coop_observatory, texture_ready(coop_observatory), coop_platform, texture_ready(coop_platform), tables, group_three, message)
+    if group_four.dice_vault_ready and group_four.dice_signal_display_ready and group_four.hilo_room_ready and group_four.hilo_card_tray_ready and group_four.hilo_effects_ready:
+        message = "Groups 1-4 artwork with shared resources loaded"
+    return UiResources(shared.font, shared.font_ready, shared.atlas_a, shared.atlas_a_ready, shared.atlas_b, shared.atlas_b_ready, midnight_city, texture_ready(midnight_city), midnight_car_coral, texture_ready(midnight_car_coral), midnight_car_cyan, texture_ready(midnight_car_cyan), midnight_tram, texture_ready(midnight_tram), midnight_raft, texture_ready(midnight_raft), chicken_explorer, texture_ready(chicken_explorer), crash_flight, texture_ready(crash_flight), crash_rocket, texture_ready(crash_rocket), crash_burst, texture_ready(crash_burst), coop_observatory, texture_ready(coop_observatory), coop_platform, texture_ready(coop_platform), tables, group_three, group_four, message)
 
 pub fn ready(value: UiResources) -> Bool:
     return value.font_ready and value.atlas_a_ready and value.atlas_b_ready
 
 pub fn unload(value: UiResources) -> Result[Bool, String]:
     var clean = true
+    if value.group_four.hilo_effects_ready:
+        match rocket_raylib.unload_texture(value.group_four.hilo_effects):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.group_four.hilo_card_tray_ready:
+        match rocket_raylib.unload_texture(value.group_four.hilo_card_tray):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.group_four.hilo_room_ready:
+        match rocket_raylib.unload_texture(value.group_four.hilo_room):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.group_four.dice_signal_display_ready:
+        match rocket_raylib.unload_texture(value.group_four.dice_signal_display):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.group_four.dice_vault_ready:
+        match rocket_raylib.unload_texture(value.group_four.dice_vault):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
     if value.group_three.mines_tiles_ready:
         match rocket_raylib.unload_texture(value.group_three.mines_tiles):
             case Ok(unloaded):

@@ -71,19 +71,25 @@ building.
 ## Packaging
 
 The current workflow produces and verifies the asset-bearing
-`out/package/Scroll2Roll-0.3.0-windows-x64.zip`. The accepted local archive is
-6,963,264 bytes (6.64 MiB) with SHA-256
-`83b4e94c24c196782cb04f209193303a6bd602a8a3e7b2b3a8e99548ec02d597`;
-exact contents and acceptance metadata are in `PACKAGING.md`.
+`out/package/Scroll2Roll-0.3.0-windows-x64.zip`. The 2026-08-20 post-art local
+review candidate is 51,516,832 bytes (49.13 MiB) with SHA-256
+`00ded10da4c66879b461fccf26c9e1cf97f505c7e899f4e7f5ef52716010c3c9`;
+exact contents, its no-build provenance, and acceptance limits are in
+`PACKAGING.md`.
 
 ```powershell
 .\scripts\package-windows.ps1 -RocketRoot $rocketRoot
 .\scripts\test-package.ps1
-.\scripts\prepare-cloudflare-site.ps1
-.\scripts\test-website.ps1 -Site .\out\cloudflare-site
+.\scripts\test-website.ps1
 ```
 
-If a local preview process has the default staged archive open, prepare and
+The post-art ZIP exceeds Cloudflare Pages' 25 MiB per-file ceiling, so it cannot
+be staged by `prepare-cloudflare-site.ps1`. A staged-site command is appropriate
+only after the owner approves a suitable distribution host or the artifact fits
+the host limit. Do not treat `-UseExistingExecutable` as fresh Release evidence;
+it exists only for an explicitly directed no-build review package.
+
+If a future eligible archive is held open by a local preview, prepare and
 validate a fresh ignored sibling without interrupting that process:
 
 ```powershell

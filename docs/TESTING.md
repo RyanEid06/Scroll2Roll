@@ -156,6 +156,13 @@ state after clipped reel motion, and requires substantial draw activity. The
 four scripted GUI flows now use exported responsive rectangles for every
 changed pointer path. The current suite passes 48/48 in Debug and Release.
 
+That 48/48 statement is the accepted pre-post-art/full-overhaul baseline.
+Post-art Groups 1-3 each completed fresh Debug/Release passes. Group 4 completed
+repository check plus focused resource/final-view/core-view fixtures and native
+Dice/HiLo review. On 2026-08-20 the owner explicitly requested no further game
+builds and no repeated all-eleven suite, so no fresh post-Group-4 full pass is
+claimed.
+
 Functional drawing tests are necessary but not visual acceptance. Each visual
 milestone launches the actual native executable and records dark/light captures
 at 800x600, 1024x768, 1280x720, 1600x900, 1920x1080, and maximized. Review must
@@ -163,18 +170,20 @@ check recognizable game grammar, stage dominance, action order, typography,
 contrast, focus/disabled states, help/history usability, clipping, overlap,
 negative geometry, reachability, and any lingering flat debug composition.
 
-Final package validation checks an exact 17-file allowlist, recursive internal
+Final package validation checks an exact 48-file allowlist, recursive internal
 checksums, reviewed font/art/manifest hashes, the complete pinned raylib
 license, forbidden source/build/development content, safe checksum paths,
 archive sidecar integrity, and a relocated `--headless-smoke` run with the
-relocation directory as the process working directory. The accepted archive is
-6,963,264 bytes with SHA-256
-`83b4e94c24c196782cb04f209193303a6bd602a8a3e7b2b3a8e99548ec02d597`.
+relocation directory as the process working directory. The post-art local
+review archive is 51,516,832 bytes with SHA-256
+`00ded10da4c66879b461fccf26c9e1cf97f505c7e899f4e7f5ef52716010c3c9`.
+It was intentionally created from the existing executable without a new build,
+so it is not fresh Release evidence.
 
-Final website validation checks all 13 verified native-capture hashes, their
+Final source-website validation checks all 13 verified native-capture hashes, their
 references, the eleven equal cards, local profile safety, CSP, reduced motion,
-semantic palette hooks, prohibited claims, and the exact staged archive. The
-source tree passes with 19 files and the fresh staged tree with 20. Browser QA
-covers 1280x720 and 390x844 profile/catalog/download flows, exact metadata,
-desktop two-column and phone one-column geometry, invalid-name focus feedback,
-image loading, zero horizontal overflow, and zero console warnings/errors.
+semantic palette hooks, prohibited claims, and exact package metadata. When a
+staged archive exists, its bytes and hash are also checked. The current 49.13
+MiB archive exceeds the static host's 25 MiB per-file ceiling, so no new staged
+tree or browser re-acceptance is claimed. The prior 19/20-file and desktop/mobile
+browser QA remains historical baseline evidence.

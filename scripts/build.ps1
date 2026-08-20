@@ -21,6 +21,12 @@ if (-not (Test-Path -LiteralPath $activation)) { throw "Rocket activation script
 if (-not (Test-Path -LiteralPath $Rocketc)) { throw "Rocket compiler not found: $Rocketc" }
 
 . $activation
+$rocketClang = Join-Path $RocketRoot 'dependencies\installed\llvm-22.1.6\bin\clang.exe'
+$rocketRuntime = Join-Path $RocketRoot 'out\build\windows-release\rocket_runtime.lib'
+if (-not (Test-Path -LiteralPath $rocketClang)) { throw "Pinned Rocket Clang not found: $rocketClang" }
+if (-not (Test-Path -LiteralPath $rocketRuntime)) { throw "Rocket runtime not found: $rocketRuntime" }
+$env:ROCKET_CLANG = $rocketClang
+$env:ROCKET_RUNTIME = $rocketRuntime
 $buildRoot = Join-Path $repository ("out\build\windows-" + $Configuration.ToLowerInvariant())
 cmake -S $repository -B $buildRoot -G Ninja "-DCMAKE_BUILD_TYPE=$Configuration" "-DROCKET_ROOT=$RocketRoot" "-DROCKETC=$Rocketc"
 if ($LASTEXITCODE -ne 0) { throw 'CMake configuration failed.' }

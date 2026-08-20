@@ -80,6 +80,22 @@ fn settle_blackjack(source: blackjack_model.Game) -> Result[blackjack_model.Game
         return Err("Blackjack view fixture did not settle")
     return Ok(game)
 
+fn tied_hilo() -> Result[hilo_api.Session, String]:
+    var seed = 1
+    while seed < 5000:
+        let ready = hilo_api.new_session(1000, seed)?
+        let active = hilo_api.with_start(ready)?
+        let current = hilo_cards.rank_value(active.game.current_card)
+        let next = hilo_cards.rank_value(active.game.deck[active.game.draw_index])
+        if current == next:
+            let table = hilo_api.public_table(active)?
+            var code = 1
+            if table.can_lower:
+                code = 0
+            return hilo_api.with_prediction_code(active, code)
+        seed = seed + 1
+    return Err("HiLo view fixture could not find an equal-rank settlement")
+
 fn draw_states(window: rocket_raylib.Window, resources: ui_resources.UiResources, light_mode: Bool) -> Result[Bool, String]:
     var blackjack_ready = blackjack_engine.new_game("Player", 1000, 3, 20260841)?
     blackjack_ready = blackjack_engine.set_bet(blackjack_ready, 0, 10)?
@@ -105,6 +121,7 @@ fn draw_states(window: rocket_raylib.Window, resources: ui_resources.UiResources
     if next < current:
         wrong_code = 1
     let hilo_settled = hilo_api.with_prediction_code(hilo_active, wrong_code)?
+    let hilo_tied = tied_hilo()?
 
     let frame = rocket_raylib.begin_frame(window)?
     rocket_raylib.clear(frame, rocket_raylib.black())?
@@ -125,6 +142,7 @@ fn draw_states(window: rocket_raylib.Window, resources: ui_resources.UiResources
     hilo_view.draw(window, frame, resources, hilo_api.public_table(hilo_ready)?, false, light_mode, false, 0.0, 0.0, -100, -100)?
     hilo_view.draw(window, frame, resources, hilo_api.public_table(hilo_active)?, false, light_mode, false, 0.0, 0.3, -100, -100)?
     hilo_view.draw(window, frame, resources, hilo_api.public_table(hilo_settled)?, light_mode, light_mode, true, 1.0, 0.0, -100, -100)?
+    hilo_view.draw(window, frame, resources, hilo_api.public_table(hilo_tied)?, false, light_mode, false, 0.2, 0.6, -100, -100)?
     if rocket_raylib_testing.scissor_active() or rocket_raylib_testing.draw_count() < 500:
         return Ok(false)
     rocket_raylib.end_frame(frame)?
@@ -147,14 +165,16 @@ fn run() -> Result[Int, String]:
         index = index + 1
     let production_window = rocket_raylib.open_window(1280, 720, "Core game production resources")?
     let production = ui_resources.load(production_window)
-    if not draw_states(production_window, production, false)? or not draw_states(production_window, production, true)?:
+    if not production.group_four.hilo_room_ready or not production.group_four.hilo_card_tray_ready or not production.group_four.hilo_effects_ready:
         return Ok(20)
+    if not draw_states(production_window, production, false)? or not draw_states(production_window, production, true)?:
+        return Ok(21)
     ui_resources.unload(production)?
     rocket_raylib.close_window(production_window)?
     if rocket_raylib_testing.buffer_live_count() != 0:
-        return Ok(21)
-    if rocket_raylib_testing.font_live_count() != 0 or rocket_raylib_testing.texture_live_count() != 0:
         return Ok(22)
+    if rocket_raylib_testing.font_live_count() != 0 or rocket_raylib_testing.texture_live_count() != 0:
+        return Ok(23)
     return Ok(0)
 
 fn main() -> Int:
