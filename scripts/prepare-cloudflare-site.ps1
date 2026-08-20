@@ -6,7 +6,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repository = Split-Path $PSScriptRoot -Parent
-if (-not $Archive) { $Archive = Join-Path $repository 'out\package\Scroll2Roll-0.3.0-windows-x64.zip' }
+if (-not $Archive) { $Archive = Join-Path $repository 'out\package\Scroll2Roll-0.3.1-windows-x64.zip' }
 $Archive = [System.IO.Path]::GetFullPath($Archive)
 if (-not (Test-Path -LiteralPath $Archive)) { throw "Release archive not found: $Archive" }
 $maxPagesAsset = 25MB
@@ -43,12 +43,12 @@ foreach ($sourceFile in Get-ChildItem -LiteralPath $websiteRoot -File -Recurse) 
 }
 $downloads = Join-Path $output 'downloads'
 New-Item -ItemType Directory -Force -Path $downloads | Out-Null
-$stagedArchive = Join-Path $downloads 'Scroll2Roll-0.3.0-windows-x64.zip'
+$stagedArchive = Join-Path $downloads 'Scroll2Roll-0.3.1-windows-x64.zip'
 $archiveHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $Archive).Hash
 if (-not (Test-Path -LiteralPath $stagedArchive) -or (Get-FileHash -Algorithm SHA256 -LiteralPath $stagedArchive).Hash -ne $archiveHash) {
     Copy-Item -LiteralPath $Archive -Destination $stagedArchive -Force
 }
-[void]$expectedFiles.Add('downloads\Scroll2Roll-0.3.0-windows-x64.zip')
+[void]$expectedFiles.Add('downloads\Scroll2Roll-0.3.1-windows-x64.zip')
 
 foreach ($stagedFile in Get-ChildItem -LiteralPath $output -File -Recurse) {
     if (-not $stagedFile.FullName.StartsWith($output + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {

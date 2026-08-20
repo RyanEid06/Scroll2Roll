@@ -495,8 +495,8 @@ This file records the complete local acceptance pass performed on Windows x64 on
   package allowlist. `package-windows.ps1 -UseExistingExecutable` produced a
   no-build local review candidate from executable SHA-256
   `56351380ac66fd98703b6750ad289e2966610e3010a93d1922f9f8be83b4f9c9`.
-  The 51,516,832-byte archive has SHA-256
-  `00ded10da4c66879b461fccf26c9e1cf97f505c7e899f4e7f5ef52716010c3c9`;
+  The 51,516,900-byte 0.3.1 Casino Freeze archive has SHA-256
+  `e27cc112aa7a50dde1acea8d369aeb594ab88552f7668625df7c37008f1d0115`;
   exact hashes/allowlist, recursive checksums, forbidden-content scan, full
   raylib license, and relocated `--headless-smoke` pass. This is not fresh
   Release-build evidence.
@@ -504,6 +504,24 @@ This file records the complete local acceptance pass performed on Windows x64 on
   package metadata. The 49.13 MiB archive exceeds the static host's 25 MiB
   per-file ceiling, so no staged download, browser re-acceptance, publication,
   deployment, release, signing, or owner visual approval is claimed.
+
+## 0.3.1 Casino Freeze
+
+- On 2026-08-21, the completed Groups 1-4 source state was frozen as
+  Scroll2Roll 0.3.1 “Casino Freeze.” Release metadata, package paths, website
+  integrity data, and owner-facing documentation were refreshed without a
+  native rebuild.
+- `package-windows.ps1 -UseExistingExecutable` produced
+  `out/package/Scroll2Roll-0.3.1-windows-x64.zip`; the 48-file archive is
+  51,516,900 bytes (49.13 MiB), SHA-256
+  `e27cc112aa7a50dde1acea8d369aeb594ab88552f7668625df7c37008f1d0115`.
+  `test-package.ps1` passed its exact allowlist/checksum/asset/relocated-smoke
+  checks. This remains a no-build local freeze candidate, not new full
+  Debug/Release evidence.
+- Source website validation was refreshed against the exact 0.3.1 archive
+  metadata. The archive still exceeds the 25 MiB static-host per-file ceiling;
+  no site deployment, public release, signing, or owner visual approval is
+  claimed.
 
 ## 0.2.0 expansion baseline
 

@@ -2,7 +2,7 @@
 
 ## The application does not start
 
-Scroll2Roll version 0.3.0 targets Windows x64. Extract the complete ZIP to a writable local folder, then run `Scroll2Roll.exe`. Do not run the executable from inside the ZIP.
+Scroll2Roll version 0.3.1 “Casino Freeze” targets Windows x64. Extract the complete ZIP to a writable local folder, then run `Scroll2Roll.exe`. Do not run the executable from inside the ZIP.
 
 If Windows displays an unknown-publisher warning, that is expected for this local unsigned build. Scroll2Roll does not claim trusted code signing. Verify the files against `SHA256SUMS.txt` before running.
 

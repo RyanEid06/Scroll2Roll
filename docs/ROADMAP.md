@@ -49,3 +49,6 @@ Completion evidence lives in `PROJECT_CONTEXT.md` and `VALIDATION.md`.
   Slots in reviewable groups with the same functional and visual gates.
 - [x] Align the website, build and relocation-test the real asset-bearing
   package, and complete final functional, visual, Git, and frozen-Rocket audits.
+- [x] Freeze Scroll2Roll 0.3.1 “Casino Freeze”: complete the Groups 1-4 source,
+  documentation, package, and publishing audit without claiming a new full
+  Debug/Release acceptance pass or public release.

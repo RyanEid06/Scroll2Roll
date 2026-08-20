@@ -64,12 +64,12 @@ foreach ($required in @('games do not run in the browser', 'Download or launch o
     if ($playHtml -notmatch [regex]::Escape($required)) { throw "Play page is missing required launcher language: $required" }
 }
 
-$expectedBytes = 51516832
-$expectedHash = '00ded10da4c66879b461fccf26c9e1cf97f505c7e899f4e7f5ef52716010c3c9'
-foreach ($required in @('Scroll2Roll-0.3.0-windows-x64.zip', '51,516,832 bytes', '49.13 MiB', $expectedHash, 'Distribution pending owner approval', '25 MiB per-file ceiling', 'Windows x64', 'Installation', 'System requirements', 'Unsigned-build disclosure', 'unknown-publisher', 'Troubleshooting', 'SHA256SUMS.txt')) {
+$expectedBytes = 51516900
+$expectedHash = 'e27cc112aa7a50dde1acea8d369aeb594ab88552f7668625df7c37008f1d0115'
+foreach ($required in @('Scroll2Roll-0.3.1-windows-x64.zip', '51,516,900 bytes', '49.13 MiB', $expectedHash, 'Distribution pending owner approval', '25 MiB per-file ceiling', 'Windows x64', 'Installation', 'System requirements', 'Unsigned-build disclosure', 'unknown-publisher', 'Troubleshooting', 'SHA256SUMS.txt')) {
     if ($downloadHtml -notmatch [regex]::Escape($required)) { throw "Download page is missing verified package content: $required" }
 }
-if ($downloadHtml -match 'href="downloads/Scroll2Roll-0\.3\.0-windows-x64\.zip"') { throw 'The oversized local review package must not be linked as a Pages asset.' }
+if ($downloadHtml -match 'href="downloads/Scroll2Roll-0\.3\.1-windows-x64\.zip"') { throw 'The oversized local review package must not be linked as a Pages asset.' }
 
 foreach ($required in @('localStorage', 'scroll2roll.localProfile.v1', 'MAX_AVATAR_BYTES', '1572864', 'image/png', 'image/jpeg', 'image/webp', 'fileSignatureMatches', 'decodeImage', 'removeItem', 'textContent')) {
     if ($script -notmatch [regex]::Escape($required)) { throw "Profile script is missing a required local-safety control: $required" }
@@ -85,7 +85,7 @@ foreach ($required in @("script-src 'self'", "connect-src 'none'", "object-src '
     if ($headers -notmatch [regex]::Escape($required)) { throw "Security headers are missing required policy: $required" }
 }
 
-$archive = Join-Path $Site 'downloads\Scroll2Roll-0.3.0-windows-x64.zip'
+$archive = Join-Path $Site 'downloads\Scroll2Roll-0.3.1-windows-x64.zip'
 if (Test-Path -LiteralPath $archive) {
     $archiveItem = Get-Item -LiteralPath $archive
     if ($archiveItem.Length -ne $expectedBytes) { throw "Staged archive size changed: $($archiveItem.Length) bytes." }

@@ -175,8 +175,8 @@ checksums, reviewed font/art/manifest hashes, the complete pinned raylib
 license, forbidden source/build/development content, safe checksum paths,
 archive sidecar integrity, and a relocated `--headless-smoke` run with the
 relocation directory as the process working directory. The post-art local
-review archive is 51,516,832 bytes with SHA-256
-`00ded10da4c66879b461fccf26c9e1cf97f505c7e899f4e7f5ef52716010c3c9`.
+review archive is 51,516,900 bytes with SHA-256
+`e27cc112aa7a50dde1acea8d369aeb594ab88552f7668625df7c37008f1d0115`.
 It was intentionally created from the existing executable without a new build,
 so it is not fresh Release evidence.
 

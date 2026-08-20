@@ -1,5 +1,6 @@
-Scroll2Roll 0.3.0
+Scroll2Roll 0.3.1
+Casino Freeze
 Windows x64
 Rocket 2.0
 raylib 6.0
-Local unsigned development release candidate
+Local unsigned freeze candidate

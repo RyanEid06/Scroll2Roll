@@ -1,6 +1,6 @@
 # Windows Packaging
 
-Scroll2Roll 0.3.0 is packaged as a portable, local, unsigned Windows x64 ZIP.
+Scroll2Roll 0.3.1 “Casino Freeze” is packaged as a portable, local, unsigned Windows x64 ZIP.
 From the repository root, use the frozen Rocket checkout explicitly:
 
 ```powershell
@@ -9,7 +9,7 @@ From the repository root, use the frozen Rocket checkout explicitly:
 ```
 
 The default packaging path performs a Release native build and creates ignored
-`out/package/Scroll2Roll-0.3.0-windows-x64.zip`. For the owner-directed 2026-08-20
+`out/package/Scroll2Roll-0.3.1-windows-x64.zip`. For the owner-directed 2026-08-21
 no-build handoff only, the already-built post-Group-4 executable was packaged
 explicitly with:
 
@@ -18,10 +18,10 @@ explicitly with:
 .\scripts\test-package.ps1
 ```
 
-That local review archive is exactly 51,516,832 bytes (49.13 MiB) with SHA-256:
+That local review archive is exactly 51,516,900 bytes (49.13 MiB) with SHA-256:
 
 ```text
-00ded10da4c66879b461fccf26c9e1cf97f505c7e899f4e7f5ef52716010c3c9
+e27cc112aa7a50dde1acea8d369aeb594ab88552f7668625df7c37008f1d0115
 ```
 
 It reuses executable SHA-256

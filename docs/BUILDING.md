@@ -71,9 +71,9 @@ building.
 ## Packaging
 
 The current workflow produces and verifies the asset-bearing
-`out/package/Scroll2Roll-0.3.0-windows-x64.zip`. The 2026-08-20 post-art local
-review candidate is 51,516,832 bytes (49.13 MiB) with SHA-256
-`00ded10da4c66879b461fccf26c9e1cf97f505c7e899f4e7f5ef52716010c3c9`;
+`out/package/Scroll2Roll-0.3.1-windows-x64.zip`. The 2026-08-21 post-art local
+review candidate is 51,516,900 bytes (49.13 MiB) with SHA-256
+`e27cc112aa7a50dde1acea8d369aeb594ab88552f7668625df7c37008f1d0115`;
 exact contents, its no-build provenance, and acceptance limits are in
 `PACKAGING.md`.
 

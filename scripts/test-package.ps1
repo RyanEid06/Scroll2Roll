@@ -3,7 +3,7 @@ param([string]$Archive = '')
 
 $ErrorActionPreference = 'Stop'
 $repository = Split-Path $PSScriptRoot -Parent
-if (-not $Archive) { $Archive = Join-Path $repository 'out\package\Scroll2Roll-0.3.0-windows-x64.zip' }
+if (-not $Archive) { $Archive = Join-Path $repository 'out\package\Scroll2Roll-0.3.1-windows-x64.zip' }
 $Archive = [System.IO.Path]::GetFullPath($Archive)
 if (-not (Test-Path -LiteralPath $Archive)) { throw "Package archive not found: $Archive" }
 

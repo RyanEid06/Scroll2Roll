@@ -12,8 +12,8 @@ Read this file and `MASTER_PLAN.md` completely at the start of every Scroll2Roll
 - Graphics/input/audio: Rocket's reviewed raylib 6.0 integration
 - Target: Windows x64
 - IDE: Visual Studio Community 2026 with Rocket Language 2.0.3
-- Last fully accepted local package version: 0.3.0; no public release is claimed
-- Current implementation version: 0.3.0
+- Last fully accepted full Debug/Release package baseline: 0.3.0; no public release is claimed
+- Current repository freeze: 0.3.1 “Casino Freeze” (local unsigned no-build candidate; no fresh post-Group-4 full suite)
 
 ## Product vision and completed scope
 
@@ -564,8 +564,8 @@ separate decisions.
   archive made from executable SHA-256
   `56351380AC66FD98703B6750AD289E2966610E3010A93D1922F9F8BE83B4F9C9`
   passes exact 48-file hash/allowlist validation and relocated
-  `--headless-smoke`; it is 51,516,832 bytes with SHA-256
-  `00DED10DA4C66879B461FCCF26C9E1CF97F505C7E899F4E7F5EF52716010C3C9`.
+  `--headless-smoke`; the 0.3.1 Casino Freeze archive is 51,516,900 bytes with
+  SHA-256 `E27CC112AA7A50DDE1ACEA8D369AEB594AB88552F7668625DF7C37008F1D0115`.
   It is explicitly a local review candidate, not fresh Release evidence. At
   49.13 MiB it exceeds the static site's 25 MiB per-file ceiling, so the site
   shows exact integrity metadata with distribution disabled pending owner
@@ -665,7 +665,7 @@ capture review pass; exact Dice signals, HiLo future-card privacy, equal-rank
 loss clarity, legal actions, lifetimes, and no per-frame loading are preserved.
 The owner explicitly waived another all-eleven retest and requested no further
 game builds, so do not claim a fresh post-Group-4 Debug/Release pass. The
-48-file 51,516,832-byte local review package and refreshed source website
+48-file 51,516,900-byte 0.3.1 Casino Freeze local review package and refreshed source website
 evidence are described above; distribution remains disabled because the ZIP
 exceeds the static host's per-file ceiling. Keep using frozen Rocket 2.0 and the
 pinned raylib integration with custom frame control forced off. Preserve the
