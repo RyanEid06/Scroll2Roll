@@ -310,6 +310,22 @@ fn change_bet(state: State, delta: Int) -> State:
         case Err(error):
             return with_error(state, error)
 
+fn select_bet(state: State, requested: Int) -> State:
+    let player = state.game.players[0]
+    let available = player.balance + player.pending_bet
+    var amount = requested
+    if amount < state.game.rules.minimum_bet:
+        amount = state.game.rules.minimum_bet
+    if amount > state.game.rules.maximum_bet:
+        amount = state.game.rules.maximum_bet
+    if amount > available:
+        amount = available / state.game.rules.bet_unit * state.game.rules.bet_unit
+    match blackjack_engine.set_bet(state.game, 0, amount):
+        case Ok(game):
+            return rebuild(state, state.screen, game, amount, state.settings, "Bet selected", "", state.exit_prompt, state.running, state.next_step, state.saved_round)
+        case Err(error):
+            return with_error(state, error)
+
 fn deal(state: State, now: Float) -> State:
     match blackjack_engine.place_ai_bets(state.game):
         case Ok(with_ai_bets):
@@ -468,6 +484,15 @@ fn update_game(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_
             return change_bet(state, 10 - 20)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_right()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_up()) or clicked and components.contains(blackjack_view.bet_plus_rect(width, height), mouse_x, mouse_y):
             return change_bet(state, 10)
+        if rocket_raylib.is_key_pressed(window, rocket_raylib.key_m()) or clicked and width >= 960 and components.contains(blackjack_view.auto_bet_rect(width, height), mouse_x, mouse_y):
+            return save_settings(state, persistence.with_auto_bet(state.settings, not state.settings.auto_bet))
+        if clicked:
+            let chips = [10, 25, 50, 100, 250, 500]
+            var chip_index = 0
+            while chip_index < 6:
+                if components.contains(blackjack_view.quick_bet_rect(chip_index, width, height), mouse_x, mouse_y):
+                    return select_bet(state, chips[chip_index])
+                chip_index = chip_index + 1
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_enter()) or clicked and components.contains(blackjack_view.deal_rect(width, height), mouse_x, mouse_y):
             return deal(state, now)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()):
@@ -486,7 +511,7 @@ fn update_game(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_
         if clicked:
             var code = 0
             while code < 5:
-                if components.contains(blackjack_view.action_rect(code, width, height), mouse_x, mouse_y):
+                if components.contains(blackjack_view.game_action_rect(state.game, code, width, height), mouse_x, mouse_y):
                     return apply_action_code(state, code, now)
                 code = code + 1
     if phase == 1 and not blackjack_engine.active_player_is_human(state.game) and now >= state.next_step:
@@ -505,7 +530,12 @@ fn update_game(state: State, window: rocket_raylib.Window, clicked: Bool, mouse_
         var settled_state = state
         if state.saved_round != state.game.round_number:
             let settings = persistence.with_balance(state.settings, state.game.players[0].balance)
-            settled_state = save_settings(rebuild(state, state.screen, state.game, state.selected_bet, settings, "Round progress saved", "", state.exit_prompt, state.running, state.next_step, state.game.round_number), settings)
+            settled_state = save_settings(rebuild(state, state.screen, state.game, state.selected_bet, settings, "Round progress saved", "", state.exit_prompt, state.running, now + 2.0, state.game.round_number), settings)
+        if settled_state.settings.auto_bet and now >= settled_state.next_step:
+            let advanced = next_round(settled_state)
+            if advanced.error != "":
+                return advanced
+            return deal(advanced, now)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_n()) or clicked and components.contains(blackjack_view.next_rect(width, height), mouse_x, mouse_y):
             return next_round(settled_state)
         if rocket_raylib.is_key_pressed(window, rocket_raylib.key_r()) or clicked and components.contains(blackjack_view.restart_rect(width, height), mouse_x, mouse_y):
@@ -1833,16 +1863,26 @@ fn update(state: State, window: rocket_raylib.Window) -> State:
             return rebuild(state, 1, state.game, state.selected_bet, state.settings, "Choose a game", "", false, true, state.next_step, state.saved_round)
         return state
     let width = rocket_raylib.window_width(window)
-    let shell_back = not shell_view.is_lobby_screen(state.screen) and(clicked and components.contains(shell_view.back_rect(width), mouse_x, mouse_y) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()))
+    let height = rocket_raylib.window_height(window)
+    var shell_back_target = shell_view.back_rect(width)
+    var shell_theme_target = shell_view.theme_rect(width)
+    var shell_help_target = shell_view.help_rect(width)
+    var shell_settings_target = shell_view.settings_rect(width)
+    if state.screen == 2 and blackjack_view.uses_reference_layout(width, height):
+        shell_back_target = blackjack_view.reference_back_rect(width, height)
+        shell_theme_target = blackjack_view.reference_theme_rect(width, height)
+        shell_help_target = blackjack_view.reference_help_rect(width, height)
+        shell_settings_target = blackjack_view.reference_settings_rect(width, height)
+    let shell_back = not shell_view.is_lobby_screen(state.screen) and(clicked and components.contains(shell_back_target, mouse_x, mouse_y) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_escape()) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_b()))
     if shell_back:
         return request_back(state)
-    if clicked and components.contains(shell_view.theme_rect(width), mouse_x, mouse_y) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_t()):
+    if clicked and components.contains(shell_theme_target, mouse_x, mouse_y) or rocket_raylib.is_key_pressed(window, rocket_raylib.key_t()):
         return settings_theme(state)
-    if clicked and components.contains(shell_view.help_rect(width), mouse_x, mouse_y):
+    if clicked and components.contains(shell_help_target, mouse_x, mouse_y):
         if shell_view.is_help_screen(state.screen):
             return state
         return rebuild(state, shell_view.help_screen(state.screen), state.game, state.selected_bet, state.settings, "Guide opened", "", false, true, state.next_step, state.saved_round)
-    if clicked and components.contains(shell_view.settings_rect(width), mouse_x, mouse_y):
+    if clicked and components.contains(shell_settings_target, mouse_x, mouse_y):
         return request_settings(state)
     if shell_view.is_help_screen(state.screen):
         return state
@@ -1882,7 +1922,7 @@ fn draw(window: rocket_raylib.Window, state: State, resources: ui_resources.UiRe
     if shell_view.is_lobby_screen(state.screen):
         shell_view.draw_lobby(window, frame, resources, shell_view.lobby_focus(state.screen), state.notice, state.settings.light_mode, mouse_x, mouse_y)?
     if state.screen == 2:
-        blackjack_view.draw(window, frame, resources, state.game, state.selected_bet, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.next_step, mouse_x, mouse_y)?
+        blackjack_view.draw(window, frame, resources, state.game, state.selected_bet, state.settings.auto_bet, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.next_step, mouse_x, mouse_y)?
     if state.screen == 3:
         shell_view.draw_settings(window, frame, resources, state.settings, state.settings.light_mode, mouse_x, mouse_y)?
     if state.screen == 4:
@@ -1914,7 +1954,7 @@ fn draw(window: rocket_raylib.Window, state: State, resources: ui_resources.UiRe
         slots_view.draw(window, frame, resources, state.slots, state.slots_help, state.slots_reel_stage, state.settings.light_mode, state.settings.reduced_motion, rocket_raylib.elapsed_time(window), state.slots_animation_end, mouse_x, mouse_y)?
     if shell_view.is_help_screen(state.screen):
         shell_view.draw_help(window, frame, resources, shell_view.help_source(state.screen), state.settings.light_mode)?
-    if state.screen != 0:
+    if state.screen != 0 and not(state.screen == 2 and blackjack_view.uses_reference_layout(rocket_raylib.window_width(window), rocket_raylib.window_height(window))):
         shell_view.draw_shell(window, frame, resources, shell_view.screen_title(state.screen), visible_balance(state), not shell_view.is_lobby_screen(state.screen), state.settings.light_mode, mouse_x, mouse_y)?
     if state.error != "":
         components.modern_modal(window, frame, resources, "Something needs attention", state.error, false, state.settings.light_mode, mouse_x, mouse_y)?
@@ -1934,6 +1974,125 @@ pub fn draw_for_test(window: rocket_raylib.Window, state: State) -> Result[Bool,
 
 pub fn draw_with_resources_for_test(window: rocket_raylib.Window, state: State, resources: ui_resources.UiResources) -> Result[Bool, String]:
     return draw(window, state, resources)
+
+fn blackjack_audit_started(seed: Int) -> Result[blackjack_model.Game, String]:
+    var game = blackjack_engine.new_game("Player", 1000, 2, seed)?
+    game = blackjack_engine.set_bet(game, 0, 10)?
+    game = blackjack_engine.place_ai_bets(game)?
+    return blackjack_engine.start_round(game)
+
+fn blackjack_audit_has_action(game: blackjack_model.Game, code: Int) -> Bool:
+    let actions = blackjack_engine.available_actions(game)
+    var index = 0
+    while index < collections.length(actions):
+        if blackjack_engine.action_code(actions[index]) == code:
+            return true
+        index = index + 1
+    return false
+
+fn blackjack_audit_player(split_required: Bool) -> Result[blackjack_model.Game, String]:
+    var seed = 1
+    while seed < 5000:
+        let active = blackjack_audit_started(seed)?
+        if blackjack_engine.phase_code(active.phase) == 1 and blackjack_engine.active_player_is_human(active):
+            if not split_required:
+                return Ok(active)
+            match blackjack_engine.apply_action(active, blackjack_model.Split()):
+                case Ok(split):
+                    if blackjack_audit_has_action(split, 0):
+                        let hit = blackjack_engine.apply_action(split, blackjack_model.Hit())?
+                        if blackjack_engine.phase_code(hit.phase) == 1 and blackjack_engine.active_player_is_human(hit) and hit.players[0].active_hand == 0 and collections.length(hit.players[0].hands) == 2 and collections.length(hit.players[0].hands[0].cards) >= 3:
+                            return Ok(hit)
+                case Err(error):
+                    let expected = error
+        seed = seed + 1
+    return Err("A deterministic Blackjack visual-audit fixture could not be created")
+
+fn blackjack_audit_dealer(settled_required: Bool) -> Result[blackjack_model.Game, String]:
+    var seed = 1
+    while seed < 5000:
+        var game = blackjack_audit_started(seed)?
+        var guard = 0
+        while blackjack_engine.phase_code(game.phase) == 1 and blackjack_engine.active_player_is_human(game) and collections.length(game.players[0].hands[0].cards) < 4 and blackjack_audit_has_action(game, 0) and guard < 4:
+            game = blackjack_engine.apply_action(game, blackjack_model.Hit())?
+            guard = guard + 1
+        if blackjack_engine.phase_code(game.phase) == 1 and blackjack_engine.active_player_is_human(game):
+            game = blackjack_engine.apply_action(game, blackjack_model.Stand())?
+        while blackjack_engine.phase_code(game.phase) == 1 and guard < 64:
+            if blackjack_engine.active_player_is_human(game):
+                game = blackjack_engine.apply_action(game, blackjack_model.Stand())?
+            else:
+                game = blackjack_engine.ai_step(game)?
+            guard = guard + 1
+        if blackjack_engine.phase_code(game.phase) == 2 and collections.length(game.players[0].hands[0].cards) >= 4:
+            if not settled_required:
+                let drawing = blackjack_engine.dealer_step(game)?
+                if blackjack_engine.phase_code(drawing.phase) == 2 and collections.length(drawing.dealer_hand.cards) >= 3:
+                    return Ok(drawing)
+            else:
+                while blackjack_engine.phase_code(game.phase) == 2 and guard < 128:
+                    game = blackjack_engine.dealer_step(game)?
+                    guard = guard + 1
+                if blackjack_engine.phase_code(game.phase) == 3 and game.players[0].balance < 1000:
+                    return Ok(game)
+        seed = seed + 1
+    if settled_required:
+        return Err("Blackjack visual-audit fixture could not create a four-card loss")
+    return Err("Blackjack visual-audit fixture could not create a three-card dealer turn")
+
+fn blackjack_audit_game(code: Int) -> Result[blackjack_model.Game, String]:
+    if code == 0:
+        var ready = blackjack_engine.new_game("Player", 1000, 2, 20260808)?
+        return blackjack_engine.set_bet(ready, 0, 10)
+    if code == 2:
+        return blackjack_audit_player(true)
+    if code == 1:
+        return blackjack_audit_player(false)
+    if code == 3:
+        return blackjack_audit_dealer(false)
+    return blackjack_audit_dealer(true)
+
+fn blackjack_audit_state(code: Int) -> Result[State, String]:
+    if code < 0 or code > 4:
+        return Err("Blackjack visual-audit state is out of range")
+    let settings = persistence.defaults()
+    let base = initial(settings, "", "Deterministic native visual audit")?
+    let game = blackjack_audit_game(code)?
+    return Ok(rebuild(base, 2, game, 10, settings, "Deterministic native visual audit", "", false, true, 0.0, game.round_number))
+
+fn blackjack_audit_loop(window: rocket_raylib.Window, state: State, resources: ui_resources.UiResources) -> Int:
+    while not rocket_raylib.window_should_close(window):
+        match draw(window, state, resources):
+            case Ok(drawn):
+                let expected = drawn
+            case Err(error):
+                print(error)
+                return 31
+    return 0
+
+pub fn run_blackjack_audit(code: Int) -> Int:
+    match blackjack_audit_state(code):
+        case Ok(state):
+            match rocket_raylib.open_undecorated_window(1280, 720, "Scroll2Roll Blackjack native audit"):
+                case Ok(window):
+                    let fps = rocket_raylib.set_target_fps(window, 60)
+                    let resources = ui_resources.load(window)
+                    let status = blackjack_audit_loop(window, state, resources)
+                    match ui_resources.unload(resources):
+                        case Ok(unloaded):
+                            let expected = unloaded
+                        case Err(error):
+                            print(error)
+                            let closed = rocket_raylib.close_window(window)
+                            return 32
+                    let closed = rocket_raylib.close_window(window)
+                    return status
+                case Err(error):
+                    print(error)
+                    return 33
+        case Err(error):
+            print(error)
+            return 34
 
 fn volume_value(percent: Int) -> Float:
     if percent <= 0:
@@ -2015,7 +2174,7 @@ pub fn run() -> Int:
             let expected = error
     match initial(loaded.settings, save_path, loaded.message):
         case Ok(state):
-            match rocket_raylib.open_window(state.settings.window_width, state.settings.window_height, "Scroll2Roll"):
+            match rocket_raylib.open_undecorated_window(state.settings.window_width, state.settings.window_height, "Scroll2Roll"):
                 case Ok(window):
                     let fps = rocket_raylib.set_target_fps(window, 60)
                     let resources = ui_resources.load(window)

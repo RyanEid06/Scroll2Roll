@@ -54,6 +54,7 @@ ROCKET_API int64_t rlv_buffer_destroy(int64_t buffer_id);
 ROCKET_API int64_t rlv_buffer_live_count(void);
 
 ROCKET_API int64_t rlv_window_open(int64_t width, int64_t height, int64_t title_buffer_id);
+ROCKET_API int64_t rlv_window_open_undecorated(int64_t width, int64_t height, int64_t title_buffer_id);
 ROCKET_API int64_t rlv_window_close(int64_t window_id);
 ROCKET_API rocket_bool rlv_window_ready(int64_t window_id);
 ROCKET_API rocket_bool rlv_window_should_close(int64_t window_id);

@@ -262,6 +262,39 @@ states, both motion modes, the equal-rank settlement, balanced scissoring, and
 zero live texture/font handles after close. The production adapter total is
 one font and thirty-three textures.
 
+## Owner-provided Blackjack production-pack runtime artwork
+
+The owner supplied the validated, repository-local
+`HowGamesShouldLookUi/BlackJack/BlackjackProductionPack/` on 2026-08-25 and
+directed this Blackjack rebuild. That directory remains read-only source
+material. `scripts/promote-blackjack-production-assets.ps1` deterministically
+copies the selected permanent scenery and licensed fonts, then packs the
+individual card, chip, component, and icon files into runtime atlases without
+editing the source pack. The five authority references and their reconstructed
+comparison copies are not runtime assets and are not implementation evidence.
+
+| Runtime path | Purpose | Dimensions | Promotion decision | SHA-256 |
+| --- | --- | --- | --- | --- |
+| `assets/games/blackjack-reference-v1/blackjack-permanent-scene-1280x720.png` | Permanent casino, felt, padded rail, gold trim, shoe, and decorative-chip scenery only | 1280x720 | Byte-identical selected production-pack scenery; changing UI and game state remain code-owned | `4D3AFCED6F73F387DFB91FDEB98B9355770C75DBF3C93D98D7CE067D81CA50B9` |
+| `assets/games/blackjack-reference-v1/blackjack-cards-atlas.png` | Exact 52-card deck plus card back in a 13x5 grid of 116x168 cells | 1508x840 | Deterministically packed from validated production-pack card files | `5DEC21550B9F3FAFEF188753C816E2B9D1EBF91C6D75C242FA28178559C9D58C` |
+| `assets/games/blackjack-reference-v1/blackjack-chips-atlas.png` | 10, 25, 50, 100, 250, and 500 chips in normal/selected rows of 160x160 cells | 960x320 | Deterministically packed from validated production-pack chip files | `870EBC7313218F287EDC8E390927748A9C24247D750D3F90847C4F25020E6103` |
+| `assets/games/blackjack-reference-v1/blackjack-components-atlas.png` | Phase, seat, logo, button-state, action, and compact-logo components in a 5x4 grid of 480x96 cells | 2400x384 | Deterministically packed from validated production-pack component files | `E63462AB8E8D65743A9FD2572C2892DAAE8C2C9998FB384DFAD1D577EE3E1FDA` |
+| `assets/games/blackjack-reference-v1/blackjack-icons-atlas.png` | Header, navigation, table, bet, and action icons in an 8x2 grid of 72x72 cells | 576x144 | Deterministically packed from validated production-pack icon files | `E7155B9AEB8D480DE7021CD2CBEDB80E8D476B77BC5876F18FF876A7D75A2343` |
+| `assets/games/blackjack-reference-v1/Inter-SemiBold.otf` | Premium shell and control typography | Font | Byte-identical production-pack font; OFL license retained alongside it | `0A4D30778FA2DC239368D90FD854B88B27E7EDE737450DA72686A90ECA66F02C` |
+| `assets/games/blackjack-reference-v1/fonts-inter-LICENSE.txt` | Inter license | Text | Byte-identical production-pack license | `ECC57CB1A299F8DE2E28EAECE2CEC48658B3204C606BE0CC122195781CAAAA35` |
+| `assets/games/blackjack-reference-v1/EBGaramond12-Regular.ttf` | Felt-marking display typography | Font | Byte-identical production-pack font; OFL license retained alongside it | `8F607E942034FDE0B0FCCA2061266523C100C46362EE646BDE68D04408C14045` |
+| `assets/games/blackjack-reference-v1/fonts-ebgaramond-extra-LICENSE.txt` | EB Garamond license | Text | Byte-identical production-pack license | `36DEB8323ECC0E8FEA2A181A9B7FCE65F139AE557A44E9B4606D33417218AE06` |
+
+The runtime atlas order is fixed in the promotion script and mirrored by
+`src/app/blackjack_view.rocket`; card faces and backs are selected from public
+engine cards, chip cells from public wagers, and components/icons from current
+phase and legal-action state. `src/app/ui_resources.rocket` loads the five
+textures and two fonts once, exposes explicit readiness flags and degraded
+fallbacks, and unloads every successful handle exactly once. Focused resource
+tests expect three live production fonts and thirty-eight live production
+textures before unload, and zero afterward. This local integration is not a
+claim of owner visual approval, publication, packaging, or release approval.
+
 ## Legacy test assets
 
 `assets/orbit.ppm` and `assets/about.txt` predate the overhaul and remain test or

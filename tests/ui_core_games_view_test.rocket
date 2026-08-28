@@ -43,9 +43,10 @@ fn layout_valid(width: Int, height: Int) -> Bool:
         print("core layout: rail")
         return false
     let blackjack_betting = [blackjack_view.bet_minus_rect(width, height), blackjack_view.bet_plus_rect(width, height), blackjack_view.deal_rect(width, height)]
+    let blackjack_quick = [blackjack_view.quick_bet_rect(0, width, height), blackjack_view.quick_bet_rect(1, width, height), blackjack_view.quick_bet_rect(2, width, height), blackjack_view.quick_bet_rect(3, width, height), blackjack_view.quick_bet_rect(4, width, height), blackjack_view.quick_bet_rect(5, width, height)]
     let blackjack_actions = [blackjack_view.action_rect(0, width, height), blackjack_view.action_rect(1, width, height), blackjack_view.action_rect(2, width, height), blackjack_view.action_rect(3, width, height), blackjack_view.action_rect(4, width, height)]
     let blackjack_settled = [blackjack_view.next_rect(width, height), blackjack_view.restart_rect(width, height)]
-    if not set_valid(blackjack_betting, width, height) or not set_valid(blackjack_actions, width, height) or not set_valid(blackjack_settled, width, height):
+    if not set_valid(blackjack_betting, width, height) or not set_valid(blackjack_quick, width, height) or not set_valid(blackjack_actions, width, height) or not set_valid(blackjack_settled, width, height):
         print("core layout: blackjack")
         return false
     let roulette_ready = [roulette_view.chip_rect(0, width, height), roulette_view.chip_rect(1, width, height), roulette_view.chip_rect(2, width, height), roulette_view.chip_rect(3, width, height), roulette_view.chip_rect(4, width, height), roulette_view.chip_rect(5, width, height), roulette_view.spin_rect(width, height), roulette_view.undo_rect(width, height), roulette_view.clear_rect(width, height), roulette_view.repeat_rect(width, height)]
@@ -80,6 +81,19 @@ fn settle_blackjack(source: blackjack_model.Game) -> Result[blackjack_model.Game
         return Err("Blackjack view fixture did not settle")
     return Ok(game)
 
+fn split_blackjack() -> Result[blackjack_model.Game, String]:
+    var seed = 1
+    while seed < 5000:
+        var game = blackjack_engine.new_game("Player", 1000, 3, seed)?
+        game = blackjack_engine.set_bet(game, 0, 10)?
+        let active = blackjack_engine.start_round(game)?
+        match blackjack_engine.apply_action(active, blackjack_model.Split()):
+            case Ok(split):
+                return Ok(split)
+            case Err(error):
+                seed = seed + 1
+    return Err("Blackjack split view fixture could not find a pair")
+
 fn tied_hilo() -> Result[hilo_api.Session, String]:
     var seed = 1
     while seed < 5000:
@@ -100,6 +114,7 @@ fn draw_states(window: rocket_raylib.Window, resources: ui_resources.UiResources
     var blackjack_ready = blackjack_engine.new_game("Player", 1000, 3, 20260841)?
     blackjack_ready = blackjack_engine.set_bet(blackjack_ready, 0, 10)?
     let blackjack_active = blackjack_engine.start_round(blackjack_ready)?
+    let blackjack_split = split_blackjack()?
     let blackjack_settled = settle_blackjack(blackjack_active)?
 
     let roulette_ready_session = roulette_api.new_session(1000, 20260842)?
@@ -125,10 +140,11 @@ fn draw_states(window: rocket_raylib.Window, resources: ui_resources.UiResources
 
     let frame = rocket_raylib.begin_frame(window)?
     rocket_raylib.clear(frame, rocket_raylib.black())?
-    blackjack_view.draw(window, frame, resources, blackjack_ready, 10, light_mode, false, 0.0, 0.0, -100, -100)?
-    blackjack_view.draw(window, frame, resources, blackjack_active, 10, light_mode, false, 0.0, 0.3, -100, -100)?
-    blackjack_view.draw(window, frame, resources, blackjack_active, 10, light_mode, true, 0.0, 0.3, -100, -100)?
-    blackjack_view.draw(window, frame, resources, blackjack_settled, 10, light_mode, true, 1.0, 0.0, -100, -100)?
+    blackjack_view.draw(window, frame, resources, blackjack_ready, 10, false, light_mode, false, 0.0, 0.0, -100, -100)?
+    blackjack_view.draw(window, frame, resources, blackjack_active, 10, false, light_mode, false, 0.0, 0.3, -100, -100)?
+    blackjack_view.draw(window, frame, resources, blackjack_split, 10, false, light_mode, false, 0.0, 0.3, -100, -100)?
+    blackjack_view.draw(window, frame, resources, blackjack_active, 10, false, light_mode, true, 0.0, 0.3, -100, -100)?
+    blackjack_view.draw(window, frame, resources, blackjack_settled, 10, true, light_mode, true, 1.0, 0.0, -100, -100)?
     roulette_view.draw(window, frame, resources, roulette_bet_session.game, 0, 17, false, light_mode, false, 0.0, 0.0, -100, -100)?
     roulette_view.draw(window, frame, resources, roulette_spinning.game, 0, 17, false, light_mode, false, 0.0, 0.6, -100, -100)?
     roulette_view.draw(window, frame, resources, roulette_spinning.game, 0, 17, false, light_mode, true, 0.0, 0.6, -100, -100)?
@@ -163,6 +179,10 @@ fn run() -> Result[Int, String]:
             return Ok(10 + index)
         rocket_raylib.close_window(window)?
         index = index + 1
+    let split_layout = split_blackjack()?
+    let split_actions = [blackjack_view.game_action_rect(split_layout, 0, 1280, 720), blackjack_view.game_action_rect(split_layout, 1, 1280, 720), blackjack_view.game_action_rect(split_layout, 2, 1280, 720), blackjack_view.game_action_rect(split_layout, 3, 1280, 720), blackjack_view.game_action_rect(split_layout, 4, 1280, 720)]
+    if not set_valid(split_actions, 1280, 720):
+        return Ok(19)
     let production_window = rocket_raylib.open_window(1280, 720, "Core game production resources")?
     let production = ui_resources.load(production_window)
     if not production.group_four.hilo_room_ready or not production.group_four.hilo_card_tray_ready or not production.group_four.hilo_effects_ready:

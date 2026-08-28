@@ -12,4 +12,14 @@ fn main() -> Int:
             case Err(error):
                 print(error)
                 return 2
+    if collections.length(arguments) == 1 and arguments[0] == "--blackjack-audit-betting":
+        return application.run_blackjack_audit(0)
+    if collections.length(arguments) == 1 and arguments[0] == "--blackjack-audit-player":
+        return application.run_blackjack_audit(1)
+    if collections.length(arguments) == 1 and arguments[0] == "--blackjack-audit-split":
+        return application.run_blackjack_audit(2)
+    if collections.length(arguments) == 1 and arguments[0] == "--blackjack-audit-dealer":
+        return application.run_blackjack_audit(3)
+    if collections.length(arguments) == 1 and arguments[0] == "--blackjack-audit-settled":
+        return application.run_blackjack_audit(4)
     return application.run()

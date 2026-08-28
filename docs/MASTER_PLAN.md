@@ -8,7 +8,7 @@ https://github.com/RyanEid06/Scroll2Roll.git
 The GitHub repository is currently empty.
 
 Workspace separation:
-- Keep `C:\Users\Administrator\Desktop\Projects\coding language` exclusively for the Rocket language, compiler, toolchain, editor integration, and language documentation.
+- Keep `C:\Users\Administrator\Desktop\Projects\Rocket` exclusively for the Rocket language, compiler, toolchain, editor integration, and language documentation.
 - Create a separate sibling directory:
   `C:\Users\Administrator\Desktop\Projects\Scroll2Roll`
 - Clone the Scroll2Roll GitHub repository directly into that directory.
@@ -18,7 +18,7 @@ Workspace separation:
 - Preserve all existing user work unless I explicitly authorize removing it.
 
 Existing Blackjack draft:
-`C:\Users\Administrator\Desktop\Projects\coding language\Blackjack-v1`
+`C:\Users\Administrator\Desktop\Projects\Rocket\Blackjack-v1`
 
 Copy the Blackjack draft into the Scroll2Roll repository. Do not move or delete the original. Preserve it until the repaired version has been committed and thoroughly verified in the new repository.
 
@@ -680,4 +680,3 @@ Continue through:
 - durable documentation
 
 If a genuine blocker appears, investigate it fully, preserve evidence, and report it accurately. Do not silently weaken requirements or claim unfinished features are complete.
-

@@ -165,6 +165,19 @@ pub fn open_window(width: Int, height: Int, title: String) -> Result[Window, Str
         case Err(error):
             return Err(error)
 
+pub fn open_undecorated_window(width: Int, height: Int, title: String) -> Result[Window, String]:
+    match encode_text(title):
+        case Ok(buffer_id):
+            var window_id = 0
+            unsafe:
+                window_id = rocket_raylib_adapter.rlv_window_open_undecorated(width, height, buffer_id)
+            let released = release_text(buffer_id)
+            if window_id > 0:
+                return Ok(Window(window_id))
+            return Err(status_message(window_id))
+        case Err(error):
+            return Err(error)
+
 pub fn close_window(window: Window) -> Result[Bool, String]:
     unsafe:
         return status_result(rocket_raylib_adapter.rlv_window_close(window.id))

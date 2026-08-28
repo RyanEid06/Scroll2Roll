@@ -15,6 +15,28 @@ import std.string
 fn interior(width: Int, height: Int) -> game_layout.Interior:
     return game_layout.interior(width, height)
 
+pub fn uses_reference_layout(width: Int, height: Int) -> Bool:
+    if width < 1100 or height < 620:
+        return false
+    let expected_width = height * 16 / 9
+    let difference = width - expected_width
+    return difference >= 0 - 8 and difference <= 8
+
+fn reference_rect(x: Int, y: Int, width: Int, height: Int, window_width: Int, window_height: Int) -> components.Rect:
+    return components.rect(x * window_width / 1280, y * window_height / 720, width * window_width / 1280, height * window_height / 720)
+
+pub fn reference_back_rect(width: Int, height: Int) -> components.Rect:
+    return reference_rect(4, 136, 57, 56, width, height)
+
+pub fn reference_theme_rect(width: Int, height: Int) -> components.Rect:
+    return reference_rect(999, 16, 74, 32, width, height)
+
+pub fn reference_help_rect(width: Int, height: Int) -> components.Rect:
+    return reference_rect(1081, 16, 76, 32, width, height)
+
+pub fn reference_settings_rect(width: Int, height: Int) -> components.Rect:
+    return reference_rect(1164, 16, 89, 32, width, height)
+
 fn table_rect(value: game_layout.Interior) -> components.Rect:
     var top = 50
     if value.compact:
@@ -35,42 +57,93 @@ fn draw_room(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, va
     return rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.04, 12, 1.0, theme.subtle_border(light_mode))
 
 pub fn action_rect(code: Int, width: Int, height: Int) -> components.Rect:
+    if uses_reference_layout(width, height):
+        return reference_rect(1034, 427 + code * 44, 223, 44, width, height)
     let value = interior(width, height)
     if value.compact:
         let gap = 8
         let button_width =(value.dock.width - 32 - gap * 4) / 5
         return components.rect(value.dock.x + 16 + code *(button_width + gap), value.dock.y + value.dock.height - 60, button_width, 48)
-    return components.rect(value.rail.x + 16, value.rail.y + 150 + code * 58, value.rail.width - 32, 48)
+    let gap = 8
+    let half =(value.rail.width - 32 - gap) / 2
+    if code == 4:
+        return components.rect(value.rail.x + 16, value.rail.y + 420, value.rail.width - 32, 44)
+    let row = code / 2
+    let column = code - row * 2
+    return components.rect(value.rail.x + 16 + column *(half + gap), value.rail.y + 304 + row * 52, half, 44)
+
+pub fn game_action_rect(game: blackjack_model.Game, code: Int, width: Int, height: Int) -> components.Rect:
+    if uses_reference_layout(width, height) and collections.length(game.players[0].hands) > 1:
+        if code == 4:
+            return reference_rect(1030, 580, 228, 44, width, height)
+        let row = code / 2
+        let column = code - row * 2
+        return reference_rect(1030 + column * 118, 491 + row * 44, 114, 44, width, height)
+    return action_rect(code, width, height)
 
 pub fn bet_minus_rect(width: Int, height: Int) -> components.Rect:
+    if uses_reference_layout(width, height):
+        return reference_rect(1043, 324, 44, 44, width, height)
     let value = interior(width, height)
     if value.compact:
         return components.rect(value.dock.x + 16, value.dock.y + value.dock.height - 60, 48, 48)
     return components.rect(value.rail.x + 16, value.rail.y + 154, 48, 48)
 
 pub fn bet_plus_rect(width: Int, height: Int) -> components.Rect:
+    if uses_reference_layout(width, height):
+        return reference_rect(1200, 324, 44, 44, width, height)
     let value = interior(width, height)
     if value.compact:
         return components.rect(value.dock.x + 72, value.dock.y + value.dock.height - 60, 48, 48)
     return components.rect(value.rail.x + value.rail.width - 64, value.rail.y + 154, 48, 48)
 
 pub fn deal_rect(width: Int, height: Int) -> components.Rect:
+    if uses_reference_layout(width, height):
+        return reference_rect(1034, 596, 223, 48, width, height)
     let value = interior(width, height)
     if value.compact:
         return components.rect(value.dock.x + 136, value.dock.y + value.dock.height - 60, value.dock.width - 152, 48)
-    return components.rect(value.rail.x + 16, value.rail.y + 218, value.rail.width - 32, 50)
+    return components.rect(value.rail.x + 16, value.rail.y + 392, value.rail.width - 32, 50)
 
 pub fn next_rect(width: Int, height: Int) -> components.Rect:
+    if uses_reference_layout(width, height):
+        return reference_rect(1034, 511, 223, 58, width, height)
     let value = interior(width, height)
     if value.compact:
         return components.rect(value.dock.x + 16, value.dock.y + value.dock.height - 60, value.dock.width * 2 / 3 - 20, 48)
     return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 124, value.rail.width - 32, 50)
 
 pub fn restart_rect(width: Int, height: Int) -> components.Rect:
+    if uses_reference_layout(width, height):
+        return reference_rect(1034, 580, 223, 58, width, height)
     let value = interior(width, height)
     if value.compact:
         return components.rect(value.dock.x + value.dock.width * 2 / 3 + 4, value.dock.y + value.dock.height - 60, value.dock.width / 3 - 20, 48)
     return components.rect(value.rail.x + 16, value.rail.y + value.rail.height - 64, value.rail.width - 32, 44)
+
+pub fn auto_bet_rect(width: Int, height: Int) -> components.Rect:
+    if uses_reference_layout(width, height):
+        return reference_rect(1172, 126, 76, 24, width, height)
+    let value = interior(width, height)
+    if value.compact:
+        return components.rect(value.dock.x + 16, value.dock.y + 12, 100, 32)
+    return components.rect(value.rail.x + value.rail.width - 116, value.rail.y + 20, 100, 32)
+
+pub fn quick_bet_rect(index: Int, width: Int, height: Int) -> components.Rect:
+    if uses_reference_layout(width, height):
+        let row = index / 3
+        let column = index - row * 3
+        return reference_rect(1047 + column * 59, 370 + row * 44, 49, 44, width, height)
+    let value = interior(width, height)
+    if value.compact:
+        let gap = 6
+        let button_width =(value.dock.width - 32 - gap * 5) / 6
+        return components.rect(value.dock.x + 16 + index *(button_width + gap), value.dock.y + 52, button_width, 44)
+    let gap = 8
+    let button_width =(value.rail.width - 32 - gap * 2) / 3
+    let row = index / 3
+    let column = index - row * 3
+    return components.rect(value.rail.x + 16 + column *(button_width + gap), value.rail.y + 288 + row * 50, button_width, 44)
 
 pub fn lobby_rect(width: Int, height: Int) -> components.Rect:
     let expected = height
@@ -91,7 +164,7 @@ fn phase_name(phase: Int) -> String:
     if phase == 1:
         return "PLAYER TURN"
     if phase == 2:
-        return "DEALER"
+        return "DEALER TURN"
     return "SETTLED"
 
 fn hand_summary(hand: blackjack_model.Hand) -> String:
@@ -122,20 +195,26 @@ fn draw_ai_seats(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resou
     let opponents = collections.length(game.players) - 1
     if opponents <= 0:
         return Ok(true)
-    let seat_width =(table.width - 40) / opponents
+    let slots = opponents + 1
+    let seat_width =(table.width - 44) / slots
     var index = 1
     while index < collections.length(game.players):
         let player = game.players[index]
-        let x = table.x + 20 +(index - 1) * seat_width
+        var slot = index - 1
+        if slot >= opponents / 2:
+            slot = slot + 1
+        let x = table.x + 22 + slot * seat_width
         var ink = theme.secondary_text(light_mode)
         if blackjack_engine.phase_code(game.phase) == 1 and game.active_player == index:
             ink = theme.highlight(light_mode)
-        let seat = components.rect(x + 3, table.y + 8, seat_width - 8, 40)
+        let seat = components.rect(x + 5, table.y + 10, seat_width - 12, 34)
         rocket_raylib.draw_rounded_rectangle(frame, seat.x, seat.y, seat.width, seat.height, 0.5, 14, rocket_raylib.color(6, 20, 32, 205))?
         rocket_raylib.draw_rounded_rectangle_lines(frame, seat.x, seat.y, seat.width, seat.height, 0.5, 14, 1.0, ink)?
         components.type_centered(window, frame, resources, player.name, components.rect(seat.x + 4, seat.y + 8, seat.width - 8, 22), components.type_caption(), ink)?
-        rocket_raylib.draw_ring_pixels(frame, x + seat_width / 2, table.y + 70, 18, 22, 0.0, 360.0, 24, rocket_raylib.color(245, 190, 82, 92))?
-        game_components.chip_stack(window, frame, resources, x + seat_width / 2 - 22, table.y + 72 + offset / 4, player.pending_bet, theme.violet(light_mode), light_mode)?
+        rocket_raylib.draw_ring_pixels(frame, x + seat_width / 2, table.y + 66, 17, 22, 0.0, 360.0, 24, rocket_raylib.color(245, 190, 82, 112))?
+        components.type_centered(window, frame, resources, string.from_int(player.pending_bet), components.rect(x, table.y + 64, seat_width, 22), components.type_caption(), theme.primary_text(light_mode))?
+        if player.pending_bet > 0:
+            game_components.chip_stack(window, frame, resources, x + seat_width / 2 - 22, table.y + 74 + offset / 4, player.pending_bet, theme.violet(light_mode), light_mode)?
         index = index + 1
     return Ok(true)
 
@@ -150,10 +229,15 @@ fn draw_dealer(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resourc
         components.pill(window, frame, resources, components.rect(table.x + table.width / 2 - 48, y + card_height + 8, 96, 28), string.concat("TOTAL ", string.from_int(value.total)), false, light_mode)?
     return Ok(true)
 
-fn draw_player_hands(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, table: components.Rect, card_width: Int, card_height: Int, offset: Int, light_mode: Bool) -> Result[Bool, String]:
+fn draw_player_hands(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, selected_bet: Int, table: components.Rect, card_width: Int, card_height: Int, offset: Int, light_mode: Bool) -> Result[Bool, String]:
     let hand_count = collections.length(game.players[0].hands)
     if hand_count <= 0:
-        components.type_centered(window, frame, resources, "PLACE A WAGER TO OPEN THE TABLE", components.rect(table.x, table.y + table.height * 2 / 3, table.width, 30), components.type_label(), rocket_raylib.color(255, 255, 255, 190))?
+        let center_x = table.x + table.width / 2
+        let center_y = table.y + table.height - 104
+        rocket_raylib.draw_ring_pixels(frame, center_x, center_y, 42, 46, 0.0, 360.0, 42, rocket_raylib.color(245, 190, 82, 186))?
+        game_components.chip_stack(window, frame, resources, center_x - 22, center_y - 4, selected_bet, theme.violet(light_mode), light_mode)?
+        components.pill(window, frame, resources, components.rect(center_x - 52, center_y + 48, 104, 26), string.concat("BET  ", string.from_int(selected_bet)), true, light_mode)?
+        components.type_centered(window, frame, resources, "PLACE YOUR WAGER", components.rect(center_x - 110, center_y - 72, 220, 22), components.type_caption(), rocket_raylib.color(255, 255, 255, 190))?
         return Ok(true)
     let hand_width =(table.width - 40) / hand_count
     var hand_index = 0
@@ -187,26 +271,48 @@ fn draw_results(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resour
         index = index + 1
     if human_results == 0:
         return Ok(true)
-    let panel = components.rect(table.x + table.width - 210, table.y + table.height / 2 - 38, 190, 42 + human_results * 25)
+    let panel = components.rect(table.x + table.width - 256, table.y + table.height / 2 - 90, 232, 166)
     if motion > 0:
         rocket_raylib.draw_ring_pixels(frame, panel.x + panel.width / 2, panel.y + panel.height / 2, panel.width / 2, panel.width / 2 + motion / 2, 0.0, 360.0, 32, theme.highlight(light_mode))?
     components.modern_panel(frame, panel, light_mode, true)?
-    components.type_text(window, frame, resources, "ROUND RESULT", panel.x + 14, panel.y + 11, components.type_caption(), theme.secondary_text(light_mode))?
+    components.type_centered(window, frame, resources, "ROUND RESULT", components.rect(panel.x + 14, panel.y + 16, panel.width - 28, 24), components.type_caption(), theme.secondary_text(light_mode))?
     index = 0
     var row = 0
+    var net = 0
+    var headline = "ROUND SETTLED"
+    var headline_ink = theme.highlight(light_mode)
     while index < collections.length(game.results):
         let result = game.results[index]
         if result.player_index == 0:
-            let label = string.concat(string.concat("Hand ", string.from_int(result.hand_index + 1)), string.concat("  ", settlement.outcome_name(result.outcome)))
+            let label = string.concat(string.concat("HAND ", string.from_int(result.hand_index + 1)), string.concat("  ", settlement.outcome_name(result.outcome)))
             var ink = theme.destructive(light_mode)
             let outcome = settlement.outcome_code(result.outcome)
             if outcome == 0 or outcome == 1:
                 ink = theme.success(light_mode)
+                headline = "YOU WIN"
+                headline_ink = ink
             if outcome == 2:
                 ink = theme.highlight(light_mode)
-            components.type_text(window, frame, resources, label, panel.x + 14, panel.y + 35 + row * 25, components.type_caption(), ink)?
+                headline = "PUSH"
+                headline_ink = ink
+            if outcome == 3 or outcome == 4:
+                headline = "DEALER WINS"
+                headline_ink = ink
+            let settled_hand = game.players[0].hands[result.hand_index]
+            net = net + result.payout - settled_hand.bet
+            components.type_text(window, frame, resources, label, panel.x + 18, panel.y + 66 + row * 22, components.type_caption(), ink)?
             row = row + 1
         index = index + 1
+    components.type_centered(window, frame, resources, headline, components.rect(panel.x + 14, panel.y + 38, panel.width - 28, 28), components.type_heading(), headline_ink)?
+    rocket_raylib.draw_line(frame, panel.x + 18, panel.y + 116, panel.x + panel.width - 18, panel.y + 116, 1.0, theme.subtle_border(light_mode))?
+    components.type_text(window, frame, resources, "CREDITS CHANGE", panel.x + 18, panel.y + 126, components.type_caption(), theme.secondary_text(light_mode))?
+    var net_text = string.from_int(net)
+    if net > 0:
+        net_text = string.concat("+", net_text)
+    var net_ink = theme.destructive(light_mode)
+    if net >= 0:
+        net_ink = theme.success(light_mode)
+    components.type_text(window, frame, resources, net_text, panel.x + panel.width - 68, panel.y + 124, components.type_label(), net_ink)?
     return Ok(true)
 
 fn draw_table_props(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, table: components.Rect, offset: Int, light_mode: Bool) -> Result[Bool, String]:
@@ -222,7 +328,7 @@ fn draw_table_props(window: rocket_raylib.Window, frame: rocket_raylib.Frame, re
         game_components.chip_stack(window, frame, resources, table.x + 32, table.y + table.height / 2, 100, theme.highlight(light_mode), light_mode)?
     return Ok(true)
 
-fn draw_rail(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, selected_bet: Int, value: game_layout.Interior, mouse_x: Int, mouse_y: Int, light_mode: Bool) -> Result[Bool, String]:
+fn draw_rail(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, selected_bet: Int, auto_bet: Bool, value: game_layout.Interior, mouse_x: Int, mouse_y: Int, light_mode: Bool) -> Result[Bool, String]:
     components.modern_panel(frame, value.rail, light_mode, true)?
     let phase = blackjack_engine.phase_code(game.phase)
     if value.compact:
@@ -230,17 +336,60 @@ fn draw_rail(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources
         components.type_text(window, frame, resources, game.message, value.dock.x + 148, value.dock.y + 16, components.type_caption(), theme.primary_text(light_mode))?
         game_components.metric(window, frame, resources, "WAGER", string.from_int(selected_bet), value.dock.x + value.dock.width - 142, value.dock.y + 8, 126, false, light_mode)?
     else:
-        components.badge(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 16, 132, 28), phase_name(phase), light_mode)?
-        game_components.status_banner(window, frame, resources, components.rect(value.rail.x + 16, value.rail.y + 56, value.rail.width - 32, 54), game.message, light_mode)?
-        game_components.metric(window, frame, resources, "TABLE LIMITS", string.concat(string.concat(string.from_int(game.rules.minimum_bet), " - "), string.from_int(game.rules.maximum_bet)), value.rail.x + 16, value.rail.y + 118, value.rail.width - 32, false, light_mode)?
+        let title = components.rect(value.rail.x + 16, value.rail.y + 16, value.rail.width - 32, 48)
+        rocket_raylib.draw_rounded_rectangle(frame, title.x, title.y, title.width, title.height, 0.22, 12, theme.elevated(light_mode))?
+        components.type_centered(window, frame, resources, phase_name(phase), components.rect(title.x + 8, title.y + 7, title.width - 8, 24), components.type_label(), theme.primary_text(light_mode))?
+        components.type_centered(window, frame, resources, game.message, components.rect(title.x + 8, title.y + 28, title.width - 8, 16), components.type_caption(), theme.secondary_text(light_mode))?
+        let limits = components.rect(value.rail.x + 16, value.rail.y + 76, value.rail.width - 32, 84)
+        rocket_raylib.draw_rounded_rectangle(frame, limits.x, limits.y, limits.width, limits.height, 0.16, 10, theme.surface(light_mode))?
+        rocket_raylib.draw_rounded_rectangle_lines(frame, limits.x, limits.y, limits.width, limits.height, 0.16, 10, 1.0, theme.subtle_border(light_mode))?
+        components.type_text(window, frame, resources, "TABLE LIMITS", limits.x + 14, limits.y + 12, components.type_caption(), theme.secondary_text(light_mode))?
+        components.type_centered(window, frame, resources, "MIN", components.rect(limits.x + 18, limits.y + 38, 58, 16), components.type_caption(), theme.secondary_text(light_mode))?
+        components.type_centered(window, frame, resources, "MAX", components.rect(limits.x + limits.width - 76, limits.y + 38, 58, 16), components.type_caption(), theme.secondary_text(light_mode))?
+        components.type_centered(window, frame, resources, string.from_int(game.rules.minimum_bet), components.rect(limits.x + 18, limits.y + 56, 58, 22), components.type_label(), theme.primary_text(light_mode))?
+        components.type_centered(window, frame, resources, string.from_int(game.rules.maximum_bet), components.rect(limits.x + limits.width - 76, limits.y + 56, 58, 22), components.type_label(), theme.primary_text(light_mode))?
     if phase == 0:
         let minus = bet_minus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
         let plus = bet_plus_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
         let deal = deal_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+        if not value.compact:
+            components.type_text(window, frame, resources, "BET AMOUNT", value.rail.x + 16, value.rail.y + 178, components.type_caption(), theme.secondary_text(light_mode))?
+            let amount = components.rect(value.rail.x + 74, value.rail.y + 202, value.rail.width - 148, 48)
+            rocket_raylib.draw_rounded_rectangle(frame, amount.x, amount.y, amount.width, amount.height, 0.16, 10, theme.elevated(light_mode))?
+            rocket_raylib.draw_rounded_rectangle_lines(frame, amount.x, amount.y, amount.width, amount.height, 0.16, 10, 1.0, theme.subtle_border(light_mode))?
+            components.type_centered(window, frame, resources, string.from_int(selected_bet), amount, components.type_heading(), theme.primary_text(light_mode))?
+            let chips = [10, 25, 50, 100, 250, 500]
+            var chip_index = 0
+            while chip_index < 6:
+                let chip = quick_bet_rect(chip_index, rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+                components.modern_button(window, frame, resources, chip, string.from_int(chips[chip_index]), components.button_secondary(), chips[chip_index] <= game.players[0].balance + game.players[0].pending_bet, components.contains(chip, mouse_x, mouse_y), selected_bet == chips[chip_index], light_mode)?
+                chip_index = chip_index + 1
+            let toggle = auto_bet_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
+            components.modern_button(window, frame, resources, toggle, "AUTO [M]", components.button_secondary(), true, components.contains(toggle, mouse_x, mouse_y), auto_bet, light_mode)?
         components.modern_button(window, frame, resources, minus, "-", components.button_secondary(), true, components.contains(minus, mouse_x, mouse_y), false, light_mode)?
         components.modern_button(window, frame, resources, plus, "+", components.button_secondary(), true, components.contains(plus, mouse_x, mouse_y), false, light_mode)?
         components.modern_button(window, frame, resources, deal, string.concat("DEAL  ", string.from_int(selected_bet)), components.button_primary(), selected_bet <= game.players[0].balance + game.players[0].pending_bet, components.contains(deal, mouse_x, mouse_y), true, light_mode)?
     if phase == 1:
+        if not value.compact:
+            let hands = components.rect(value.rail.x + 16, value.rail.y + 174, value.rail.width - 32, 112)
+            rocket_raylib.draw_rounded_rectangle(frame, hands.x, hands.y, hands.width, hands.height, 0.16, 10, theme.surface(light_mode))?
+            rocket_raylib.draw_rounded_rectangle_lines(frame, hands.x, hands.y, hands.width, hands.height, 0.16, 10, 1.0, theme.subtle_border(light_mode))?
+            components.type_text(window, frame, resources, "CURRENT HAND", hands.x + 14, hands.y + 12, components.type_caption(), theme.secondary_text(light_mode))?
+            var hand_index = 0
+            while hand_index < collections.length(game.players[0].hands):
+                let hand = game.players[0].hands[hand_index]
+                let active = game.players[0].active_hand == hand_index
+                var label = string.concat("HAND ", string.from_int(hand_index + 1))
+                if active:
+                    label = string.concat(label, "  ACTIVE")
+                let row = components.rect(hands.x + 10, hands.y + 36 + hand_index * 32, hands.width - 20, 26)
+                var ink = theme.secondary_text(light_mode)
+                if active:
+                    ink = theme.violet(light_mode)
+                rocket_raylib.draw_rounded_rectangle_lines(frame, row.x, row.y, row.width, row.height, 0.12, 8, 1.0, ink)?
+                components.type_text(window, frame, resources, label, row.x + 10, row.y + 6, components.type_caption(), ink)?
+                components.type_text(window, frame, resources, hand_summary(hand), row.x + row.width - 66, row.y + 6, components.type_caption(), theme.primary_text(light_mode))?
+                hand_index = hand_index + 1
         let names = ["HIT [H]", "STAND [S]", "DOUBLE [D]", "SPLIT [P]", "SURRENDER [R]"]
         var code = 0
         while code < 5:
@@ -248,23 +397,731 @@ fn draw_rail(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources
             components.modern_button(window, frame, resources, button, names[code], components.button_primary(), action_available(game, code), components.contains(button, mouse_x, mouse_y), code == 0, light_mode)?
             code = code + 1
     if phase == 2:
-        components.type_text(window, frame, resources, "Dealer completes only the committed round.", value.rail.x + 16, value.rail.y + value.rail.height - 42, components.type_caption(), theme.highlight(light_mode))?
+        if value.compact:
+            components.type_text(window, frame, resources, "Dealer is drawing committed cards.", value.dock.x + 16, value.dock.y + value.dock.height - 40, components.type_caption(), theme.highlight(light_mode))?
+        if not value.compact:
+            let progress = components.rect(value.rail.x + 16, value.rail.y + 184, value.rail.width - 32, 132)
+            rocket_raylib.draw_rounded_rectangle(frame, progress.x, progress.y, progress.width, progress.height, 0.16, 10, theme.surface(light_mode))?
+            rocket_raylib.draw_rounded_rectangle_lines(frame, progress.x, progress.y, progress.width, progress.height, 0.16, 10, 1.0, theme.subtle_border(light_mode))?
+            components.type_text(window, frame, resources, "YOUR HAND", progress.x + 14, progress.y + 14, components.type_caption(), theme.secondary_text(light_mode))?
+            components.type_text(window, frame, resources, hand_summary(game.players[0].hands[0]), progress.x + 14, progress.y + 36, components.type_heading(), theme.primary_text(light_mode))?
+            components.type_text(window, frame, resources, "STATUS", progress.x + 14, progress.y + 76, components.type_caption(), theme.secondary_text(light_mode))?
+            components.type_text(window, frame, resources, "Dealer is completing their hand.", progress.x + 14, progress.y + 98, components.type_caption(), theme.primary_text(light_mode))?
     if phase == 3:
+        if not value.compact:
+            let result = components.rect(value.rail.x + 16, value.rail.y + 184, value.rail.width - 32, 142)
+            rocket_raylib.draw_rounded_rectangle(frame, result.x, result.y, result.width, result.height, 0.16, 10, theme.surface(light_mode))?
+            rocket_raylib.draw_rounded_rectangle_lines(frame, result.x, result.y, result.width, result.height, 0.16, 10, 1.0, theme.subtle_border(light_mode))?
+            components.type_text(window, frame, resources, "ROUND RESULT", result.x + 14, result.y + 14, components.type_caption(), theme.secondary_text(light_mode))?
+            components.type_centered(window, frame, resources, game.message, components.rect(result.x + 12, result.y + 42, result.width - 24, 30), components.type_heading(), theme.primary_text(light_mode))?
+            components.type_text(window, frame, resources, "Choose Next Round to keep the table moving.", result.x + 14, result.y + 96, components.type_caption(), theme.secondary_text(light_mode))?
         let next = next_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
         let restart = restart_rect(rocket_raylib.window_width(window), rocket_raylib.window_height(window))
         components.modern_button(window, frame, resources, next, "NEXT ROUND [N]", components.button_primary(), true, components.contains(next, mouse_x, mouse_y), true, light_mode)?
         components.modern_button(window, frame, resources, restart, "NEW TABLE [R]", components.button_secondary(), true, components.contains(restart, mouse_x, mouse_y), false, light_mode)?
     return Ok(true)
 
-pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, selected_bet: Int, light_mode: Bool, reduced_motion: Bool, now: Float, animation_end: Float, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+fn reference_font_size(size: Int) -> Float:
+    if size <= 8:
+        return 8.0
+    if size == 9:
+        return 9.0
+    if size == 10:
+        return 10.0
+    if size == 11:
+        return 11.0
+    if size == 12:
+        return 12.0
+    if size == 13:
+        return 13.0
+    if size == 14:
+        return 14.0
+    if size == 15:
+        return 15.0
+    if size == 16:
+        return 16.0
+    if size == 18:
+        return 18.0
+    if size == 20:
+        return 20.0
+    if size == 22:
+        return 22.0
+    return 24.0
+
+fn reference_text(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, text: String, x: Int, y: Int, size: Int, ink: rocket_raylib.Color) -> Result[Bool, String]:
+    if resources.tables.blackjack.inter_ready:
+        return rocket_raylib.draw_font_text(frame, resources.tables.blackjack.inter, text, x, y, reference_font_size(size), 0.1, ink)
+    return rocket_raylib.draw_text(frame, text, x, y, size, ink)
+
+fn reference_measure(window: rocket_raylib.Window, resources: ui_resources.UiResources, text: String, size: Int) -> Result[Int, String]:
+    if resources.tables.blackjack.inter_ready:
+        return rocket_raylib.measure_font_text(window, resources.tables.blackjack.inter, text, reference_font_size(size), 0.1)
+    return rocket_raylib.measure_text(window, text, size)
+
+fn reference_centered(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, text: String, value: components.Rect, size: Int, ink: rocket_raylib.Color) -> Result[Bool, String]:
+    let measured = reference_measure(window, resources, text, size)?
+    return reference_text(window, frame, resources, text, value.x +(value.width - measured) / 2, value.y +(value.height - size) / 2, size, ink)
+
+fn reference_garamond_centered(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, text: String, value: components.Rect, size: Int, ink: rocket_raylib.Color) -> Result[Bool, String]:
+    if resources.tables.blackjack.garamond_ready:
+        let measured = rocket_raylib.measure_font_text(window, resources.tables.blackjack.garamond, text, reference_font_size(size), 1.0)?
+        return rocket_raylib.draw_font_text(frame, resources.tables.blackjack.garamond, text, value.x +(value.width - measured) / 2, value.y +(value.height - size) / 2, reference_font_size(size), 1.0, ink)
+    return reference_centered(window, frame, resources, text, value, size, ink)
+
+fn reference_panel(frame: rocket_raylib.Frame, value: components.Rect, elevated: Bool) -> Result[Bool, String]:
+    var fill = rocket_raylib.color(11, 18, 34, 246)
+    if elevated:
+        fill = rocket_raylib.color(16, 25, 44, 248)
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y + 3, value.width, value.height, 0.10, 10, rocket_raylib.color(0, 0, 0, 90))?
+    rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.10, 10, fill)?
+    return rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.10, 10, 1.0, rocket_raylib.color(41, 54, 82, 255))
+
+fn reference_component(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, cell: Int, value: components.Rect, alpha: Int) -> Result[Bool, String]:
+    if resources.tables.blackjack.components_ready:
+        return game_components.texture_cell(frame, resources.tables.blackjack.components, 5, 4, cell, value, alpha)
+    return Ok(true)
+
+fn reference_icon(frame: rocket_raylib.Frame, resources: ui_resources.UiResources, cell: Int, value: components.Rect, alpha: Int) -> Result[Bool, String]:
+    if resources.tables.blackjack.icons_ready:
+        return game_components.texture_cell(frame, resources.tables.blackjack.icons, 8, 2, cell, value, alpha)
+    return Ok(true)
+
+fn draw_reference_shell(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, light_mode: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let header = reference_rect(0, 0, 1280, 62, width, height)
+    let navigation = reference_rect(0, 62, 65, 613, width, height)
+    let footer = reference_rect(0, 675, 1280, 45, width, height)
+    rocket_raylib.draw_rectangle(frame, header.x, header.y, header.width, header.height, rocket_raylib.color(7, 11, 22, 255))?
+    rocket_raylib.draw_rectangle(frame, navigation.x, navigation.y, navigation.width, navigation.height, rocket_raylib.color(8, 14, 27, 255))?
+    rocket_raylib.draw_rectangle(frame, footer.x, footer.y, footer.width, footer.height, rocket_raylib.color(7, 16, 30, 255))?
+    rocket_raylib.draw_line(frame, 0, header.height - 1, width, header.height - 1, 1.0, rocket_raylib.color(29, 41, 66, 255))?
+    rocket_raylib.draw_line(frame, navigation.width - 1, navigation.y, navigation.width - 1, footer.y, 1.0, rocket_raylib.color(29, 41, 66, 255))?
+    rocket_raylib.draw_line(frame, 0, footer.y, width, footer.y, 1.0, rocket_raylib.color(29, 41, 66, 255))?
+
+    reference_component(frame, resources, 18, reference_rect(12, 11, 38, 38, width, height), 255)?
+    reference_component(frame, resources, 4, reference_rect(78, 17, 118, 31, width, height), 255)?
+    reference_text(window, frame, resources, "BLACKJACK", reference_rect(210, 0, 0, 0, width, height).x, reference_rect(0, 29, 0, 0, width, height).y, 9, rocket_raylib.color(157, 168, 188, 255))?
+
+    let credits = reference_rect(852, 16, 139, 32, width, height)
+    rocket_raylib.draw_rounded_rectangle(frame, credits.x, credits.y, credits.width, credits.height, 0.24, 12, rocket_raylib.color(48, 23, 112, 255))?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, credits.x, credits.y, credits.width, credits.height, 0.24, 12, 1.0, rocket_raylib.color(110, 53, 232, 255))?
+    reference_icon(frame, resources, 0, reference_rect(862, 22, 20, 20, width, height), 255)?
+    reference_text(window, frame, resources, string.concat("Credits ", string.from_int(game.players[0].balance)), reference_rect(888, 0, 0, 0, width, height).x, reference_rect(0, 26, 0, 0, width, height).y, 11, rocket_raylib.color(244, 246, 251, 255))?
+
+    let light = reference_theme_rect(width, height)
+    let help = reference_help_rect(width, height)
+    let settings = reference_settings_rect(width, height)
+    let header_buttons = [light, help, settings]
+    var header_index = 0
+    while header_index < 3:
+        let button = header_buttons[header_index]
+        var fill = rocket_raylib.color(10, 16, 32, 255)
+        if components.contains(button, mouse_x, mouse_y):
+            fill = rocket_raylib.color(19, 30, 52, 255)
+        rocket_raylib.draw_rounded_rectangle(frame, button.x, button.y, button.width, button.height, 0.16, 10, fill)?
+        rocket_raylib.draw_rounded_rectangle_lines(frame, button.x, button.y, button.width, button.height, 0.16, 10, 1.0, rocket_raylib.color(41, 54, 82, 255))?
+        header_index = header_index + 1
+    reference_icon(frame, resources, 1, reference_rect(1007, 22, 19, 19, width, height), 255)?
+    var theme_label = "Light"
+    if light_mode:
+        theme_label = "Dark"
+    reference_text(window, frame, resources, theme_label, reference_rect(1031, 0, 0, 0, width, height).x, reference_rect(0, 26, 0, 0, width, height).y, 10, rocket_raylib.color(244, 246, 251, 255))?
+    reference_icon(frame, resources, 2, reference_rect(1088, 22, 18, 18, width, height), 255)?
+    reference_text(window, frame, resources, "Help", reference_rect(1111, 0, 0, 0, width, height).x, reference_rect(0, 26, 0, 0, width, height).y, 10, rocket_raylib.color(244, 246, 251, 255))?
+    reference_icon(frame, resources, 3, reference_rect(1172, 22, 18, 18, width, height), 255)?
+    reference_text(window, frame, resources, "Settings", reference_rect(1195, 0, 0, 0, width, height).x, reference_rect(0, 26, 0, 0, width, height).y, 10, rocket_raylib.color(244, 246, 251, 255))?
+
+    let active = reference_rect(4, 80, 57, 54, width, height)
+    rocket_raylib.draw_rounded_rectangle(frame, active.x, active.y, active.width, active.height, 0.12, 10, rocket_raylib.color(38, 18, 88, 255))?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, active.x, active.y, active.width, active.height, 0.12, 10, 1.0, rocket_raylib.color(138, 77, 255, 255))?
+    reference_icon(frame, resources, 4, reference_rect(18, 86, 28, 28, width, height), 255)?
+    reference_centered(window, frame, resources, "Blackjack", reference_rect(3, 115, 59, 16, width, height), 8, rocket_raylib.color(244, 246, 251, 255))?
+    let all_games = reference_back_rect(width, height)
+    if components.contains(all_games, mouse_x, mouse_y):
+        rocket_raylib.draw_rounded_rectangle(frame, all_games.x, all_games.y, all_games.width, all_games.height, 0.12, 10, rocket_raylib.color(16, 25, 44, 255))?
+    reference_icon(frame, resources, 5, reference_rect(20, 146, 25, 25, width, height), 235)?
+    reference_centered(window, frame, resources, "All Games", reference_rect(2, 174, 61, 16, width, height), 8, rocket_raylib.color(157, 168, 188, 255))?
+    reference_icon(frame, resources, 6, reference_rect(18, 588, 28, 28, width, height), 235)?
+    reference_centered(window, frame, resources, "Help", reference_rect(4, 619, 57, 14, width, height), 8, rocket_raylib.color(157, 168, 188, 255))?
+
+    reference_text(window, frame, resources, "LOCAL TABLE", reference_rect(20, 0, 0, 0, width, height).x, reference_rect(0, 690, 0, 0, width, height).y, 9, rocket_raylib.color(244, 246, 251, 255))?
+    reference_text(window, frame, resources, "Play money only", reference_rect(20, 0, 0, 0, width, height).x, reference_rect(0, 704, 0, 0, width, height).y, 8, rocket_raylib.color(157, 168, 188, 255))?
+    reference_centered(window, frame, resources, string.concat("Game ID: BJ-", string.from_int(game.round_number)), reference_rect(520, 685, 230, 24, width, height), 9, rocket_raylib.color(157, 168, 188, 255))?
+    reference_icon(frame, resources, 6, reference_rect(1092, 690, 16, 16, width, height), 255)?
+    reference_text(window, frame, resources, "Secure Play", reference_rect(1113, 0, 0, 0, width, height).x, reference_rect(0, 692, 0, 0, width, height).y, 9, rocket_raylib.color(157, 168, 188, 255))?
+    reference_text(window, frame, resources, "LOCAL", reference_rect(1220, 0, 0, 0, width, height).x, reference_rect(0, 690, 0, 0, width, height).y, 9, rocket_raylib.color(244, 246, 251, 255))?
+    reference_text(window, frame, resources, "TABLE", reference_rect(1220, 0, 0, 0, width, height).x, reference_rect(0, 704, 0, 0, width, height).y, 8, rocket_raylib.color(157, 168, 188, 255))?
+    return Ok(true)
+
+fn reference_chip_cell(amount: Int) -> Int:
+    if amount >= 500:
+        return 5
+    if amount >= 250:
+        return 4
+    if amount >= 100:
+        return 3
+    if amount >= 50:
+        return 2
+    if amount >= 25:
+        return 1
+    return 0
+
+fn draw_reference_chip(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, amount: Int, selected: Bool, center_x: Int, center_y: Int, size: Int, light_mode: Bool) -> Result[Bool, String]:
+    if resources.tables.blackjack.chips_ready:
+        var cell = reference_chip_cell(amount)
+        if selected:
+            cell = cell + 6
+        return game_components.texture_cell(frame, resources.tables.blackjack.chips, 6, 2, cell, components.rect(center_x - size / 2, center_y - size / 2, size, size), 255)
+    return game_components.chip_stack(window, frame, resources, center_x - 22, center_y, amount, theme.violet(light_mode), light_mode)
+
+fn reference_card_cell(card: blackjack_model.Card, hidden: Bool) -> Int:
+    if hidden:
+        return 52
+    return card.suit * 13 + card.rank - 1
+
+fn draw_reference_card(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, card: blackjack_model.Card, hidden: Bool, value: components.Rect, active: Bool, light_mode: Bool) -> Result[Bool, String]:
+    rocket_raylib.draw_rounded_rectangle(frame, value.x + 3, value.y + 5, value.width, value.height, 0.08, 8, rocket_raylib.color(0, 0, 0, 105))?
+    if resources.tables.blackjack.cards_ready:
+        let cell = reference_card_cell(card, hidden)
+        let column = cell - cell / 13 * 13
+        let row = cell / 13
+        rocket_raylib.draw_texture_region(frame, resources.tables.blackjack.cards, column * 116, row * 168, 116, 168, value.x, value.y, value.width, value.height, rocket_raylib.color(255, 255, 255, 255))?
+    else:
+        var fill = rocket_raylib.color(249, 247, 241, 255)
+        var outline = rocket_raylib.color(205, 194, 173, 255)
+        var ink = rocket_raylib.color(20, 28, 43, 255)
+        var label = blackjack_cards.rank_name(card.rank)
+        if hidden:
+            fill = rocket_raylib.color(81, 43, 174, 255)
+            outline = rocket_raylib.color(187, 158, 255, 255)
+            ink = rocket_raylib.color(255, 255, 255, 255)
+            label = "S2R"
+        rocket_raylib.draw_rounded_rectangle(frame, value.x, value.y, value.width, value.height, 0.08, 8, fill)?
+        rocket_raylib.draw_rounded_rectangle_lines(frame, value.x, value.y, value.width, value.height, 0.08, 8, 1.0, outline)?
+        reference_centered(window, frame, resources, label, value, 13, ink)?
+    if active:
+        rocket_raylib.draw_rounded_rectangle_lines(frame, value.x - 2, value.y - 2, value.width + 4, value.height + 4, 0.10, 8, 2.0, rocket_raylib.color(142, 87, 255, 230))?
+    return Ok(true)
+
+fn draw_reference_cards(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, cards: Array[blackjack_model.Card], center_x: Int, y: Int, card_width: Int, card_height: Int, overlap: Int, hide_hole: Bool, flip_hole: Bool, active: Bool, offset: Int, light_mode: Bool) -> Result[Bool, String]:
+    let count = collections.length(cards)
+    if count <= 0:
+        return Ok(true)
+    let total_width = card_width +(count - 1) * overlap
+    let start_x = center_x - total_width / 2
+    var index = 0
+    while index < count:
+        var card_x = start_x + index * overlap
+        var card_y = y
+        if index == count - 1 and offset > 0:
+            card_x = card_x + offset * 4
+            card_y = card_y - offset
+        var hidden = hide_hole and index == 1
+        if flip_hole and index == 1 and offset > 14:
+            hidden = true
+        draw_reference_card(window, frame, resources, cards[index], hidden, components.rect(card_x, card_y, card_width, card_height), active and index == count - 1, light_mode)?
+        index = index + 1
+    return Ok(true)
+
+fn reference_ai_center(index: Int, count: Int) -> Int:
+    if count <= 1:
+        return 275
+    if count == 2:
+        if index == 0:
+            return 275
+        return 803
+    if count == 3:
+        if index == 0:
+            return 275
+        if index == 1:
+            return 375
+        return 803
+    if count == 4:
+        if index == 0:
+            return 238
+        if index == 1:
+            return 350
+        if index == 2:
+            return 758
+        return 866
+    if index == 0:
+        return 210
+    if index == 1:
+        return 315
+    if index == 2:
+        return 410
+    if index == 3:
+        return 760
+    return 865
+
+fn draw_reference_seats(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, offset: Int, light_mode: Bool) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    reference_component(frame, resources, 3, reference_rect(507, 106, 102, 28, width, height), 255)?
+    var dealer_score = "0"
+    let phase = blackjack_engine.phase_code(game.phase)
+    if phase >= 2 and collections.length(game.dealer_hand.cards) > 0:
+        dealer_score = string.from_int(blackjack_cards.value(game.dealer_hand).total)
+    reference_centered(window, frame, resources, dealer_score, reference_rect(507, 136, 102, 18, width, height), 10, rocket_raylib.color(244, 246, 251, 255))?
+    let opponents = collections.length(game.players) - 1
+    var index = 0
+    while index < opponents:
+        let player = game.players[index + 1]
+        let center = reference_ai_center(index, opponents)
+        let seat = reference_rect(center - 45, 106, 90, 28, width, height)
+        var outline = rocket_raylib.color(215, 168, 58, 220)
+        if phase == 1 and game.active_player == index + 1:
+            outline = rocket_raylib.color(33, 212, 243, 255)
+        rocket_raylib.draw_rounded_rectangle(frame, seat.x, seat.y, seat.width, seat.height, 0.36, 12, rocket_raylib.color(5, 9, 17, 245))?
+        rocket_raylib.draw_rounded_rectangle_lines(frame, seat.x, seat.y, seat.width, seat.height, 0.36, 12, 1.0, outline)?
+        reference_centered(window, frame, resources, player.name, seat, 9, rocket_raylib.color(244, 246, 251, 255))?
+        var score = "0"
+        if collections.length(player.hands) > 0:
+            score = string.from_int(blackjack_cards.value(player.hands[0]).total)
+        reference_centered(window, frame, resources, score, reference_rect(center - 30, 136, 60, 18, width, height), 10, rocket_raylib.color(244, 246, 251, 255))?
+        if collections.length(player.hands) > 0 and collections.length(player.hands[0].cards) > 0:
+            let mini_center = reference_rect(center, 0, 0, 0, width, height).x
+            let mini_y = reference_rect(0, 155, 0, 0, width, height).y
+            let mini_width = reference_rect(0, 0, 32, 0, width, height).width
+            let mini_height = reference_rect(0, 0, 0, 46, width, height).height
+            let mini_overlap = reference_rect(0, 0, 18, 0, width, height).width
+            draw_reference_cards(window, frame, resources, player.hands[0].cards, mini_center, mini_y, mini_width, mini_height, mini_overlap, false, false, phase == 1 and game.active_player == index + 1, offset / 3, light_mode)?
+        index = index + 1
+    return Ok(true)
+
+fn reference_hand_center(index: Int, count: Int) -> Int:
+    if count <= 1:
+        return 554
+    if count == 2:
+        if index == 0:
+            return 401
+        return 703
+    if count == 3:
+        return 326 + index * 228
+    return 248 + index * 204
+
+fn draw_reference_dealer(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, offset: Int, light_mode: Bool) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let phase = blackjack_engine.phase_code(game.phase)
+    let hide_hole = phase == 1
+    let flip_hole = phase == 2
+    var y = 155
+    if phase >= 2:
+        y = 142
+    draw_reference_cards(window, frame, resources, game.dealer_hand.cards, reference_rect(554, 0, 0, 0, width, height).x, reference_rect(0, y, 0, 0, width, height).y, reference_rect(0, 0, 64, 0, width, height).width, reference_rect(0, 0, 0, 92, width, height).height, reference_rect(0, 0, 34, 0, width, height).width, hide_hole, flip_hole, false, offset, light_mode)?
+    if phase >= 2 and collections.length(game.dealer_hand.cards) > 0:
+        let total = blackjack_cards.value(game.dealer_hand).total
+        let badge = reference_rect(531, 218, 50, 22, width, height)
+        rocket_raylib.draw_rounded_rectangle(frame, badge.x, badge.y, badge.width, badge.height, 0.5, 12, rocket_raylib.color(7, 27, 24, 245))?
+        rocket_raylib.draw_rounded_rectangle_lines(frame, badge.x, badge.y, badge.width, badge.height, 0.5, 12, 1.0, rocket_raylib.color(240, 196, 91, 230))?
+        reference_centered(window, frame, resources, string.from_int(total), badge, 10, rocket_raylib.color(244, 246, 251, 255))?
+    return Ok(true)
+
+fn draw_reference_wager(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, amount: Int, selected: Bool, center_x: Int, cards_y: Int, label_y: Int, value_y: Int, offset: Int, light_mode: Bool) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let scaled_center_x = reference_rect(center_x, 0, 0, 0, width, height).x
+    let chip_center_y = reference_rect(0, cards_y - offset / 2, 0, 0, width, height).y
+    let chip_size = reference_rect(0, 0, 52, 0, width, height).width
+    draw_reference_chip(window, frame, resources, amount, selected, scaled_center_x, chip_center_y, chip_size, light_mode)?
+    let label = reference_rect(center_x - 28, label_y, 56, 18, width, height)
+    rocket_raylib.draw_rounded_rectangle(frame, label.x, label.y, label.width, label.height, 0.5, 12, rocket_raylib.color(16, 23, 37, 248))?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, label.x, label.y, label.width, label.height, 0.5, 12, 1.0, rocket_raylib.color(138, 92, 19, 220))?
+    reference_centered(window, frame, resources, "BET", label, 8, rocket_raylib.color(240, 196, 91, 255))?
+    let amount_box = reference_rect(center_x - 44, value_y, 89, 30, width, height)
+    rocket_raylib.draw_rounded_rectangle(frame, amount_box.x, amount_box.y, amount_box.width, amount_box.height, 0.5, 12, rocket_raylib.color(5, 32, 24, 248))?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, amount_box.x, amount_box.y, amount_box.width, amount_box.height, 0.5, 12, 1.0, rocket_raylib.color(240, 196, 91, 245))?
+    return reference_centered(window, frame, resources, string.from_int(amount), amount_box, 15, rocket_raylib.color(244, 246, 251, 255))
+
+fn draw_reference_player(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, selected_bet: Int, offset: Int, light_mode: Bool) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let hand_count = collections.length(game.players[0].hands)
+    if hand_count <= 0:
+        draw_reference_wager(window, frame, resources, selected_bet, true, 554, 514, 544, 560, offset, light_mode)?
+        return Ok(true)
+    var index = 0
+    while index < hand_count:
+        let hand = game.players[0].hands[index]
+        let center = reference_hand_center(index, hand_count)
+        let active = blackjack_engine.phase_code(game.phase) == 1 and game.active_player == 0 and game.players[0].active_hand == index
+        if active:
+            let halo_center_x = reference_rect(center, 0, 0, 0, width, height).x
+            let halo_center_y = reference_rect(0, 505, 0, 0, width, height).y
+            let inner = reference_rect(0, 0, 61, 0, width, height).width
+            let outer = reference_rect(0, 0, 64, 0, width, height).width
+            rocket_raylib.draw_ring_pixels(frame, halo_center_x, halo_center_y, inner, outer, 0.0, 360.0, 64, rocket_raylib.color(142, 87, 255, 238))?
+            rocket_raylib.draw_ring_pixels(frame, halo_center_x, halo_center_y, outer + 4, outer + 7, 0.0, 360.0, 64, rocket_raylib.color(33, 212, 243, 110))?
+        let cards_y = reference_rect(0, 436, 0, 0, width, height).y
+        let card_width = reference_rect(0, 0, 64, 0, width, height).width
+        let card_height = reference_rect(0, 0, 0, 92, width, height).height
+        let overlap = reference_rect(0, 0, 34, 0, width, height).width
+        draw_reference_cards(window, frame, resources, hand.cards, reference_rect(center, 0, 0, 0, width, height).x, cards_y, card_width, card_height, overlap, false, false, active, offset, light_mode)?
+        let total = blackjack_cards.value(hand)
+        let total_badge = reference_rect(center - 18, 412, 36, 24, width, height)
+        rocket_raylib.draw_rounded_rectangle(frame, total_badge.x, total_badge.y, total_badge.width, total_badge.height, 0.5, 12, rocket_raylib.color(7, 27, 24, 250))?
+        rocket_raylib.draw_rounded_rectangle_lines(frame, total_badge.x, total_badge.y, total_badge.width, total_badge.height, 0.5, 12, 1.0, rocket_raylib.color(240, 196, 91, 235))?
+        reference_centered(window, frame, resources, string.from_int(total.total), total_badge, 10, rocket_raylib.color(244, 246, 251, 255))?
+        var chip_y = 523
+        var label_y = 548
+        var value_y = 566
+        if hand_count > 1:
+            chip_y = 547
+            label_y = 567
+            value_y = 584
+        draw_reference_wager(window, frame, resources, hand.bet, active, center, chip_y, label_y, value_y, offset, light_mode)?
+        if total.busted:
+            let bust = reference_rect(center - 30, value_y + 32, 60, 26, width, height)
+            rocket_raylib.draw_rounded_rectangle(frame, bust.x, bust.y, bust.width, bust.height, 0.3, 10, rocket_raylib.color(4, 53, 39, 250))?
+            rocket_raylib.draw_rounded_rectangle_lines(frame, bust.x, bust.y, bust.width, bust.height, 0.3, 10, 1.0, rocket_raylib.color(20, 184, 121, 255))?
+            reference_centered(window, frame, resources, "BUST", bust, 11, rocket_raylib.color(53, 210, 160, 255))?
+        index = index + 1
+    return Ok(true)
+
+fn draw_reference_status(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, auto_bet: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let phase = blackjack_engine.phase_code(game.phase)
+    let panel = reference_rect(1031, 82, 229, 85, width, height)
+    reference_panel(frame, panel, true)?
+    let pill = reference_rect(1071, 88, 149, 32, width, height)
+    if phase == 1 and resources.tables.blackjack.components_ready:
+        reference_component(frame, resources, 0, pill, 255)?
+    else:
+        rocket_raylib.draw_rounded_rectangle(frame, pill.x, pill.y, pill.width, pill.height, 0.5, 18, rocket_raylib.color(47, 20, 108, 255))?
+        rocket_raylib.draw_rounded_rectangle_lines(frame, pill.x, pill.y, pill.width, pill.height, 0.5, 18, 1.0, rocket_raylib.color(138, 77, 255, 255))?
+        reference_centered(window, frame, resources, phase_name(phase), pill, 12, rocket_raylib.color(244, 246, 251, 255))?
+    var subtitle = "Place your bets to begin"
+    if phase == 1:
+        subtitle = "Your move"
+        if collections.length(game.players[0].hands) > 1:
+            subtitle = "Your turn. Play your hand."
+    if phase == 2:
+        subtitle = "Dealer is drawing"
+    if phase == 3:
+        subtitle = "Round settled"
+    var subtitle_rect = reference_rect(1042, 126, 207, 20, width, height)
+    if phase == 0:
+        subtitle_rect = reference_rect(1042, 126, 122, 20, width, height)
+    reference_centered(window, frame, resources, subtitle, subtitle_rect, 9, rocket_raylib.color(244, 246, 251, 255))?
+    if phase == 0:
+        let toggle = auto_bet_rect(width, height)
+        var toggle_fill = rocket_raylib.color(16, 25, 44, 255)
+        var toggle_ink = rocket_raylib.color(157, 168, 188, 255)
+        if auto_bet:
+            toggle_fill = rocket_raylib.color(66, 28, 146, 255)
+            toggle_ink = rocket_raylib.color(244, 246, 251, 255)
+        if components.contains(toggle, mouse_x, mouse_y):
+            toggle_fill = rocket_raylib.color(82, 40, 174, 255)
+        rocket_raylib.draw_rounded_rectangle(frame, toggle.x, toggle.y, toggle.width, toggle.height, 0.5, 12, toggle_fill)?
+        rocket_raylib.draw_rounded_rectangle_lines(frame, toggle.x, toggle.y, toggle.width, toggle.height, 0.5, 12, 1.0, rocket_raylib.color(110, 53, 232, 255))?
+        var label = "AUTO OFF"
+        if auto_bet:
+            label = "AUTO ON"
+        reference_centered(window, frame, resources, label, toggle, 8, toggle_ink)?
+    return Ok(true)
+
+fn draw_reference_limits(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, top: Int, panel_height: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let panel = reference_rect(1031, top, 229, panel_height, width, height)
+    reference_panel(frame, panel, false)?
+    reference_icon(frame, resources, 7, reference_rect(1044, top + 12, 18, 18, width, height), 255)?
+    reference_text(window, frame, resources, "TABLE LIMITS", reference_rect(1068, 0, 0, 0, width, height).x, reference_rect(0, top + 14, 0, 0, width, height).y, 10, rocket_raylib.color(244, 246, 251, 255))?
+    reference_centered(window, frame, resources, "Min", reference_rect(1061, top + 40, 55, 16, width, height), 8, rocket_raylib.color(157, 168, 188, 255))?
+    reference_centered(window, frame, resources, "Max", reference_rect(1172, top + 40, 55, 16, width, height), 8, rocket_raylib.color(157, 168, 188, 255))?
+    reference_centered(window, frame, resources, string.from_int(game.rules.minimum_bet), reference_rect(1061, top + 56, 55, 22, width, height), 13, rocket_raylib.color(244, 246, 251, 255))?
+    reference_centered(window, frame, resources, "-", reference_rect(1124, top + 56, 35, 22, width, height), 13, rocket_raylib.color(157, 168, 188, 255))?
+    return reference_centered(window, frame, resources, string.from_int(game.rules.maximum_bet), reference_rect(1172, top + 56, 55, 22, width, height), 13, rocket_raylib.color(244, 246, 251, 255))
+
+fn draw_reference_bet_amount(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, selected_bet: Int, top: Int, panel_height: Int, interactive: Bool, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let panel = reference_rect(1031, top, 229, panel_height, width, height)
+    reference_panel(frame, panel, false)?
+    reference_icon(frame, resources, 9, reference_rect(1044, top + 11, 18, 18, width, height), 255)?
+    reference_text(window, frame, resources, "BET AMOUNT", reference_rect(1068, 0, 0, 0, width, height).x, reference_rect(0, top + 13, 0, 0, width, height).y, 10, rocket_raylib.color(244, 246, 251, 255))?
+    let minus = reference_rect(1048, top + 35, 34, 34, width, height)
+    let plus = reference_rect(1205, top + 35, 34, 34, width, height)
+    let amount = reference_rect(1093, top + 35, 102, 34, width, height)
+    var control_fill = rocket_raylib.color(16, 25, 44, 255)
+    if not interactive:
+        control_fill = rocket_raylib.color(13, 21, 37, 220)
+    rocket_raylib.draw_rounded_rectangle(frame, minus.x, minus.y, minus.width, minus.height, 0.5, 16, control_fill)?
+    rocket_raylib.draw_rounded_rectangle(frame, plus.x, plus.y, plus.width, plus.height, 0.5, 16, control_fill)?
+    rocket_raylib.draw_rounded_rectangle(frame, amount.x, amount.y, amount.width, amount.height, 0.14, 8, rocket_raylib.color(8, 14, 27, 250))?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, amount.x, amount.y, amount.width, amount.height, 0.14, 8, 1.0, rocket_raylib.color(41, 54, 82, 255))?
+    reference_centered(window, frame, resources, "-", minus, 18, rocket_raylib.color(244, 246, 251, 255))?
+    reference_centered(window, frame, resources, "+", plus, 18, rocket_raylib.color(244, 246, 251, 255))?
+    reference_centered(window, frame, resources, string.from_int(selected_bet), amount, 15, rocket_raylib.color(244, 246, 251, 255))?
+    let values = [10, 25, 50, 100, 250, 500]
+    var index = 0
+    while index < 6:
+        let row = index / 3
+        let column = index - row * 3
+        let button = reference_rect(1047 + column * 59, top + 82 + row * 44, 49, 32, width, height)
+        let enabled = interactive and values[index] <= game.players[0].balance + game.players[0].pending_bet
+        var fill = rocket_raylib.color(8, 14, 27, 250)
+        var outline = rocket_raylib.color(41, 54, 82, 255)
+        var ink = rocket_raylib.color(244, 246, 251, 255)
+        if selected_bet == values[index]:
+            fill = rocket_raylib.color(48, 20, 112, 255)
+            outline = rocket_raylib.color(138, 77, 255, 255)
+        if interactive and components.contains(button, mouse_x, mouse_y):
+            outline = rocket_raylib.color(33, 212, 243, 255)
+        if not enabled and interactive:
+            ink = rocket_raylib.color(102, 113, 136, 180)
+        rocket_raylib.draw_rounded_rectangle(frame, button.x, button.y, button.width, button.height, 0.16, 8, fill)?
+        rocket_raylib.draw_rounded_rectangle_lines(frame, button.x, button.y, button.width, button.height, 0.16, 8, 1.0, outline)?
+        reference_centered(window, frame, resources, string.from_int(values[index]), button, 10, ink)?
+        index = index + 1
+    return Ok(true)
+
+fn draw_reference_current_bet(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, selected_bet: Int, top: Int, panel_height: Int, light_mode: Bool) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let panel = reference_rect(1031, top, 229, panel_height, width, height)
+    reference_panel(frame, panel, false)?
+    reference_icon(frame, resources, 10, reference_rect(1044, top + 11, 18, 18, width, height), 255)?
+    reference_text(window, frame, resources, "CURRENT BET", reference_rect(1068, 0, 0, 0, width, height).x, reference_rect(0, top + 13, 0, 0, width, height).y, 10, rocket_raylib.color(244, 246, 251, 255))?
+    draw_reference_chip(window, frame, resources, selected_bet, false, reference_rect(1058, 0, 0, 0, width, height).x, reference_rect(0, top + 53, 0, 0, width, height).y, reference_rect(0, 0, 28, 0, width, height).width, light_mode)?
+    return reference_text(window, frame, resources, string.from_int(selected_bet), reference_rect(1081, 0, 0, 0, width, height).x, reference_rect(0, top + 43, 0, 0, width, height).y, 18, rocket_raylib.color(244, 246, 251, 255))
+
+fn reference_action_visual_rect(game: blackjack_model.Game, code: Int, width: Int, height: Int) -> components.Rect:
+    if collections.length(game.players[0].hands) > 1:
+        if code == 4:
+            return reference_rect(1030, 582, 228, 40, width, height)
+        let row = code / 2
+        let column = code - row * 2
+        return reference_rect(1030 + column * 118, 494 + row * 44, 110, 39, width, height)
+    return reference_rect(1034, 432 + code * 43, 223, 35, width, height)
+
+fn draw_reference_action_button(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, code: Int, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let target = game_action_rect(game, code, width, height)
+    let button = reference_action_visual_rect(game, code, width, height)
+    let enabled = action_available(game, code)
+    let labels = ["HIT [H]", "STAND [S]", "DOUBLE [D]", "SPLIT [P]", "SURRENDER [R]"]
+    if enabled and resources.tables.blackjack.components_ready:
+        reference_component(frame, resources, 13 + code, button, 255)?
+    else:
+        var fill = rocket_raylib.color(13, 21, 37, 255)
+        var ink = rocket_raylib.color(102, 113, 136, 190)
+        if enabled:
+            fill = rocket_raylib.color(19, 30, 52, 255)
+            ink = rocket_raylib.color(244, 246, 251, 255)
+        rocket_raylib.draw_rounded_rectangle(frame, button.x, button.y, button.width, button.height, 0.14, 8, fill)?
+        rocket_raylib.draw_rounded_rectangle_lines(frame, button.x, button.y, button.width, button.height, 0.14, 8, 1.0, rocket_raylib.color(41, 54, 82, 255))?
+        reference_centered(window, frame, resources, labels[code], button, 10, ink)?
+    if enabled and(components.contains(target, mouse_x, mouse_y) or code == 0):
+        rocket_raylib.draw_rounded_rectangle_lines(frame, button.x - 1, button.y - 1, button.width + 2, button.height + 2, 0.14, 8, 2.0, rocket_raylib.color(33, 212, 243, 235))?
+    return Ok(true)
+
+fn draw_reference_deal_button(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, selected_bet: Int, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let button = deal_rect(width, height)
+    let enabled = selected_bet <= game.players[0].balance + game.players[0].pending_bet
+    var fill = rocket_raylib.color(94, 37, 215, 255)
+    var outline = rocket_raylib.color(138, 77, 255, 255)
+    var ink = rocket_raylib.color(255, 255, 255, 255)
+    if components.contains(button, mouse_x, mouse_y):
+        fill = rocket_raylib.color(132, 72, 255, 255)
+        outline = rocket_raylib.color(33, 212, 243, 255)
+    if not enabled:
+        fill = rocket_raylib.color(39, 49, 74, 255)
+        outline = rocket_raylib.color(41, 54, 82, 255)
+        ink = rocket_raylib.color(102, 113, 136, 200)
+    rocket_raylib.draw_rounded_rectangle(frame, button.x, button.y + 3, button.width, button.height, 0.14, 10, rocket_raylib.color(68, 24, 155, 150))?
+    rocket_raylib.draw_rounded_rectangle(frame, button.x, button.y, button.width, button.height, 0.14, 10, fill)?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, button.x, button.y, button.width, button.height, 0.14, 10, 1.0, outline)?
+    reference_icon(frame, resources, 8, reference_rect(1094, 607, 22, 22, width, height), 255)?
+    return reference_centered(window, frame, resources, string.concat("Deal ", string.from_int(selected_bet)), reference_rect(1110, 596, 118, 48, width, height), 15, ink)
+
+fn draw_reference_result_panel(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, on_table: Bool, offset: Int, light_mode: Bool) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    var net = 0
+    var headline = "ROUND SETTLED"
+    var detail = game.message
+    var ink = rocket_raylib.color(240, 196, 91, 255)
+    var index = 0
+    while index < collections.length(game.results):
+        let result = game.results[index]
+        if result.player_index == 0:
+            let outcome = settlement.outcome_code(result.outcome)
+            net = net + result.payout - game.players[0].hands[result.hand_index].bet
+            detail = settlement.outcome_name(result.outcome)
+            if outcome == 0 or outcome == 1:
+                headline = "You Win"
+                ink = rocket_raylib.color(53, 210, 160, 255)
+            if outcome == 2:
+                headline = "Push"
+                ink = rocket_raylib.color(240, 196, 91, 255)
+            if outcome == 3 or outcome == 4:
+                headline = "Dealer Wins"
+                ink = rocket_raylib.color(243, 75, 94, 255)
+        index = index + 1
+    var panel = reference_rect(1031, 282, 229, 187, width, height)
+    if on_table:
+        panel = reference_rect(749, 349, 202, 192, width, height)
+    if offset > 0:
+        rocket_raylib.draw_ring_pixels(frame, panel.x + panel.width / 2, panel.y + panel.height / 2, panel.width / 2, panel.width / 2 + offset / 2, 0.0, 360.0, 48, rocket_raylib.color(240, 196, 91, 120))?
+    rocket_raylib.draw_rounded_rectangle(frame, panel.x, panel.y, panel.width, panel.height, 0.08, 10, rocket_raylib.color(4, 30, 26, 246))?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, panel.x, panel.y, panel.width, panel.height, 0.08, 10, 1.0, rocket_raylib.color(215, 168, 58, 235))?
+    reference_centered(window, frame, resources, "ROUND RESULT", components.rect(panel.x + 12, panel.y + 42, panel.width - 24, 22), 10, rocket_raylib.color(244, 246, 251, 255))?
+    reference_centered(window, frame, resources, headline, components.rect(panel.x + 12, panel.y + 70, panel.width - 24, 28), 18, ink)?
+    reference_centered(window, frame, resources, detail, components.rect(panel.x + 12, panel.y + 102, panel.width - 24, 18), 9, rocket_raylib.color(244, 246, 251, 255))?
+    rocket_raylib.draw_line(frame, panel.x + 16, panel.y + 130, panel.x + panel.width - 16, panel.y + 130, 1.0, rocket_raylib.color(41, 54, 82, 255))?
+    reference_centered(window, frame, resources, "CREDITS CHANGE", components.rect(panel.x + 12, panel.y + 138, panel.width - 24, 16), 8, rocket_raylib.color(157, 168, 188, 255))?
+    var net_text = string.from_int(net)
+    if net > 0:
+        net_text = string.concat("+", net_text)
+    return reference_centered(window, frame, resources, net_text, components.rect(panel.x + 12, panel.y + 158, panel.width - 24, 24), 16, ink)
+
+fn draw_reference_hand_selector(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let panel = reference_rect(1031, 234, 229, 142, width, height)
+    reference_panel(frame, panel, false)?
+    reference_icon(frame, resources, 10, reference_rect(1044, 245, 18, 18, width, height), 255)?
+    reference_text(window, frame, resources, "CURRENT HAND", reference_rect(1068, 0, 0, 0, width, height).x, reference_rect(0, 247, 0, 0, width, height).y, 10, rocket_raylib.color(244, 246, 251, 255))?
+    var index = 0
+    while index < collections.length(game.players[0].hands):
+        let hand = game.players[0].hands[index]
+        let active = game.players[0].active_hand == index
+        let row = reference_rect(1040, 272 + index * 27, 211, 23, width, height)
+        var fill = rocket_raylib.color(8, 14, 27, 250)
+        var outline = rocket_raylib.color(41, 54, 82, 255)
+        if active:
+            fill = rocket_raylib.color(48, 20, 112, 255)
+            outline = rocket_raylib.color(138, 77, 255, 255)
+        rocket_raylib.draw_rounded_rectangle(frame, row.x, row.y, row.width, row.height, 0.12, 8, fill)?
+        rocket_raylib.draw_rounded_rectangle_lines(frame, row.x, row.y, row.width, row.height, 0.12, 8, 1.0, outline)?
+        var label = string.concat("HAND ", string.from_int(index + 1))
+        if active:
+            label = string.concat(label, " (ACTIVE)")
+        reference_text(window, frame, resources, label, row.x + 12, row.y + 5, 9, rocket_raylib.color(244, 246, 251, 255))?
+        reference_text(window, frame, resources, string.from_int(blackjack_cards.value(hand).total), row.x + row.width - 28, row.y + 5, 9, rocket_raylib.color(244, 246, 251, 255))?
+        index = index + 1
+    return Ok(true)
+
+fn draw_reference_dealer_progress(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let panel = reference_rect(1031, 462, 229, 124, width, height)
+    reference_panel(frame, panel, false)?
+    reference_text(window, frame, resources, "YOUR HAND", reference_rect(1045, 0, 0, 0, width, height).x, reference_rect(0, 477, 0, 0, width, height).y, 9, rocket_raylib.color(157, 168, 188, 255))?
+    if collections.length(game.players[0].hands) > 0:
+        reference_text(window, frame, resources, string.from_int(blackjack_cards.value(game.players[0].hands[0]).total), reference_rect(1045, 0, 0, 0, width, height).x, reference_rect(0, 498, 0, 0, width, height).y, 16, rocket_raylib.color(244, 246, 251, 255))?
+    rocket_raylib.draw_line(frame, reference_rect(1045, 0, 0, 0, width, height).x, reference_rect(0, 527, 0, 0, width, height).y, reference_rect(1246, 0, 0, 0, width, height).x, reference_rect(0, 527, 0, 0, width, height).y, 1.0, rocket_raylib.color(41, 54, 82, 255))?
+    reference_text(window, frame, resources, "STATUS", reference_rect(1045, 0, 0, 0, width, height).x, reference_rect(0, 539, 0, 0, width, height).y, 9, rocket_raylib.color(157, 168, 188, 255))?
+    reference_text(window, frame, resources, "Dealer is completing the hand.", reference_rect(1045, 0, 0, 0, width, height).x, reference_rect(0, 560, 0, 0, width, height).y, 9, rocket_raylib.color(244, 246, 251, 255))?
+    return Ok(true)
+
+fn draw_reference_settled_buttons(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let next = next_rect(width, height)
+    let restart = restart_rect(width, height)
+    var next_fill = rocket_raylib.color(94, 37, 215, 255)
+    if components.contains(next, mouse_x, mouse_y):
+        next_fill = rocket_raylib.color(132, 72, 255, 255)
+    rocket_raylib.draw_rounded_rectangle(frame, next.x, next.y + 3, next.width, next.height, 0.14, 10, rocket_raylib.color(66, 28, 146, 160))?
+    rocket_raylib.draw_rounded_rectangle(frame, next.x, next.y, next.width, next.height, 0.14, 10, next_fill)?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, next.x, next.y, next.width, next.height, 0.14, 10, 1.0, rocket_raylib.color(138, 77, 255, 255))?
+    reference_centered(window, frame, resources, "Next Round", next, 16, rocket_raylib.color(255, 255, 255, 255))?
+    var restart_fill = rocket_raylib.color(16, 25, 44, 255)
+    if components.contains(restart, mouse_x, mouse_y):
+        restart_fill = rocket_raylib.color(29, 41, 66, 255)
+    rocket_raylib.draw_rounded_rectangle(frame, restart.x, restart.y, restart.width, restart.height, 0.14, 10, restart_fill)?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, restart.x, restart.y, restart.width, restart.height, 0.14, 10, 1.0, rocket_raylib.color(41, 54, 82, 255))?
+    return reference_centered(window, frame, resources, "New Table", restart, 15, rocket_raylib.color(244, 246, 251, 255))
+
+fn draw_reference_rail(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, selected_bet: Int, auto_bet: Bool, offset: Int, mouse_x: Int, mouse_y: Int, light_mode: Bool) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    let phase = blackjack_engine.phase_code(game.phase)
+    draw_reference_status(window, frame, resources, game, auto_bet, mouse_x, mouse_y)?
+    if phase == 0:
+        draw_reference_limits(window, frame, resources, game, 175, 111)?
+        draw_reference_bet_amount(window, frame, resources, game, selected_bet, 294, 202, true, mouse_x, mouse_y)?
+        draw_reference_current_bet(window, frame, resources, selected_bet, 504, 82, light_mode)?
+        draw_reference_deal_button(window, frame, resources, game, selected_bet, mouse_x, mouse_y)?
+    if phase == 1 and collections.length(game.players[0].hands) <= 1:
+        draw_reference_limits(window, frame, resources, game, 165, 82)?
+        draw_reference_bet_amount(window, frame, resources, game, selected_bet, 256, 164, false, mouse_x, mouse_y)?
+        var code = 0
+        while code < 5:
+            draw_reference_action_button(window, frame, resources, game, code, mouse_x, mouse_y)?
+            code = code + 1
+    if phase == 1 and collections.length(game.players[0].hands) > 1:
+        draw_reference_limits(window, frame, resources, game, 147, 80)?
+        draw_reference_hand_selector(window, frame, resources, game)?
+        let wager = reference_rect(1031, 382, 229, 100, width, height)
+        reference_panel(frame, wager, false)?
+        reference_text(window, frame, resources, "BET AMOUNT (EACH HAND)", reference_rect(1045, 0, 0, 0, width, height).x, reference_rect(0, 396, 0, 0, width, height).y, 9, rocket_raylib.color(244, 246, 251, 255))?
+        reference_centered(window, frame, resources, string.from_int(game.players[0].hands[0].bet), reference_rect(1088, 420, 116, 34, width, height), 15, rocket_raylib.color(244, 246, 251, 255))?
+        var split_code = 0
+        while split_code < 5:
+            draw_reference_action_button(window, frame, resources, game, split_code, mouse_x, mouse_y)?
+            split_code = split_code + 1
+    if phase == 2:
+        draw_reference_limits(window, frame, resources, game, 175, 111)?
+        draw_reference_bet_amount(window, frame, resources, game, selected_bet, 294, 160, false, mouse_x, mouse_y)?
+        draw_reference_dealer_progress(window, frame, resources, game)?
+        reference_centered(window, frame, resources, "ROUND IN PROGRESS", reference_rect(1034, 596, 223, 48, width, height), 11, rocket_raylib.color(102, 113, 136, 210))?
+    if phase == 3:
+        draw_reference_limits(window, frame, resources, game, 175, 99)?
+        draw_reference_result_panel(window, frame, resources, game, false, offset, light_mode)?
+        draw_reference_settled_buttons(window, frame, resources, mouse_x, mouse_y)?
+    return Ok(true)
+
+fn draw_reference_scene(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, selected_bet: Int, auto_bet: Bool, light_mode: Bool, reduced_motion: Bool, now: Float, animation_end: Float, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    if resources.tables.blackjack.scene_ready:
+        game_components.texture_full(frame, resources.tables.blackjack.scene, components.rect(0, 0, width, height), 255)?
+    else:
+        rocket_raylib.draw_rectangle(frame, 0, 0, width, height, rocket_raylib.color(7, 11, 22, 255))?
+        let value = interior(width, height)
+        draw_room(frame, resources, value.stage, light_mode)?
+        game_components.felt_table(frame, table_rect(value), light_mode)?
+        reference_garamond_centered(window, frame, resources, "BLACKJACK", reference_rect(430, 240, 250, 48, width, height), 24, rocket_raylib.color(215, 168, 58, 255))?
+    let offset = game_components.motion_offset(now, animation_end, reduced_motion, 34)
+    draw_reference_seats(window, frame, resources, game, offset, light_mode)?
+    draw_reference_dealer(window, frame, resources, game, offset, light_mode)?
+    draw_reference_player(window, frame, resources, game, selected_bet, offset, light_mode)?
+    if collections.length(game.players[0].hands) > 1:
+        reference_garamond_centered(window, frame, resources, "DEALER STANDS ON SOFT 17", reference_rect(822, 326, 166, 20, width, height), 9, rocket_raylib.color(215, 168, 58, 205))?
+    if blackjack_engine.phase_code(game.phase) == 3:
+        draw_reference_result_panel(window, frame, resources, game, true, offset, light_mode)?
+    draw_reference_rail(window, frame, resources, game, selected_bet, auto_bet, offset, mouse_x, mouse_y, light_mode)?
+    draw_reference_shell(window, frame, resources, game, light_mode, mouse_x, mouse_y)?
+    return Ok(true)
+
+fn draw_responsive(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, selected_bet: Int, auto_bet: Bool, light_mode: Bool, reduced_motion: Bool, now: Float, animation_end: Float, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
     let width = rocket_raylib.window_width(window)
     let height = rocket_raylib.window_height(window)
     let value = interior(width, height)
     draw_room(frame, resources, value.stage, light_mode)?
     let table = table_rect(value)
     game_components.felt_table(frame, table, light_mode)?
-    components.type_text(window, frame, resources, "BLACKJACK PAYS 3 TO 2", table.x + 28, table.y + table.height / 2 - 12, components.type_caption(), rocket_raylib.color(255, 255, 255, 112))?
-    components.type_text(window, frame, resources, "DEALER STANDS ON SOFT 17", table.x + table.width - 226, table.y + table.height / 2 - 12, components.type_caption(), rocket_raylib.color(255, 255, 255, 112))?
+    let table_center = table.x + table.width / 2
+    let rules_y = table.y + table.height / 2 - 36
+    components.type_centered(window, frame, resources, "BLACKJACK", components.rect(table_center - 180, rules_y - 36, 360, 34), components.type_heading(), rocket_raylib.color(236, 205, 125, 210))?
+    components.type_centered(window, frame, resources, "PAYS 3 TO 2", components.rect(table_center - 120, rules_y, 240, 22), components.type_label(), rocket_raylib.color(236, 205, 125, 190))?
+    rocket_raylib.draw_line(frame, table_center - 112, rules_y + 28, table_center + 112, rules_y + 28, 1.0, rocket_raylib.color(236, 205, 125, 128))?
+    components.type_centered(window, frame, resources, "DEALER MUST STAND ON SOFT 17", components.rect(table_center - 180, rules_y + 40, 360, 22), components.type_caption(), rocket_raylib.color(236, 205, 125, 190))?
+    components.type_centered(window, frame, resources, "INSURANCE PAYS 2 TO 1", components.rect(table_center - 150, rules_y + 66, 300, 22), components.type_caption(), rocket_raylib.color(236, 205, 125, 154))?
+    let plaque = components.rect(table.x + 34, table.y + table.height / 2 - 12, 122, 56)
+    rocket_raylib.draw_rounded_rectangle(frame, plaque.x, plaque.y, plaque.width, plaque.height, 0.16, 10, rocket_raylib.color(5, 45, 36, 210))?
+    rocket_raylib.draw_rounded_rectangle_lines(frame, plaque.x, plaque.y, plaque.width, plaque.height, 0.16, 10, 1.0, rocket_raylib.color(236, 205, 125, 126))?
+    components.type_centered(window, frame, resources, "PAYS 3 TO 2", components.rect(plaque.x + 6, plaque.y + 10, plaque.width - 12, 18), components.type_caption(), rocket_raylib.color(236, 205, 125, 220))?
+    components.type_centered(window, frame, resources, "ON ALL BLACKJACKS", components.rect(plaque.x + 6, plaque.y + 30, plaque.width - 12, 16), components.type_caption(), rocket_raylib.color(236, 205, 125, 174))?
     var card_width = 56
     var card_height = 76
     if value.stage.width >= 960:
@@ -274,8 +1131,15 @@ pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources:
     draw_ai_seats(window, frame, resources, game, table, offset, light_mode)?
     draw_table_props(window, frame, resources, table, offset, light_mode)?
     draw_dealer(window, frame, resources, game, table, card_width, card_height, offset, light_mode)?
-    draw_player_hands(window, frame, resources, game, table, card_width, card_height, offset, light_mode)?
+    draw_player_hands(window, frame, resources, game, selected_bet, table, card_width, card_height, offset, light_mode)?
     if blackjack_engine.phase_code(game.phase) == 3:
         draw_results(window, frame, resources, game, table, offset, light_mode)?
-    draw_rail(window, frame, resources, game, selected_bet, value, mouse_x, mouse_y, light_mode)?
+    draw_rail(window, frame, resources, game, selected_bet, auto_bet, value, mouse_x, mouse_y, light_mode)?
     return Ok(true)
+
+pub fn draw(window: rocket_raylib.Window, frame: rocket_raylib.Frame, resources: ui_resources.UiResources, game: blackjack_model.Game, selected_bet: Int, auto_bet: Bool, light_mode: Bool, reduced_motion: Bool, now: Float, animation_end: Float, mouse_x: Int, mouse_y: Int) -> Result[Bool, String]:
+    let width = rocket_raylib.window_width(window)
+    let height = rocket_raylib.window_height(window)
+    if uses_reference_layout(width, height):
+        return draw_reference_scene(window, frame, resources, game, selected_bet, auto_bet, light_mode, reduced_motion, now, animation_end, mouse_x, mouse_y)
+    return draw_responsive(window, frame, resources, game, selected_bet, auto_bet, light_mode, reduced_motion, now, animation_end, mouse_x, mouse_y)

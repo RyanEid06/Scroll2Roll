@@ -25,6 +25,8 @@
 - `Left` / `Down`: reduce the bet by 10 credits.
 - `Right` / `Up`: increase the bet by 10 credits.
 - `Enter`: deal from the betting phase.
+- `M`: toggle Auto Bet. When enabled, the table starts the next round with the
+  selected wager after a short settled-state pause; it never changes a live hand.
 - `H`: Hit.
 - `S`: Stand.
 - `D`: Double Down when enabled.

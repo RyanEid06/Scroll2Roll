@@ -11,6 +11,10 @@
 #include <utility>
 #include <vector>
 
+#if defined(_WIN32)
+extern "C" __declspec(dllimport) int __stdcall SetProcessDpiAwarenessContext(void* value);
+#endif
+
 namespace {
 
 struct TextureRecord {
@@ -145,15 +149,21 @@ extern "C" int64_t rlv_buffer_live_count(void) {
   return static_cast<int64_t>(state.buffers.size());
 }
 
-extern "C" int64_t rlv_window_open(int64_t width, int64_t height,
-                                     int64_t titleBufferId) {
+static int64_t openWindow(int64_t width, int64_t height,
+                          int64_t titleBufferId, bool undecorated) {
   const std::string* title = buffer(titleBufferId);
   if (!title || width <= 0 || height <= 0 || !fitsInt(width) || !fitsInt(height)) {
     return RLV_ERR_INVALID_ARGUMENT;
   }
   if (state.windowOpen) return RLV_ERR_INVALID_STATE;
   if (!state.testMode) {
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
+#if defined(_WIN32)
+    SetProcessDpiAwarenessContext(
+        reinterpret_cast<void*>(static_cast<intptr_t>(-4)));
+#endif
+    unsigned int flags = FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT;
+    if (undecorated) flags |= FLAG_WINDOW_UNDECORATED;
+    SetConfigFlags(flags);
     InitWindow(static_cast<int>(width), static_cast<int>(height), title->c_str());
     if (!IsWindowReady()) return RLV_ERR_UNAVAILABLE;
     SetExitKey(KEY_NULL);
@@ -164,6 +174,16 @@ extern "C" int64_t rlv_window_open(int64_t width, int64_t height,
   state.windowHeight = height;
   state.windowId = nextId();
   return state.windowId;
+}
+
+extern "C" int64_t rlv_window_open(int64_t width, int64_t height,
+                                     int64_t titleBufferId) {
+  return openWindow(width, height, titleBufferId, false);
+}
+
+extern "C" int64_t rlv_window_open_undecorated(int64_t width, int64_t height,
+                                                 int64_t titleBufferId) {
+  return openWindow(width, height, titleBufferId, true);
 }
 
 extern "C" int64_t rlv_window_close(int64_t windowId) {

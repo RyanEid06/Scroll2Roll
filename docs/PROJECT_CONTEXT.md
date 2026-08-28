@@ -14,6 +14,9 @@ Read this file and `MASTER_PLAN.md` completely at the start of every Scroll2Roll
 - IDE: Visual Studio Community 2026 with Rocket Language 2.0.3
 - Last fully accepted full Debug/Release package baseline: 0.3.0; no public release is claimed
 - Current repository freeze: 0.3.1 “Casino Freeze” (local unsigned no-build candidate; no fresh post-Group-4 full suite)
+- Current local milestone: reference-driven Blackjack implementation and the
+  Rocket checkout rename were validated in fresh Debug and Release builds on
+  2026-08-24; final visual comparison/polish remains intentionally pending.
 
 ## Product vision and completed scope
 
@@ -53,7 +56,8 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
 
 ## Implemented functionality
 
-- The authoritative master plan is preserved byte-for-byte as `docs/MASTER_PLAN.md`.
+- The authoritative master plan is maintained as `docs/MASTER_PLAN.md`, with
+  its local Rocket checkout references updated to the current directory name.
 - The untouched original failing draft is preserved under `legacy/Blackjack-v1`.
 - A modular rendering-independent Blackjack engine implements checked cards, exact hand values, a deterministic six-deck shoe, cut-card reshuffling, table limits, player/AI betting, legal actions, Hit, Stand, Double Down, Split, Double After Split, a four-hand maximum, split-Ace one-card behavior, no standard resplit, Late Surrender, dealer stand on soft 17, naturals, exact 3:2 settlement, and deterministic AI/basic-strategy progression.
 - Complete and consecutive rounds have bounded transitions and nonnegative play-money balances.
@@ -86,6 +90,13 @@ Rocket 2.0 remains frozen and the original Rocket repository remains untouched b
   reduced-motion preference, migrates valid save-v1/v2/v3 data with credit
   integrity, and never persists live wagers, private outcomes, or resource
   handles.
+- Version 5 persistence adds the approved Blackjack Auto Bet preference,
+  migrates valid save-v1 through save-v4 data with Auto Bet disabled, and still
+  never persists live wagers, private outcomes, or resource handles.
+- Blackjack has a reference-driven betting, active-hand, dealer-turn, split,
+  and settled presentation: a state-specific rail, quick chip wagers, felt
+  rule markings, selected-wager treatment, result delta, and bounded Auto Bet
+  round advance. Rule decisions remain in the tested Blackjack engine.
 - European Roulette is fully playable through its rendering-independent engine
   and presentation API. It implements the single-zero 0-36 wheel; correct
   colors; straight, split, street, corner, six-line, basket, dozen, column,
@@ -571,6 +582,43 @@ separate decisions.
   shows exact integrity metadata with distribution disabled pending owner
   approval of a suitable host. Nothing was pushed, published, deployed,
   released, or signed, and no owner visual approval is claimed.
+- Completed locally on 2026-08-25 and reverified on 2026-08-28: the owner-
+  directed Blackjack authority rebuild. The read-only
+  `HowGamesShouldLookUi/BlackJack/BlackjackProductionPack` supplied the five
+  1280x720 authority references and promoted source material; selected runtime
+  assets, licenses, source provenance, hashes, and atlas order now live under
+  the intentionally versioned `assets/games/blackjack-reference-v1/` entry in
+  `assets/MANIFEST.md`. Central ownership loads the Blackjack scene, card,
+  chip, component, and icon atlases plus EB Garamond and Inter exactly once
+  outside the frame loop and unloads each successful handle once.
+  The native Blackjack view now follows the authority shell, table, seat,
+  action-rail, card, chip, split-hand, dealer-progress, and settled-result
+  hierarchy. Betting, player turn, split hands, dealer turn, and settled result
+  are produced through legal engine actions by deterministic audit fixtures;
+  changing cards, totals, wagers, legal/disabled actions, dealer privacy, AI
+  state, credit changes, and Auto Bet remain live application state rather than
+  reconstructed imagery. State-driven card/halo/status motion has a zero-offset
+  reduced-motion equivalent, focus remains non-color-only, disabled controls
+  remain readable, and the existing responsive fallback is retained.
+  Fresh repository `rocketc check` passes. Focused
+  `ui_core_games_view_test.rocket`, `ui_resources_test.rocket`,
+  `persistence_test.rocket`, `api_smoke_test.rocket`, and
+  `lifetime_test.rocket` each pass 1/1; the complete GUI-flow filter passes
+  11/11; formatting checks pass for all eight changed Rocket source/test files.
+  The exact fresh Release executable is
+  `.rocketc/targets/windows-x64/Scroll2Roll.exe`, 5,633,024 bytes, timestamped
+  `2026-08-25T19:25:07.7193135+03:00`, with SHA-256
+  `B2264F21A827045CF5287854A9144E46D0CAE953360669EFEBC70CE497D3BEA8`.
+  That binary was launched separately for all five audit flags and closed
+  cleanly after each capture. Windows Graphics Capture reports the requested
+  1280x720 client as 1024x576 logical pixels at the machine's 125% desktop
+  scaling; the untouched raw captures remain under ignored
+  `out/visual-audit/blackjack-reference-final/`, and deterministic 1280x720
+  resamples, side-by-side authority comparisons, and overlays were generated
+  there solely for pixel-grid review. All five final comparisons were reviewed
+  after the last UI iteration. The production pack was not modified, and no
+  Rocket repository change, package, website refresh, push, publication,
+  deployment, signing, or owner-approval claim was made.
 
 ## Major decisions
 

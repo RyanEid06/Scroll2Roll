@@ -15,6 +15,23 @@ pub struct TableResources:
     roulette_room_ready: Bool
     roulette_wheel: rocket_raylib.Texture
     roulette_wheel_ready: Bool
+    blackjack: BlackjackPremiumResources
+
+pub struct BlackjackPremiumResources:
+    scene: rocket_raylib.Texture
+    scene_ready: Bool
+    cards: rocket_raylib.Texture
+    cards_ready: Bool
+    chips: rocket_raylib.Texture
+    chips_ready: Bool
+    components: rocket_raylib.Texture
+    components_ready: Bool
+    icons: rocket_raylib.Texture
+    icons_ready: Bool
+    inter: rocket_raylib.Font
+    inter_ready: Bool
+    garamond: rocket_raylib.Font
+    garamond_ready: Bool
 
 pub struct GroupThreeResources:
     slots_arcade: rocket_raylib.Texture
@@ -82,7 +99,11 @@ pub struct UiResources:
 
 fn empty_tables() -> TableResources:
     let missing = rocket_raylib.Texture(0, 0, 0)
-    return TableResources(missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false)
+    return TableResources(missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, missing, false, empty_blackjack())
+
+fn empty_blackjack() -> BlackjackPremiumResources:
+    let missing = rocket_raylib.Texture(0, 0, 0)
+    return BlackjackPremiumResources(missing, false, missing, false, missing, false, missing, false, missing, false, rocket_raylib.Font(0), false, rocket_raylib.Font(0), false)
 
 fn empty_group_three() -> GroupThreeResources:
     let missing = rocket_raylib.Texture(0, 0, 0)
@@ -138,6 +159,17 @@ fn try_texture(window: rocket_raylib.Window, path: String) -> rocket_raylib.Text
 fn texture_ready(texture: rocket_raylib.Texture) -> Bool:
     return texture.id > 0 and texture.width > 0 and texture.height > 0
 
+fn try_font(window: rocket_raylib.Window, path: String) -> rocket_raylib.Font:
+    match rocket_raylib.load_font(window, path):
+        case Ok(font):
+            return font
+        case Err(error):
+            let expected = error
+            return rocket_raylib.Font(0)
+
+fn font_ready(font: rocket_raylib.Font) -> Bool:
+    return font.id > 0
+
 pub fn load(window: rocket_raylib.Window) -> UiResources:
     let shared = load_from_paths(window, "assets/fonts/manrope/Manrope-Medium.ttf", "assets/ui/scroll2roll-cover-atlas-a.png", "assets/ui/scroll2roll-cover-atlas-b.png")
     let midnight_city = try_texture(window, "assets/games/group1-v1/midnight-city-base.png")
@@ -158,7 +190,15 @@ pub fn load(window: rocket_raylib.Window) -> UiResources:
     let holdem_props = try_texture(window, "assets/games/group2-v1/holdem-props-atlas.png")
     let roulette_room = try_texture(window, "assets/games/group2-v1/roulette-room-background.png")
     let roulette_wheel = try_texture(window, "assets/games/group2-v1/roulette-wheel.png")
-    let tables = TableResources(blackjack_room, texture_ready(blackjack_room), blackjack_shoe, texture_ready(blackjack_shoe), casino_chips, texture_ready(casino_chips), holdem_lounge, texture_ready(holdem_lounge), holdem_props, texture_ready(holdem_props), roulette_room, texture_ready(roulette_room), roulette_wheel, texture_ready(roulette_wheel))
+    let blackjack_scene = try_texture(window, "assets/games/blackjack-reference-v1/blackjack-permanent-scene-1280x720.png")
+    let blackjack_cards = try_texture(window, "assets/games/blackjack-reference-v1/blackjack-cards-atlas.png")
+    let blackjack_chips = try_texture(window, "assets/games/blackjack-reference-v1/blackjack-chips-atlas.png")
+    let blackjack_components = try_texture(window, "assets/games/blackjack-reference-v1/blackjack-components-atlas.png")
+    let blackjack_icons = try_texture(window, "assets/games/blackjack-reference-v1/blackjack-icons-atlas.png")
+    let blackjack_inter = try_font(window, "assets/games/blackjack-reference-v1/Inter-SemiBold.otf")
+    let blackjack_garamond = try_font(window, "assets/games/blackjack-reference-v1/EBGaramond12-Regular.ttf")
+    let blackjack = BlackjackPremiumResources(blackjack_scene, texture_ready(blackjack_scene), blackjack_cards, texture_ready(blackjack_cards), blackjack_chips, texture_ready(blackjack_chips), blackjack_components, texture_ready(blackjack_components), blackjack_icons, texture_ready(blackjack_icons), blackjack_inter, font_ready(blackjack_inter), blackjack_garamond, font_ready(blackjack_garamond))
+    let tables = TableResources(blackjack_room, texture_ready(blackjack_room), blackjack_shoe, texture_ready(blackjack_shoe), casino_chips, texture_ready(casino_chips), holdem_lounge, texture_ready(holdem_lounge), holdem_props, texture_ready(holdem_props), roulette_room, texture_ready(roulette_room), roulette_wheel, texture_ready(roulette_wheel), blackjack)
     let slots_arcade = try_texture(window, "assets/games/group3-v1/slots-arcade-background.png")
     let slots_cabinet = try_texture(window, "assets/games/group3-v1/slots-cabinet.png")
     let slots_symbols = try_texture(window, "assets/games/group3-v1/slots-symbols-exact.png")
@@ -179,6 +219,8 @@ pub fn load(window: rocket_raylib.Window) -> UiResources:
         message = "Group 1 artwork and shared resources loaded"
     if tables.blackjack_room_ready and tables.blackjack_shoe_ready and tables.casino_chips_ready and tables.holdem_lounge_ready and tables.holdem_props_ready and tables.roulette_room_ready and tables.roulette_wheel_ready:
         message = "Group 1 and Group 2 artwork with shared resources loaded"
+    if blackjack.scene_ready and blackjack.cards_ready and blackjack.chips_ready and blackjack.components_ready and blackjack.icons_ready and blackjack.inter_ready and blackjack.garamond_ready:
+        message = "Blackjack authority artwork and bundled typography loaded"
     if group_three.slots_arcade_ready and group_three.slots_cabinet_ready and group_three.slots_symbols_ready and group_three.plinko_chamber_ready and group_three.plinko_enclosure_ready and group_three.mines_cavern_ready and group_three.mines_mine_ready and group_three.mines_tiles_ready:
         message = "Groups 1-3 artwork with shared resources loaded"
     if group_four.dice_vault_ready and group_four.dice_signal_display_ready and group_four.hilo_room_ready and group_four.hilo_card_tray_ready and group_four.hilo_effects_ready:
@@ -264,6 +306,48 @@ pub fn unload(value: UiResources) -> Result[Bool, String]:
                 clean = false
     if value.group_three.slots_arcade_ready:
         match rocket_raylib.unload_texture(value.group_three.slots_arcade):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.tables.blackjack.garamond_ready:
+        match rocket_raylib.unload_font(value.tables.blackjack.garamond):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.tables.blackjack.inter_ready:
+        match rocket_raylib.unload_font(value.tables.blackjack.inter):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.tables.blackjack.icons_ready:
+        match rocket_raylib.unload_texture(value.tables.blackjack.icons):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.tables.blackjack.components_ready:
+        match rocket_raylib.unload_texture(value.tables.blackjack.components):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.tables.blackjack.chips_ready:
+        match rocket_raylib.unload_texture(value.tables.blackjack.chips):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.tables.blackjack.cards_ready:
+        match rocket_raylib.unload_texture(value.tables.blackjack.cards):
+            case Ok(unloaded):
+                let expected = unloaded
+            case Err(error):
+                clean = false
+    if value.tables.blackjack.scene_ready:
+        match rocket_raylib.unload_texture(value.tables.blackjack.scene):
             case Ok(unloaded):
                 let expected = unloaded
             case Err(error):
