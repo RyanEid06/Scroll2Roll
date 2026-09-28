@@ -17,7 +17,10 @@ state-driven, reduced-motion-aware animation.
 
 - Treat `docs/MASTER_PLAN.md` as the authoritative product mandate.
 - Keep all casino work in this repository; never place it in the Rocket repository.
-- Use frozen Rocket 2.0 and the pinned Windows x64 raylib 6.0 integration without changing Rocket syntax, compiler contracts, runtime ABI, or tooling protocols.
+- The existing 0.3.1 casino remains on frozen Rocket 2.0. For the owner-directed
+  Rocket 3.5 transition, develop `rocket35/` against the frozen
+  `v3.5.0-scroll2roll-baseline` public modules. Do not copy engine code, use
+  private adapter calls, or alter Rocket to work around product code.
 - Keep Blackjack rules independent from rendering and back every completed rule with passing tests.
 - Preserve user work and keep generated, downloaded, experimental, cached, packaged, and machine-specific files out of Git.
 - Update `docs/PROJECT_CONTEXT.md` after every meaningful milestone and run the relevant validation before handoff.

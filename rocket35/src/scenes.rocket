@@ -1,0 +1,92 @@
+import rocket.assets
+import rocket.graphics
+import rocket.graphics.shapes
+import rocket.motion
+import rocket.raylib.safe
+import rocket.ui.containers
+import rocket.ui.render
+import rocket.ui.styles
+
+pub struct Scene:
+    table: assets.TextureRef
+    font: assets.FontRef
+
+fn succeeded(value: Result[Bool, String]) -> Bool:
+    match value:
+        case Ok(success):
+            return success
+        case Err(message):
+            print(message)
+            return false
+
+fn draw_text(frame: safe.Frame, font: safe.Font, label: String, bounds: graphics.Rect, size: Float, color: safe.Color) -> Bool:
+    return succeeded(safe.draw_text_layout(frame, font, label, bounds, graphics.text_style("default", size), color, graphics.text_align_left(), graphics.text_align_middle()))
+
+fn draw_panel(frame: safe.Frame, bounds: graphics.Rect) -> Bool:
+    let gold = graphics.color_from_rgba(0.96, 0.77, 0.26)
+    let fill = graphics.color_from_rgba(0.06, 0.09, 0.15, 0.96)
+    let panel_style = styles.panel_style(fill, styles.border_style(gold, 1.0, 14.0), styles.shadow_style(graphics.color_from_rgba(0.0, 0.0, 0.0, 0.35), graphics.vec2(3.0, 5.0)))
+    match containers.panel(bounds, panel_style):
+        case Err(message):
+            print(message)
+            return false
+        case Ok(panel):
+            return succeeded(render.draw_panel(frame, panel))
+
+pub fn draw_scene(frame: safe.Frame, scene: Scene, font: safe.Font, screen: Int, elapsed: Float) -> Bool:
+    let white = safe.color(243, 244, 246)
+    let muted = safe.color(156, 163, 175)
+    let gold = safe.color(245, 197, 66)
+    if screen == 1:
+        match assets.borrow_texture(scene.table):
+            case Err(message):
+                print(message)
+                return false
+            case Ok(table):
+                if not succeeded(safe.draw_texture_pro(frame, table, graphics.rect(0.0, 0.0, 1280.0, 720.0), graphics.rect(0.0, 0.0, 1280.0, 720.0), graphics.vec2(0.0, 0.0), 0.0, safe.color(255, 255, 255))):
+                    return false
+    else:
+        if not succeeded(safe.clear_background(frame, safe.color(8, 11, 20))):
+            return false
+        if not draw_panel(frame, graphics.rect(42.0, 118.0, 924.0, 506.0)):
+            return false
+        if not draw_panel(frame, graphics.rect(1018.0, 62.0, 252.0, 594.0)):
+            return false
+        let shimmer = motion.sample_float(motion.policy(false, false), motion.pulse(0.0, 16.0, 2.0), elapsed).value
+        if not succeeded(shapes.draw_line(frame, graphics.vec2(88.0, 316.0), graphics.vec2(295.0 + shimmer, 316.0), graphics.color_from_rgba(0.96, 0.77, 0.26))):
+            return false
+    if not draw_text(frame, font, "SCROLL2ROLL", graphics.rect(66.0, 25.0, 530.0, 62.0), 35.0, gold):
+        return false
+    if screen == 0:
+        if not draw_text(frame, font, "THE CASINO LOBBY", graphics.rect(88.0, 190.0, 770.0, 78.0), 46.0, white):
+            return false
+        if not draw_text(frame, font, "Play-money tables. Your next hand starts here.", graphics.rect(88.0, 263.0, 730.0, 44.0), 24.0, muted):
+            return false
+        if not draw_text(frame, font, "BLACKJACK", graphics.rect(88.0, 359.0, 510.0, 58.0), 35.0, gold):
+            return false
+        if not draw_text(frame, font, "The first table in this new build.", graphics.rect(88.0, 413.0, 680.0, 40.0), 22.0, white):
+            return false
+    if screen == 2:
+        if not draw_text(frame, font, "SETTINGS", graphics.rect(88.0, 190.0, 680.0, 78.0), 46.0, white):
+            return false
+        if not draw_text(frame, font, "Display", graphics.rect(88.0, 357.0, 370.0, 44.0), 28.0, gold):
+            return false
+        if not draw_text(frame, font, "Resizable window with a fixed table layout", graphics.rect(88.0, 408.0, 750.0, 35.0), 22.0, white):
+            return false
+        if not draw_text(frame, font, "Audio controls are coming to this build.", graphics.rect(88.0, 473.0, 750.0, 35.0), 21.0, muted):
+            return false
+    if not draw_text(frame, font, "EXPLORE", graphics.rect(1041.0, 77.0, 209.0, 34.0), 22.0, gold):
+        return false
+    if screen == 1:
+        if not draw_text(frame, font, "TABLE PREVIEW", graphics.rect(1040.0, 280.0, 212.0, 48.0), 23.0, gold):
+            return false
+        if not draw_text(frame, font, "Play-money Blackjack", graphics.rect(1040.0, 340.0, 212.0, 42.0), 19.0, white):
+            return false
+        if not draw_text(frame, font, "No wagers in this preview.", graphics.rect(1040.0, 399.0, 212.0, 55.0), 18.0, muted):
+            return false
+    else:
+        if not draw_text(frame, font, "LOCAL PLAY", graphics.rect(1040.0, 295.0, 212.0, 39.0), 20.0, white):
+            return false
+        if not draw_text(frame, font, "No real-money play.", graphics.rect(1040.0, 348.0, 212.0, 50.0), 18.0, muted):
+            return false
+    return true

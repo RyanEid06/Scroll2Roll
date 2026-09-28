@@ -1,0 +1,4 @@
+import src.application
+
+fn main() -> Int:
+    return application.run_app()

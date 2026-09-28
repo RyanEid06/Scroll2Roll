@@ -1,0 +1,167 @@
+import std.process
+import rocket.assets
+import rocket.graphics
+import rocket.graphics.canvas
+import rocket.raylib.safe
+import rocket.ui
+import rocket.ui.render
+import src.scenes
+import src.shell
+
+fn succeeded(value: Result[Bool, String]) -> Bool:
+    match value:
+        case Ok(success):
+            return success
+        case Err(message):
+            print(message)
+            return false
+
+fn draw_frame(window: safe.Window, target: safe.RenderTexture, scene: scenes.Scene, font: safe.Font, screen: Int, nav: shell.Navigation, elapsed: Float) -> Bool:
+    match safe.begin_frame(window):
+        case Err(message):
+            print(message)
+            return false
+        case Ok(frame):
+            match canvas.begin_target(frame, target):
+                case Err(message):
+                    print(message)
+                    let aborted = safe.abort_frame(frame)
+                    return false
+                case Ok(scope):
+                    let content = scenes.draw_scene(frame, scene, font, screen, elapsed)
+                    let first_drawn = render.draw_button(frame, font, nav.first)
+                    let second_drawn = render.draw_button(frame, font, nav.second)
+                    let ended = canvas.end_target(scope)
+                    if not content or not succeeded(first_drawn) or not succeeded(second_drawn) or not succeeded(ended):
+                        let aborted = safe.abort_frame(frame)
+                        return false
+            if not succeeded(safe.clear_background(frame, safe.color(3, 5, 10))):
+                let aborted = safe.abort_frame(frame)
+                return false
+            if not succeeded(canvas.present_current(window, frame, target, graphics.size(1280.0, 720.0))):
+                let aborted = safe.abort_frame(frame)
+                return false
+            return succeeded(safe.end_frame(frame))
+
+fn loop(window: safe.Window, target: safe.RenderTexture, scene: scenes.Scene, font: safe.Font) -> Int:
+    match ui.new_context("scroll2roll-35"):
+        case Err(message):
+            print(message)
+            return 10
+        case Ok(initial_context):
+            var context = initial_context
+            var screen = 0
+            var frame_limit = 0
+            match process.environment("SCROLL2ROLL_35_SMOKE"):
+                case None:
+                    frame_limit = 0
+                case Some(value):
+                    frame_limit = 3
+                    screen = 1
+                    match process.environment("SCROLL2ROLL_35_SCENE"):
+                        case None:
+                            screen = 1
+                        case Some(name):
+                            if name == "lobby":
+                                screen = 0
+                            if name == "settings":
+                                screen = 2
+            var frames = 0
+            while frame_limit == 0 or frames < frame_limit:
+                match safe.window_should_close(window):
+                    case Err(message):
+                        print(message)
+                        return 11
+                    case Ok(closing):
+                        if closing:
+                            break
+                match shell.update_navigation(context, window, screen):
+                    case Err(message):
+                        print(message)
+                        return 12
+                    case Ok(nav):
+                        context = nav.context
+                        match safe.elapsed_time(window):
+                            case Err(message):
+                                print(message)
+                                return 13
+                            case Ok(elapsed):
+                                if not draw_frame(window, target, scene, font, screen, nav, elapsed):
+                                    return 14
+                        if nav.first_clicked:
+                            if screen == 0:
+                                screen = 1
+                            else:
+                                screen = 0
+                        if nav.second_clicked:
+                            if screen == 2:
+                                screen = 1
+                            else:
+                                screen = 2
+                frames = frames + 1
+            if frame_limit > 0:
+                print("Scroll2Roll Rocket 3.5 smoke: frames rendered")
+                print(frames)
+                match process.environment("SCROLL2ROLL_35_CAPTURE"):
+                    case None:
+                        return 0
+                    case Some(path):
+                        if not succeeded(canvas.save_logical_screenshot(window, target, path)):
+                            return 15
+            return 0
+
+fn run(window: safe.Window, root: String) -> Int:
+    match assets.open_graphics(window, root, capacity: 2):
+        case Err(message):
+            print(message)
+            return 2
+        case Ok(store):
+            var status = 0
+            match assets.load_texture(store, "table", "assets/games/blackjack-reference-v1/blackjack-permanent-scene-1280x720.png"):
+                case Err(message):
+                    print(message)
+                    status = 3
+                case Ok(table):
+                    match assets.load_font(store, "font", "assets/fonts/manrope/Manrope-Medium.ttf"):
+                        case Err(message):
+                            print(message)
+                            status = 4
+                        case Ok(font_ref):
+                            match assets.borrow_font(font_ref):
+                                case Err(message):
+                                    print(message)
+                                    status = 5
+                                case Ok(font):
+                                    match canvas.create_target(window, 1280, 720):
+                                        case Err(message):
+                                            print(message)
+                                            status = 6
+                                        case Ok(target):
+                                            if not succeeded(canvas.set_output_filter(window, target, true)):
+                                                status = 7
+                                            else:
+                                                status = loop(window, target, scenes.Scene(table, font_ref), font)
+                                            if not succeeded(canvas.unload_target(target)):
+                                                status = 8
+            if not succeeded(assets.cleanup(store)):
+                status = 9
+            return status
+
+pub fn run_app() -> Int:
+    match process.environment("SCROLL2ROLL_ROOT"):
+        case None:
+            print("Set SCROLL2ROLL_ROOT to the Scroll2Roll repository directory")
+            return 2
+        case Some(root):
+            match safe.open_window_quality(1280, 720, "Scroll2Roll | Rocket 3.5"):
+                case Err(message):
+                    print(message)
+                    return 1
+                case Ok(window):
+                    if not succeeded(safe.set_target_fps(window, 60)):
+                        let closed = safe.close_window(window)
+                        return 3
+                    let status = run(window, root)
+                    if not succeeded(safe.close_window(window)):
+                        return 4
+                    return status

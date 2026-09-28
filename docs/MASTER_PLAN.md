@@ -1,3 +1,12 @@
+## Owner-directed Rocket 3.5 transition — 2026-09-28
+
+The plan below records the completed Rocket 2.0 casino program. The owner's
+newer direction freezes Rocket at `v3.5.0-scroll2roll-baseline` and starts
+Scroll2Roll as a consumer of its public 3.5 APIs. The existing 0.3.1 casino
+stays intact while `rocket35/` establishes the new product foundation and
+subsequent game migration. The no-real-money, asset provenance, tested-rules,
+local-data, and no-push/publication requirements below continue to apply.
+
 /goal Build Scroll2Roll as a complete, production-quality, downloadable Windows casino application written in Rocket 2.0, beginning with a fully playable Blackjack game and a reusable casino interface for adding more games later.
 
 ## Repository and workspace

@@ -6,17 +6,43 @@ Read this file and `MASTER_PLAN.md` completely at the start of every Scroll2Roll
 
 - Product: Scroll2Roll
 - Repository: `https://github.com/RyanEid06/Scroll2Roll.git`
-- Local workspace: `C:\Users\Administrator\Desktop\Projects\Scroll2Roll`
+- Current local workspace: `C:\Users\User\Documents\ChatGPT\Scroll2Roll`
 - Application: downloadable Windows desktop casino
-- Language: frozen Rocket 2.0
+- Language: existing 0.3.1 casino on frozen Rocket 2.0; new consumer package
+  on frozen Rocket 3.5
 - Graphics/input/audio: Rocket's reviewed raylib 6.0 integration
 - Target: Windows x64
 - IDE: Visual Studio Community 2026 with Rocket Language 2.0.3
 - Last fully accepted full Debug/Release package baseline: 0.3.0; no public release is claimed
 - Current repository freeze: 0.3.1 “Casino Freeze” (local unsigned no-build candidate; no fresh post-Group-4 full suite)
-- Current local milestone: reference-driven Blackjack implementation and the
-  Rocket checkout rename were validated in fresh Debug and Release builds on
-  2026-08-24; final visual comparison/polish remains intentionally pending.
+- Current local milestone: owner-directed Rocket 3.5 consumer foundation on
+  branch `codex/rocket35-consumer-foundation`; existing 0.3.1 remains intact.
+
+## Rocket 3.5 consumer foundation — 2026-09-28
+
+- Rocket baseline: `v3.5.0-scroll2roll-baseline` at
+  `1f6ba76f16f3246095d5d573c28d825d8b9367e3`. Rocket engine work is
+  paused pending a concrete product defect or requirement.
+- `rocket35/` is a separate package in this repository using public
+  `rocket.graphics`, `rocket.graphics.canvas`, `rocket.motion`,
+  `rocket.raylib.safe`, `rocket.assets`, `rocket.ui`, and
+  `rocket.ui.render`. Its modules separate lifecycle, scene drawing, and
+  navigation. It contains no private or example-local adapter.
+- The initial product shell renders lobby, settings, and a Blackjack table
+  preview at 1280×720 logical resolution in a resizable high-DPI window.
+  The table and Manrope font use existing tracked assets and their provenance.
+  There are no wagers or migrated game rules in this preview.
+- The portable local build script accepts a Rocket checkout parameter, finds
+  Visual Studio C++ tools, sets native library paths, and supports check,
+  build, run, and bounded screenshot smoke actions. Generated files stay under
+  ignored `out/rocket35/`.
+- Debug `rocketc check`, native build, and three-frame table smoke passed.
+  The smoke loaded both assets, rendered a screenshot, and closed with all
+  resources unloaded. The previous 0.3.1 acceptance claims are historical
+  and have not been rerun for this transition.
+- Next: migrate the existing tested Blackjack engine and its headless tests
+  into the 3.5 package, then connect its public state and legal actions to
+  the table. Preserve the old app until the new build reaches parity.
 
 ## Product vision and completed scope
 
