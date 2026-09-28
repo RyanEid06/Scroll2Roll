@@ -2,6 +2,19 @@
 
 Read this file and `MASTER_PLAN.md` completely at the start of every Scroll2Roll chat. Update this file after every meaningful milestone; never describe unverified functionality as complete.
 
+## Ryan/Eddie asynchronous coordination
+
+All Codex sessions follow `docs/CODEX_COORDINATION.md` and use the private
+`Scroll2Roll-Coordination` GitHub repository as the asynchronous message and
+handoff layer. The current active phase is Phase A — WP0–WP1 risk validation;
+its issue is `[SYNC] Phase A — WP0–WP1 risk validation`. Read outstanding
+messages and fetch source Git updates before work, post one `[START]` per
+session, report blockers/breakage/interface changes when they affect the other
+lane, and post `[END]` or `[HANDOFF]` before stopping. GitHub comments store
+coordination only; Scroll2Roll Git remains authoritative for source and tests.
+The Phase A issue URL and collaborator state are recorded here after the
+coordination repository setup is verified.
+
 ## Android roadmap — 2026-09-28
 
 The owner replaced the prior WP0–WP13 plan with a risk-first Android-only roadmap in docs/ANDROID_WORK_PACKAGES.md (WP0–WP8), now organized into parallel Ryan/Eddie phases A–F with separate worktrees and sequential integration checkpoints. WP0 tests short-video scrolling on a physical phone, followed by early permission/Play assessment and a strictly bounded Rocket Android spike. A failed scrolling signal stops for an owner product decision; foreground app time is not an automatic fallback. The first product milestone is an earning/wallet/Blackjack loop. Remaining existing games follow only after its owner and distribution checkpoint. Video Poker, Guess the Number, and iPhone are postponed. Windows 0.3.1 is preserved as a rules, tests, assets, and Git-history reference, not an active product target. This is documentation only; no Android implementation, device test, store review, or publication is claimed. The sparse checkout still omits tracked legacy game sources from disk; use an isolated full checkout when migration begins.
@@ -14,7 +27,7 @@ The owner requested a more attractive Scroll2Roll UI. The `rocket35/` preview no
 
 - Product: Scroll2Roll
 - Repository: `https://github.com/RyanEid06/Scroll2Roll.git`
-- Current local workspace: `C:\Users\User\Documents\ChatGPT\Scroll2Roll`
+- Current local workspace: `C:\Users\Administrator\Desktop\Projects\Scroll2Roll`
 - Application: Android-first phone casino; Windows desktop build preserved as reference
 - Language: existing 0.3.1 casino on frozen Rocket 2.0; new consumer package
   on frozen Rocket 3.5

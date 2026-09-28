@@ -2,6 +2,14 @@
 
 Before planning or changing Scroll2Roll, read `docs/MASTER_PLAN.md` and `docs/PROJECT_CONTEXT.md` completely, then read the relevant project documentation.
 
+At the start of every Codex work session, also read
+`docs/CODEX_COORDINATION.md`. Identify the Ryan or Eddie lane, current Android
+phase/WP, and its active private GitHub Phase Sync issue before making
+meaningful changes. Read outstanding messages, inspect/fetch Git state, and
+post one `[START]` message for the session. Follow the coordination document's
+blocker, breakage, interface, handoff, and offline rules. Post `[END]` or
+`[HANDOFF]` before ending meaningful work. Do not treat silence as approval.
+
 For any owner-directed game visual refinement, also read and follow
 `docs/GAME_VISUAL_REFINEMENT_PLAN.md` completely. Its four groups must be
 implemented sequentially in the shared checkout unless the owner explicitly
