@@ -1,3 +1,7 @@
+# Current direction — Android first
+
+This file preserves the historical Windows/Rocket 2.0 master plan as reference evidence. Current Android development, its next work package, and Ryan/Eddie phase gates are governed by docs/ANDROID_WORK_PACKAGES.md. Do not infer the next Android task from the Windows plan below. Windows is now reference-only for tested rules, behavior, assets, tests, and history; its packaging is not an Android dependency. The no-real-money, privacy, provenance, tested-rules, and owner-publication boundaries still apply.
+
 ## Owner-directed Rocket 3.5 transition — 2026-09-28
 
 The plan below records the completed Rocket 2.0 casino program. The owner's

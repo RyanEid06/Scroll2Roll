@@ -50,9 +50,9 @@ The three screen captures are preview evidence only. The 1280x720 logical
 canvas scales with the Windows window; Android layout, earning credits, and
 gameplay remain future work.
 
-## Next product step
+## Current next product step
 
-Bring the existing tested Blackjack engine and its headless tests across the
-package boundary without changing its rules. Then connect legal actions and
-privacy-safe state to the table scene. Keep the 0.3.1 application available
-until the new package reaches feature and validation parity.
+WP0 in docs/ANDROID_WORK_PACKAGES.md is the next task: test short-video
+scrolling signals on a physical Android phone with a disposable Kotlin app.
+This Rocket 3.5 package is a Windows presentation reference. Blackjack
+migration and Rocket Android feasibility wait for the roadmap's gates.

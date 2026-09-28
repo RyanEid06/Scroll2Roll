@@ -1,5 +1,7 @@
 # Scroll2Roll
 
+**Current direction:** Android first. The Windows 0.3.1 application documented below is preserved as a rules, tests, assets, and historical reference. The current WP0–WP8 roadmap and next task are in docs/ANDROID_WORK_PACKAGES.md; WP0 has not started.
+
 Scroll2Roll is a local, single-player, play-money Windows casino application written in Rocket 2.0. Blackjack, European Roulette, Plinko, Chicken presented as Coop Climb, Cross the Road presented as Midnight Crossing, No-Limit Texas Hold'em, Mines, Dice, HiLo, Crash, and Slots are complete behind a reusable raylib-powered casino shell.
 
 The native application targets Windows x64. It has no accounts, deposits, withdrawals, purchases, cryptocurrency, online multiplayer, real-money wagering, or browser-playable claim. Virtual credits have no monetary value.

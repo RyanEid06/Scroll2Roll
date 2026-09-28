@@ -4,7 +4,7 @@ Read this file and `MASTER_PLAN.md` completely at the start of every Scroll2Roll
 
 ## Android roadmap — 2026-09-28
 
-The owner replaced the prior WP0–WP13 plan with a risk-first Android-only roadmap in docs/ANDROID_WORK_PACKAGES.md (WP0–WP8). WP0 tests short-video scrolling on a physical phone, followed by early permission/Play assessment and a strictly bounded Rocket Android spike. A failed scrolling signal stops for an owner product decision; foreground app time is not an automatic fallback. The first product milestone is an earning/wallet/Blackjack loop. Remaining existing games follow only after its owner and distribution checkpoint. Video Poker, Guess the Number, and iPhone are postponed. Windows 0.3.1 is preserved as a rules, tests, assets, and Git-history reference, not an active product target. This is documentation only; no Android implementation, device test, store review, or publication is claimed. The sparse checkout still omits tracked legacy game sources from disk; use an isolated full checkout when migration begins.
+The owner replaced the prior WP0–WP13 plan with a risk-first Android-only roadmap in docs/ANDROID_WORK_PACKAGES.md (WP0–WP8), now organized into parallel Ryan/Eddie phases A–F with separate worktrees and sequential integration checkpoints. WP0 tests short-video scrolling on a physical phone, followed by early permission/Play assessment and a strictly bounded Rocket Android spike. A failed scrolling signal stops for an owner product decision; foreground app time is not an automatic fallback. The first product milestone is an earning/wallet/Blackjack loop. Remaining existing games follow only after its owner and distribution checkpoint. Video Poker, Guess the Number, and iPhone are postponed. Windows 0.3.1 is preserved as a rules, tests, assets, and Git-history reference, not an active product target. This is documentation only; no Android implementation, device test, store review, or publication is claimed. The sparse checkout still omits tracked legacy game sources from disk; use an isolated full checkout when migration begins.
 
 ## Rocket 3.5 preview UI refresh — 2026-09-28
 
@@ -23,7 +23,7 @@ The owner requested a more attractive Scroll2Roll UI. The `rocket35/` preview no
 - IDE: Visual Studio Community 2026 with Rocket Language 2.0.3
 - Last fully accepted full Debug/Release package baseline: 0.3.0; no public release is claimed
 - Current repository freeze: 0.3.1 “Casino Freeze” (local unsigned no-build candidate; no fresh post-Group-4 full suite)
-- Current local milestone: owner-directed Rocket 3.5 consumer foundation on
+- Current local milestone: Android roadmap locked for WP0 risk validation on
   branch `codex/rocket35-consumer-foundation`; existing 0.3.1 remains intact.
 
 ## Rocket 3.5 consumer foundation — 2026-09-28
@@ -48,9 +48,10 @@ The owner requested a more attractive Scroll2Roll UI. The `rocket35/` preview no
   The smoke loaded both assets, rendered a screenshot, and closed with all
   resources unloaded. The previous 0.3.1 acceptance claims are historical
   and have not been rerun for this transition.
-- Next: migrate the existing tested Blackjack engine and its headless tests
-  into the 3.5 package, then connect its public state and legal actions to
-  the table. Preserve the old app until the new build reaches parity.
+- Next Android task: WP0 — disposable scrolling-signal experiment. Do not
+  migrate Blackjack, start Rocket Android work, or install Android tooling
+  before the risk-first gates in docs/ANDROID_WORK_PACKAGES.md. The Windows
+  casino and Rocket 3.5 preview remain reference material.
 
 ## Product vision and completed scope
 
@@ -352,7 +353,7 @@ defines how owner-generated art may be briefed, reviewed, licensed, manifested,
 integrated, and tested without weakening engine/privacy boundaries.
 `docs/OWNER_ASSET_GENERATION_PROMPTS.md` supplies the exact PNG formats,
 filenames, per-game prompts, and provenance record for those owner assets.
-`docs/ASSET_ANIMATION_IMPLEMENTATION_PLAN.md` is the durable next-step
+`docs/ASSET_ANIMATION_IMPLEMENTATION_PLAN.md` was the historical post-art
 handoff: promote only selected reviewed assets, integrate each game's visual
 composition and committed/reduced-motion animation together, complete the four
 groups sequentially, and defer website/package refresh until final native
