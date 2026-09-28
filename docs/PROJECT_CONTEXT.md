@@ -12,8 +12,14 @@ messages and fetch source Git updates before work, post one `[START]` per
 session, report blockers/breakage/interface changes when they affect the other
 lane, and post `[END]` or `[HANDOFF]` before stopping. GitHub comments store
 coordination only; Scroll2Roll Git remains authoritative for source and tests.
-The Phase A issue URL and collaborator state are recorded here after the
-coordination repository setup is verified.
+Coordination repository:
+<https://github.com/RyanEid06/Scroll2Roll-Coordination>. The active Phase A
+issue is [#1 — [SYNC] Phase A — WP0–WP1 risk validation](https://github.com/RyanEid06/Scroll2Roll-Coordination/issues/1)
+and is pinned. Ryan's initialization `[START]` was posted and verified
+remotely. Eddie's confirmed Scroll2Roll account, `EdwardAttieh225`, has a
+pending write-collaborator invitation and must accept it before commenting.
+The coordination repository contains only its README and coordination records;
+it does not contain Scroll2Roll product source.
 
 ## Android roadmap — 2026-09-28
 
