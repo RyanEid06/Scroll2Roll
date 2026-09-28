@@ -4,7 +4,7 @@ Read this file and `MASTER_PLAN.md` completely at the start of every Scroll2Roll
 
 ## Android roadmap — 2026-09-28
 
-The owner requested a detailed, friend-assignable Android roadmap. `docs/ANDROID_WORK_PACKAGES.md` now specifies WP0–WP13, including Android/Rocket feasibility, scrolling-versus-app-time earning, a local credit ledger, sequential phone game migration, two new games, independent payout review, real-device acceptance, and release preparation. This is a plan only; no Android implementation, device test, store review, or publication is claimed. The current sparse checkout omits tracked legacy game sources from disk, so WP0 must expand or use a full isolated checkout before migration.
+The owner replaced the prior WP0–WP13 plan with a risk-first Android-only roadmap in docs/ANDROID_WORK_PACKAGES.md (WP0–WP8). WP0 tests short-video scrolling on a physical phone, followed by early permission/Play assessment and a strictly bounded Rocket Android spike. A failed scrolling signal stops for an owner product decision; foreground app time is not an automatic fallback. The first product milestone is an earning/wallet/Blackjack loop. Remaining existing games follow only after its owner and distribution checkpoint. Video Poker, Guess the Number, and iPhone are postponed. Windows 0.3.1 is preserved as a rules, tests, assets, and Git-history reference, not an active product target. This is documentation only; no Android implementation, device test, store review, or publication is claimed. The sparse checkout still omits tracked legacy game sources from disk; use an isolated full checkout when migration begins.
 
 ## Rocket 3.5 preview UI refresh — 2026-09-28
 
@@ -15,11 +15,11 @@ The owner requested a more attractive Scroll2Roll UI. The `rocket35/` preview no
 - Product: Scroll2Roll
 - Repository: `https://github.com/RyanEid06/Scroll2Roll.git`
 - Current local workspace: `C:\Users\User\Documents\ChatGPT\Scroll2Roll`
-- Application: downloadable Windows desktop casino
+- Application: Android-first phone casino; Windows desktop build preserved as reference
 - Language: existing 0.3.1 casino on frozen Rocket 2.0; new consumer package
   on frozen Rocket 3.5
 - Graphics/input/audio: Rocket's reviewed raylib 6.0 integration
-- Target: Windows x64
+- Target: Android first; historical Windows x64 build preserved as reference
 - IDE: Visual Studio Community 2026 with Rocket Language 2.0.3
 - Last fully accepted full Debug/Release package baseline: 0.3.0; no public release is claimed
 - Current repository freeze: 0.3.1 “Casino Freeze” (local unsigned no-build candidate; no fresh post-Group-4 full suite)
