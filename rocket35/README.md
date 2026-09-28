@@ -4,8 +4,11 @@ This is the first product package using the frozen Rocket 3.5 baseline
 `v3.5.0-scroll2roll-baseline` (`1f6ba76f16f3246095d5d573c28d825d8b9367e3`).
 It lives beside the existing 0.3.1 casino. The existing game, its engines,
 assets, saves, package, and website are preserved while gameplay is migrated.
-This preview has a lobby, settings screen, and Blackjack table scene; it does
-not yet accept wagers or run the Blackjack engine.
+This preview has a redesigned lobby, an informational settings screen, and a
+Blackjack table scene. It does not yet accept wagers or run the Blackjack
+engine. The shell combines the existing reviewed table artwork and Manrope font
+with Rocket-drawn panels, gradients, typography, and controls. It adds no new
+runtime assets.
 
 ## Source boundaries
 
@@ -42,6 +45,10 @@ logical screenshot under `out/rocket35/`, and exits cleanly. Use
 Studio C++ toolchain, sets Rocket's native library and artifact paths, and
 loads the repository assets with an explicit root. `-Configuration Release`
 selects a corresponding Rocket Release build when available.
+
+The three screen captures are preview evidence only. The 1280x720 logical
+canvas scales with the Windows window; Android layout, earning credits, and
+gameplay remain future work.
 
 ## Next product step
 

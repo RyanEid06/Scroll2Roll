@@ -2,6 +2,14 @@
 
 Read this file and `MASTER_PLAN.md` completely at the start of every Scroll2Roll chat. Update this file after every meaningful milestone; never describe unverified functionality as complete.
 
+## Android roadmap — 2026-09-28
+
+The owner requested a detailed, friend-assignable Android roadmap. `docs/ANDROID_WORK_PACKAGES.md` now specifies WP0–WP13, including Android/Rocket feasibility, scrolling-versus-app-time earning, a local credit ledger, sequential phone game migration, two new games, independent payout review, real-device acceptance, and release preparation. This is a plan only; no Android implementation, device test, store review, or publication is claimed. The current sparse checkout omits tracked legacy game sources from disk, so WP0 must expand or use a full isolated checkout before migration.
+
+## Rocket 3.5 preview UI refresh — 2026-09-28
+
+The owner requested a more attractive Scroll2Roll UI. The `rocket35/` preview now has a composed lobby hero, featured Blackjack panel, clearer sidebar navigation, a framed Blackjack table preview, and an informational settings layout. The changes are Rocket-only presentation changes in `src/scenes.rocket` and `src/shell.rocket`; they reuse the existing table texture and Manrope font, with no new art or game rules. The frozen `v3.5.0-scroll2roll-baseline` compiler was built in an isolated worktree, then `rocketc check` and Release three-frame smoke captures passed for Lobby, Table, and Settings. The app opened and shut down cleanly for each capture. The new UI is still a Windows 1280x720 logical preview; no Android layout, wagers, credit earning, or owner visual approval is claimed.
+
 ## Project identity
 
 - Product: Scroll2Roll

@@ -3,15 +3,12 @@ import rocket.graphics
 import rocket.graphics.shapes
 import rocket.motion
 import rocket.raylib.safe
-import rocket.ui.containers
-import rocket.ui.render
-import rocket.ui.styles
 
 pub struct Scene:
     table: assets.TextureRef
     font: assets.FontRef
 
-fn succeeded(value: Result[Bool, String]) -> Bool:
+fn ok(value: Result[Bool, String]) -> Bool:
     match value:
         case Ok(success):
             return success
@@ -19,74 +16,196 @@ fn succeeded(value: Result[Bool, String]) -> Bool:
             print(message)
             return false
 
-fn draw_text(frame: safe.Frame, font: safe.Font, label: String, bounds: graphics.Rect, size: Float, color: safe.Color) -> Bool:
-    return succeeded(safe.draw_text_layout(frame, font, label, bounds, graphics.text_style("default", size), color, graphics.text_align_left(), graphics.text_align_middle()))
+fn color(red: Float, green: Float, blue: Float, alpha: Float = 1.0) -> graphics.Color:
+    return graphics.color_from_rgba(red, green, blue, alpha)
 
-fn draw_panel(frame: safe.Frame, bounds: graphics.Rect) -> Bool:
-    let gold = graphics.color_from_rgba(0.96, 0.77, 0.26)
-    let fill = graphics.color_from_rgba(0.06, 0.09, 0.15, 0.96)
-    let panel_style = styles.panel_style(fill, styles.border_style(gold, 1.0, 14.0), styles.shadow_style(graphics.color_from_rgba(0.0, 0.0, 0.0, 0.35), graphics.vec2(3.0, 5.0)))
-    match containers.panel(bounds, panel_style):
+fn label(frame: safe.Frame, font: safe.Font, value: String, x: Float, y: Float, width: Float, height: Float, size: Float, tint: safe.Color) -> Bool:
+    return ok(safe.draw_text_layout(frame, font, value, graphics.rect(x, y, width, height), graphics.text_style("default", size), tint, graphics.text_align_left(), graphics.text_align_middle()))
+
+fn tile(frame: safe.Frame, x: Float, y: Float, width: Float, height: Float, red: Int, green: Int, blue: Int, alpha: Int = 255) -> Bool:
+    return ok(safe.draw_rounded_rect(frame, x, y, width, height, 0.1, red, green, blue, alpha))
+
+fn edge(frame: safe.Frame, x: Float, y: Float, width: Float, height: Float, red: Int, green: Int, blue: Int) -> Bool:
+    return ok(safe.draw_rounded_rect_outline(frame, x, y, width, height, 0.1, 1.0, red, green, blue, 230))
+
+fn line(frame: safe.Frame, x: Float, y: Float, width: Float, tint: graphics.Color) -> Bool:
+    return ok(shapes.draw_line(frame, graphics.vec2(x, y), graphics.vec2(x + width, y), tint))
+
+fn art(frame: safe.Frame, scene: Scene, source: graphics.Rect, destination: graphics.Rect) -> Bool:
+    match assets.borrow_texture(scene.table):
         case Err(message):
             print(message)
             return false
-        case Ok(panel):
-            return succeeded(render.draw_panel(frame, panel))
+        case Ok(table):
+            return ok(safe.draw_texture_pro(frame, table, source, destination, graphics.vec2(0.0, 0.0), 0.0, safe.color(255, 255, 255)))
+
+fn chrome(frame: safe.Frame, font: safe.Font, screen: Int, elapsed: Float) -> Bool:
+    if not ok(shapes.draw_gradient_rect(frame, graphics.rect(0.0, 0.0, 1280.0, 720.0), color(0.034, 0.05, 0.09), color(0.013, 0.024, 0.05))):
+        return false
+    if not ok(shapes.draw_gradient_circle(frame, graphics.vec2(1060.0, 80.0), 360.0, color(0.23, 0.14, 0.30, 0.28), color(0.02, 0.03, 0.07, 0.0))):
+        return false
+    let gleam = motion.sample_float(motion.policy(false, false), motion.pulse(0.0, 65.0, 2.7), elapsed).value
+    if not line(frame, 52.0, 91.0, 1176.0, color(0.25, 0.30, 0.36)):
+        return false
+    if not line(frame, 52.0, 91.0, 152.0 + gleam, color(0.93, 0.67, 0.32)):
+        return false
+    if not tile(frame, 52.0, 36.0, 34.0, 34.0, 227, 171, 88):
+        return false
+    if not label(frame, font, "S", 60.0, 39.0, 22.0, 27.0, 20.0, safe.color(24, 29, 37)):
+        return false
+    if not label(frame, font, "SCROLL", 100.0, 33.0, 170.0, 44.0, 28.0, safe.color(248, 243, 232)):
+        return false
+    if not label(frame, font, "2ROLL", 181.0, 33.0, 170.0, 44.0, 28.0, safe.color(238, 182, 100)):
+        return false
+    if not label(frame, font, "A PRIVATE PLAY-MONEY COLLECTION", 394.0, 38.0, 510.0, 35.0, 16.0, safe.color(170, 183, 192)):
+        return false
+    if not tile(frame, 1106.0, 38.0, 122.0, 32.0, 29, 52, 56):
+        return false
+    if not label(frame, font, "PREVIEW", 1130.0, 40.0, 90.0, 27.0, 13.0, safe.color(165, 222, 196)):
+        return false
+    if not tile(frame, 982.0, 114.0, 246.0, 542.0, 17, 27, 43):
+        return false
+    if not edge(frame, 982.0, 114.0, 246.0, 542.0, 58, 76, 91):
+        return false
+    if not label(frame, font, "YOUR NIGHT", 1004.0, 137.0, 205.0, 33.0, 19.0, safe.color(244, 240, 228)):
+        return false
+    if not line(frame, 1004.0, 185.0, 202.0, color(0.25, 0.31, 0.35)):
+        return false
+    if not label(frame, font, "EXPLORE", 1004.0, 200.0, 205.0, 29.0, 13.0, safe.color(238, 181, 99)):
+        return false
+    if not line(frame, 1004.0, 375.0, 202.0, color(0.25, 0.31, 0.35)):
+        return false
+    if not label(frame, font, "THIS BUILD", 1004.0, 393.0, 205.0, 30.0, 13.0, safe.color(238, 181, 99)):
+        return false
+    if screen == 1:
+        if not label(frame, font, "Blackjack table", 1004.0, 426.0, 205.0, 32.0, 17.0, safe.color(244, 240, 228)):
+            return false
+        if not label(frame, font, "Presentation preview", 1004.0, 461.0, 205.0, 29.0, 14.0, safe.color(170, 184, 195)):
+            return false
+    else:
+        if not label(frame, font, "One table to explore", 1004.0, 426.0, 205.0, 32.0, 17.0, safe.color(244, 240, 228)):
+            return false
+        if not label(frame, font, "More on the way", 1004.0, 461.0, 205.0, 29.0, 14.0, safe.color(170, 184, 195)):
+            return false
+    if not tile(frame, 1004.0, 544.0, 202.0, 84.0, 25, 40, 52):
+        return false
+    if not label(frame, font, "LOCAL PLAY", 1020.0, 552.0, 175.0, 30.0, 13.0, safe.color(165, 219, 193)):
+        return false
+    return label(frame, font, "Credits have no cash value.", 1020.0, 583.0, 177.0, 31.0, 13.0, safe.color(242, 238, 225))
+
+fn lobby(frame: safe.Frame, scene: Scene, font: safe.Font) -> Bool:
+    let ivory = safe.color(247, 242, 230)
+    let muted = safe.color(184, 193, 197)
+    let gold = safe.color(240, 185, 104)
+    if not tile(frame, 52.0, 114.0, 902.0, 298.0, 13, 37, 41):
+        return false
+    if not art(frame, scene, graphics.rect(0.0, 100.0, 1000.0, 555.0), graphics.rect(417.0, 114.0, 537.0, 298.0)):
+        return false
+    if not ok(shapes.draw_gradient_rect(frame, graphics.rect(52.0, 114.0, 700.0, 298.0), color(0.04, 0.12, 0.14), color(0.04, 0.12, 0.14, 0.0), false)):
+        return false
+    if not edge(frame, 52.0, 114.0, 902.0, 298.0, 73, 103, 96):
+        return false
+    if not label(frame, font, "WELCOME TO THE FLOOR", 85.0, 141.0, 510.0, 33.0, 15.0, gold):
+        return false
+    if not label(frame, font, "Your next hand", 81.0, 190.0, 540.0, 68.0, 49.0, ivory):
+        return false
+    if not label(frame, font, "starts here.", 81.0, 247.0, 540.0, 68.0, 49.0, ivory):
+        return false
+    if not label(frame, font, "A quiet room for luck and a little strategy.", 85.0, 333.0, 555.0, 39.0, 18.0, muted):
+        return false
+    if not tile(frame, 52.0, 436.0, 534.0, 219.0, 23, 36, 45):
+        return false
+    if not edge(frame, 52.0, 436.0, 534.0, 219.0, 77, 102, 97):
+        return false
+    if not tile(frame, 77.0, 462.0, 106.0, 30.0, 47, 83, 71):
+        return false
+    if not label(frame, font, "FEATURED", 94.0, 464.0, 95.0, 25.0, 12.0, safe.color(176, 226, 194)):
+        return false
+    if not label(frame, font, "BLACKJACK", 77.0, 510.0, 370.0, 57.0, 36.0, ivory):
+        return false
+    if not label(frame, font, "Step inside the table preview.", 77.0, 571.0, 410.0, 34.0, 17.0, muted):
+        return false
+    if not label(frame, font, "01", 495.0, 464.0, 55.0, 39.0, 18.0, gold):
+        return false
+    if not tile(frame, 606.0, 436.0, 348.0, 219.0, 20, 28, 47):
+        return false
+    if not edge(frame, 606.0, 436.0, 348.0, 219.0, 53, 69, 88):
+        return false
+    if not label(frame, font, "UP NEXT", 631.0, 462.0, 276.0, 31.0, 13.0, gold):
+        return false
+    if not label(frame, font, "More tables,", 631.0, 504.0, 288.0, 44.0, 28.0, ivory):
+        return false
+    if not label(frame, font, "same night.", 631.0, 540.0, 288.0, 44.0, 28.0, ivory):
+        return false
+    return label(frame, font, "The collection is growing.", 631.0, 598.0, 280.0, 30.0, 16.0, muted)
+
+fn table_preview(frame: safe.Frame, scene: Scene, font: safe.Font) -> Bool:
+    let ivory = safe.color(248, 243, 231)
+    if not label(frame, font, "BLACKJACK", 52.0, 108.0, 500.0, 44.0, 29.0, ivory):
+        return false
+    if not label(frame, font, "THE TABLE", 52.0, 149.0, 400.0, 27.0, 13.0, safe.color(240, 188, 109)):
+        return false
+    if not tile(frame, 52.0, 184.0, 902.0, 409.0, 12, 22, 31):
+        return false
+    if not art(frame, scene, graphics.rect(0.0, 125.0, 1000.0, 455.0), graphics.rect(53.0, 185.0, 900.0, 407.0)):
+        return false
+    if not edge(frame, 52.0, 184.0, 902.0, 409.0, 83, 100, 92):
+        return false
+    if not tile(frame, 72.0, 202.0, 177.0, 32.0, 13, 27, 34, 230):
+        return false
+    if not label(frame, font, "TABLE PREVIEW", 88.0, 205.0, 159.0, 25.0, 13.0, safe.color(183, 232, 204)):
+        return false
+    if not tile(frame, 52.0, 607.0, 902.0, 48.0, 19, 34, 43):
+        return false
+    if not label(frame, font, "A first look at the room", 73.0, 611.0, 357.0, 38.0, 19.0, ivory):
+        return false
+    return label(frame, font, "Wagers and cards arrive with engine migration.", 430.0, 614.0, 500.0, 32.0, 15.0, safe.color(175, 188, 194))
+
+fn settings(frame: safe.Frame, font: safe.Font) -> Bool:
+    let ivory = safe.color(246, 242, 230)
+    let muted = safe.color(174, 186, 198)
+    let gold = safe.color(238, 184, 102)
+    if not label(frame, font, "THE DETAILS", 52.0, 121.0, 530.0, 29.0, 14.0, gold):
+        return false
+    if not label(frame, font, "Make room for play.", 52.0, 161.0, 860.0, 69.0, 47.0, ivory):
+        return false
+    if not label(frame, font, "A few notes on this early Scroll2Roll build.", 53.0, 237.0, 810.0, 35.0, 19.0, muted):
+        return false
+    if not tile(frame, 52.0, 309.0, 432.0, 148.0, 20, 38, 44):
+        return false
+    if not edge(frame, 52.0, 309.0, 432.0, 148.0, 62, 95, 85):
+        return false
+    if not label(frame, font, "01  DISPLAY", 75.0, 326.0, 350.0, 33.0, 16.0, gold):
+        return false
+    if not label(frame, font, "A resizable window", 75.0, 370.0, 350.0, 39.0, 25.0, ivory):
+        return false
+    if not label(frame, font, "The table scales with your screen.", 75.0, 413.0, 370.0, 27.0, 16.0, muted):
+        return false
+    if not tile(frame, 504.0, 309.0, 450.0, 148.0, 28, 32, 54):
+        return false
+    if not edge(frame, 504.0, 309.0, 450.0, 148.0, 69, 70, 103):
+        return false
+    if not label(frame, font, "02  SOUND", 527.0, 326.0, 357.0, 33.0, 16.0, gold):
+        return false
+    if not label(frame, font, "A quieter preview", 527.0, 370.0, 385.0, 39.0, 25.0, ivory):
+        return false
+    if not label(frame, font, "Audio controls are in development.", 527.0, 413.0, 390.0, 27.0, 16.0, muted):
+        return false
+    if not tile(frame, 52.0, 477.0, 902.0, 178.0, 26, 34, 51):
+        return false
+    if not edge(frame, 52.0, 477.0, 902.0, 178.0, 63, 77, 96):
+        return false
+    if not label(frame, font, "PLAY-MONEY ONLY", 77.0, 498.0, 370.0, 35.0, 16.0, safe.color(169, 225, 194)):
+        return false
+    if not label(frame, font, "A collection built for the joy of the game.", 77.0, 540.0, 800.0, 44.0, 27.0, ivory):
+        return false
+    return label(frame, font, "No deposits, withdrawals or cash-value credits.", 77.0, 598.0, 780.0, 32.0, 17.0, muted)
 
 pub fn draw_scene(frame: safe.Frame, scene: Scene, font: safe.Font, screen: Int, elapsed: Float) -> Bool:
-    let white = safe.color(243, 244, 246)
-    let muted = safe.color(156, 163, 175)
-    let gold = safe.color(245, 197, 66)
-    if screen == 1:
-        match assets.borrow_texture(scene.table):
-            case Err(message):
-                print(message)
-                return false
-            case Ok(table):
-                if not succeeded(safe.draw_texture_pro(frame, table, graphics.rect(0.0, 0.0, 1280.0, 720.0), graphics.rect(0.0, 0.0, 1280.0, 720.0), graphics.vec2(0.0, 0.0), 0.0, safe.color(255, 255, 255))):
-                    return false
-    else:
-        if not succeeded(safe.clear_background(frame, safe.color(8, 11, 20))):
-            return false
-        if not draw_panel(frame, graphics.rect(42.0, 118.0, 924.0, 506.0)):
-            return false
-        if not draw_panel(frame, graphics.rect(1018.0, 62.0, 252.0, 594.0)):
-            return false
-        let shimmer = motion.sample_float(motion.policy(false, false), motion.pulse(0.0, 16.0, 2.0), elapsed).value
-        if not succeeded(shapes.draw_line(frame, graphics.vec2(88.0, 316.0), graphics.vec2(295.0 + shimmer, 316.0), graphics.color_from_rgba(0.96, 0.77, 0.26))):
-            return false
-    if not draw_text(frame, font, "SCROLL2ROLL", graphics.rect(66.0, 25.0, 530.0, 62.0), 35.0, gold):
+    if not chrome(frame, font, screen, elapsed):
         return false
     if screen == 0:
-        if not draw_text(frame, font, "THE CASINO LOBBY", graphics.rect(88.0, 190.0, 770.0, 78.0), 46.0, white):
-            return false
-        if not draw_text(frame, font, "Play-money tables. Your next hand starts here.", graphics.rect(88.0, 263.0, 730.0, 44.0), 24.0, muted):
-            return false
-        if not draw_text(frame, font, "BLACKJACK", graphics.rect(88.0, 359.0, 510.0, 58.0), 35.0, gold):
-            return false
-        if not draw_text(frame, font, "The first table in this new build.", graphics.rect(88.0, 413.0, 680.0, 40.0), 22.0, white):
-            return false
-    if screen == 2:
-        if not draw_text(frame, font, "SETTINGS", graphics.rect(88.0, 190.0, 680.0, 78.0), 46.0, white):
-            return false
-        if not draw_text(frame, font, "Display", graphics.rect(88.0, 357.0, 370.0, 44.0), 28.0, gold):
-            return false
-        if not draw_text(frame, font, "Resizable window with a fixed table layout", graphics.rect(88.0, 408.0, 750.0, 35.0), 22.0, white):
-            return false
-        if not draw_text(frame, font, "Audio controls are coming to this build.", graphics.rect(88.0, 473.0, 750.0, 35.0), 21.0, muted):
-            return false
-    if not draw_text(frame, font, "EXPLORE", graphics.rect(1041.0, 77.0, 209.0, 34.0), 22.0, gold):
-        return false
+        return lobby(frame, scene, font)
     if screen == 1:
-        if not draw_text(frame, font, "TABLE PREVIEW", graphics.rect(1040.0, 280.0, 212.0, 48.0), 23.0, gold):
-            return false
-        if not draw_text(frame, font, "Play-money Blackjack", graphics.rect(1040.0, 340.0, 212.0, 42.0), 19.0, white):
-            return false
-        if not draw_text(frame, font, "No wagers in this preview.", graphics.rect(1040.0, 399.0, 212.0, 55.0), 18.0, muted):
-            return false
-    else:
-        if not draw_text(frame, font, "LOCAL PLAY", graphics.rect(1040.0, 295.0, 212.0, 39.0), 20.0, white):
-            return false
-        if not draw_text(frame, font, "No real-money play.", graphics.rect(1040.0, 348.0, 212.0, 50.0), 18.0, muted):
-            return false
-    return true
+        return table_preview(frame, scene, font)
+    return settings(frame, font)

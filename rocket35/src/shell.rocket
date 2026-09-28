@@ -13,15 +13,25 @@ pub struct Navigation:
     first_clicked: Bool
     second_clicked: Bool
 
-fn button_styles() -> styles.StyleStates:
+fn button_styles(primary: Bool) -> styles.StyleStates:
     let base = styles.default_styles(theme.dark_theme())
-    let ink = graphics.color_from_rgba(0.05, 0.07, 0.10)
-    let border = styles.border_style(graphics.color_from_rgba(0.98, 0.83, 0.48), 1.0, 8.0)
-    let shadow = styles.shadow_style(graphics.color_from_rgba(0.0, 0.0, 0.0, 0.40), graphics.vec2(2.0, 3.0))
-    let label = styles.text_style(ink, 17.0)
-    let normal_button = styles.button_style(graphics.color_from_rgba(0.82, 0.61, 0.27), label, border, shadow, 8.0)
-    let hovered_button = styles.button_style(graphics.color_from_rgba(0.98, 0.76, 0.37), label, border, shadow, 8.0)
-    let pressed_button = styles.button_style(graphics.color_from_rgba(0.63, 0.45, 0.18), label, border, shadow, 8.0)
+    var normal_fill = graphics.color_from_rgba(0.89, 0.67, 0.39)
+    var hovered_fill = graphics.color_from_rgba(0.98, 0.77, 0.48)
+    var pressed_fill = graphics.color_from_rgba(0.70, 0.49, 0.27)
+    var text_ink = graphics.color_from_rgba(0.09, 0.12, 0.14)
+    var border_ink = graphics.color_from_rgba(0.95, 0.78, 0.52)
+    if not primary:
+        normal_fill = graphics.color_from_rgba(0.15, 0.22, 0.27)
+        hovered_fill = graphics.color_from_rgba(0.20, 0.31, 0.36)
+        pressed_fill = graphics.color_from_rgba(0.11, 0.17, 0.22)
+        text_ink = graphics.color_from_rgba(0.93, 0.95, 0.92)
+        border_ink = graphics.color_from_rgba(0.30, 0.42, 0.45)
+    let border = styles.border_style(border_ink, 1.0, 11.0)
+    let shadow = styles.shadow_style(graphics.color_from_rgba(0.0, 0.0, 0.0, 0.24), graphics.vec2(0.0, 3.0))
+    let label = styles.text_style(text_ink, 19.0)
+    let normal_button = styles.button_style(normal_fill, label, border, shadow, 11.0)
+    let hovered_button = styles.button_style(hovered_fill, label, border, shadow, 11.0)
+    let pressed_button = styles.button_style(pressed_fill, label, border, shadow, 11.0)
     let normal = styles.style_set(base.normal.text, base.normal.panel, normal_button, base.normal.image)
     let hovered = styles.style_set(base.hovered.text, base.hovered.panel, hovered_button, base.hovered.image)
     let pressed = styles.style_set(base.pressed.text, base.pressed.panel, pressed_button, base.pressed.image)
@@ -43,12 +53,13 @@ pub fn update_navigation(context: ui.Context, window: safe.Window, screen: Int) 
                     if screen == 2:
                         first_label = "LOBBY"
                         second_label = "BLACKJACK"
-                    let states = button_styles()
-                    match controls.button(ui_frame, ui.widget_id("primary"), first_label, graphics.rect(1040.0, 122.0, 210.0, 46.0), states):
+                    let primary_states = button_styles(true)
+                    let secondary_states = button_styles(false)
+                    match controls.button(ui_frame, ui.widget_id("primary"), first_label, graphics.rect(1004.0, 235.0, 202.0, 54.0), primary_states):
                         case Err(message):
                             return Err(message)
                         case Ok(first):
-                            match controls.button(first.frame, ui.widget_id("secondary"), second_label, graphics.rect(1040.0, 181.0, 210.0, 46.0), states):
+                            match controls.button(first.frame, ui.widget_id("secondary"), second_label, graphics.rect(1004.0, 300.0, 202.0, 54.0), secondary_states):
                                 case Err(message):
                                     return Err(message)
                                 case Ok(second):
